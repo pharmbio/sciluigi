@@ -16,7 +16,7 @@ class RSyncAFolder(luigipp.LuigiPPTask):
 
     def output(self):
         # TODO: Let's see if a folder can be used as a target ...
-        return { 'dest_dir' : luigi.LocalTarget(self.dest_dir) }
+        return { 'dest_dir' : luigi.LocalTarget(self.dest_dir_path) }
 
     def run(self):
         call('rsync -a {src} {dest}'.format(
@@ -101,7 +101,7 @@ class MergeFiles(luigipp.LuigiPPTask):
     part2_target = luigi.Parameter()
 
     def output(self):
-        return { 'merged' : luigi.LocalTarget(self.get_input('part1_target').path + '_' + self.get_input('part2_target').path + '.merged' ) }
+        return { 'merged' : luigi.LocalTarget(self.get_input('part1_target').path + '.merged' ) }
 
     def run(self):
         sub.call('cat {f1} {f2} > {out}'.format(
@@ -116,7 +116,7 @@ class MergeFiles(luigipp.LuigiPPTask):
 
 class DahlbergTest(luigi.Task):
 
-    task_to_return = luigi.Parameter(default='merge')
+    task = luigi.Parameter(default='merge')
 
     def requires(self):
 
@@ -132,7 +132,7 @@ class DahlbergTest(luigi.Task):
 
         #Kor ett program som tar 10 minuter att kora
         tasks['run10min'] = Run10MinuteSleep(
-                upstream_target = tasks['rsync'].outport('destdir')
+                upstream_target = tasks['rsync'].outport('dest_dir')
                 )
 
         #Gora en http request ut
@@ -144,7 +144,7 @@ class DahlbergTest(luigi.Task):
 
         #Splitta en fil
         tasks['split'] = SplitAFile(
-                indata_target = tasks['split_indata']
+                indata_target = tasks['split_indata'].outport('acgt')
                 )
 
         #Kor samma program pa de tva resultaten
@@ -162,7 +162,7 @@ class DahlbergTest(luigi.Task):
                 part2_target = tasks['dosth2'].outport('outdata')
                 )
 
-        return tasks[self.task_to_return]
+        return tasks[self.task]
 
 
 # ------------------------------------------------------------------------
