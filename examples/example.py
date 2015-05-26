@@ -2,6 +2,10 @@ import luigi
 import luigipp
 from subprocess import call
 
+# ------------------------------------------------------------------------
+# Task classes
+# ------------------------------------------------------------------------
+
 class RawData(luigipp.LuigiPPExternalTask):
     def output(self):
         return { 'rawdata' : luigi.LocalTarget('rawdata') }
@@ -17,6 +21,10 @@ class AToT(luigipp.LuigiPPTask):
         print("COMMAND: " + cmd)
         call(cmd, shell=True)
 
+# ------------------------------------------------------------------------
+# Workflow class(es)
+# ------------------------------------------------------------------------
+
 class MyWorkflow(luigi.Task):
 
     def requires(self):
@@ -28,6 +36,10 @@ class MyWorkflow(luigi.Task):
                )
 
         return atot
+
+# ------------------------------------------------------------------------
+# Run this file as script
+# ------------------------------------------------------------------------
 
 if __name__ == '__main__':
     luigi.run()
