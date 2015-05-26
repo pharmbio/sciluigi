@@ -1,5 +1,5 @@
 import luigi
-import luigipp
+import sciluigi
 import math
 from subprocess import call
 import subprocess as sub
@@ -12,7 +12,7 @@ import time
 # ------------------------------------------------------------------------
 
 #Rsync a folder
-class RSyncAFolder(luigipp.LuigiPPTask):
+class RSyncAFolder(sciluigi.SciLuigiTask):
     src_dir_path = luigi.Parameter()
     dest_dir_path = luigi.Parameter()
 
@@ -28,7 +28,7 @@ class RSyncAFolder(luigipp.LuigiPPTask):
 
 
 #Run a program that takes 10 minutes (seconds now, for a try) to run
-class Run10MinuteSleep(luigipp.LuigiPPTask):
+class Run10MinuteSleep(sciluigi.SciLuigiTask):
     upstream_target = luigi.Parameter()
 
     def output(self):
@@ -41,7 +41,7 @@ class Run10MinuteSleep(luigipp.LuigiPPTask):
 
 
 #Perform a web request
-class DoWebRequest(luigipp.LuigiPPTask):
+class DoWebRequest(sciluigi.SciLuigiTask):
     upstream_target = luigi.Parameter()
 
     def output(self):
@@ -58,13 +58,13 @@ class DoWebRequest(luigipp.LuigiPPTask):
 
 
 #Split a file
-class ExistingData(luigipp.LuigiPPExternalTask):
+class ExistingData(sciluigi.SciLuigiExternalTask):
     file_name = luigi.Parameter(default='acgt.txt')
 
     def output(self):
         return { 'acgt' : luigi.LocalTarget('data/' + self.file_name) }
 
-class SplitAFile(luigipp.LuigiPPTask):
+class SplitAFile(sciluigi.SciLuigiTask):
     indata_target = luigi.Parameter()
 
     def output(self):
@@ -94,7 +94,7 @@ class SplitAFile(luigipp.LuigiPPTask):
 
 
 #Run the same program on both parts of the split
-class DoSomething(luigipp.LuigiPPTask):
+class DoSomething(sciluigi.SciLuigiTask):
     indata_target = luigi.Parameter()
 
     def output(self):
@@ -107,7 +107,7 @@ class DoSomething(luigipp.LuigiPPTask):
 
 
 #Merge the results of the programs
-class MergeFiles(luigipp.LuigiPPTask):
+class MergeFiles(sciluigi.SciLuigiTask):
     part1_target = luigi.Parameter()
     part2_target = luigi.Parameter()
 

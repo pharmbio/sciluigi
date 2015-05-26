@@ -1,16 +1,16 @@
 import luigi
-import luigipp
+import sciluigi
 from subprocess import call
 
 # ------------------------------------------------------------------------
 # Task classes
 # ------------------------------------------------------------------------
 
-class RawData(luigipp.LuigiPPExternalTask):
+class RawData(sciluigi.SciLuigiExternalTask):
     def output(self):
         return { 'rawdata' : luigi.LocalTarget('rawdata') }
 
-class AToT(luigipp.LuigiPPTask):
+class AToT(sciluigi.SciLuigiTask):
     indata = luigi.Parameter()
 
     def output(self):

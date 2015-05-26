@@ -5,7 +5,7 @@ import string
 
 # ==============================================================================
 
-class LuigiPPTask(luigi.Task):
+class SciLuigiTask(luigi.Task):
     '''
     A Luigi task meta-class, implementing methods for supporting
     dynamic definition of upstream targets, in Luigi
@@ -65,7 +65,7 @@ class LuigiPPTask(luigi.Task):
 
 # ==============================================================================
 
-class LuigiPPExternalTask(luigi.ExternalTask):
+class SciLuigiExternalTask(luigi.ExternalTask):
     '''
     The same as DependencyHelpers, for luigi.ExternalTask rather than
     luigi.Task

@@ -1,25 +1,25 @@
-Luigi++
-=======
+Scientific Luigi
+================
 
-Extra helper methods for writing [Luigi](http://github.com/spotify/luigi) workflows.
+Extra helper methods for writing scientific workflows in [Luigi](http://github.com/spotify/luigi).
 
 More info is coming, but this library enables to define luigi tasks and workflows
 in the following way:
 
 ```python
 import luigi
-import luigipp
+import sciluigi
 from subprocess import call
 
 # ------------------------------------------------------------------------
 # Task classes
 # ------------------------------------------------------------------------
 
-class RawData(luigipp.LuigiPPExternalTask):
+class RawData(sciluigi.SciLuigiExternalTask):
     def output(self):
         return { 'rawdata' : luigi.LocalTarget('rawdata') }
 
-class AToT(luigipp.LuigiPPTask):
+class AToT(sciluigi.SciLuigiTask):
     indata = luigi.Parameter()
 
     def output(self):
