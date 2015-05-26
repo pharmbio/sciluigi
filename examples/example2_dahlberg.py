@@ -19,9 +19,10 @@ class RSyncAFolder(luigipp.LuigiPPTask):
         return { 'dest_dir' : luigi.LocalTarget(self.dest_dir_path) }
 
     def run(self):
-        call('rsync -a {src} {dest}'.format(
+        call('rsync -a {src}/ {dest}/'.format(
             src = self.src_dir_path,
-            dest = self.dest_dir_path))
+            dest = self.dest_dir_path),
+        shell=True)
 
 
 #Run a program that takes 10 minutes (seconds now, for a try) to run
@@ -116,7 +117,7 @@ class MergeFiles(luigipp.LuigiPPTask):
 
 class DahlbergTest(luigi.Task):
 
-    task = luigi.Parameter(default='merge')
+    task = luigi.Parameter()
 
     def requires(self):
 
@@ -127,7 +128,7 @@ class DahlbergTest(luigi.Task):
         #Rsync en mapp
         tasks['rsync'] = RSyncAFolder(
                 src_dir_path = 'data',
-                dest_dir_path = 'data_copy'
+                dest_dir_path = 'data_rsynced_copy'
                 )
 
         #Kor ett program som tar 10 minuter att kora
