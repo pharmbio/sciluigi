@@ -49,6 +49,17 @@ class LuigiPPTask(luigi.Task):
         else:
             return param
 
+    def new_target(self, basestr=None, **kwargs):
+        if 'dep' in kwargs:
+            path = self.get_path(kwargs['dep'])
+            if 'ext' in kwargs:
+                path += kwargs['ext']
+        elif basestr is not None:
+            path = basestr
+
+        return luigi.LocalTarget(path)
+
+
     def outport(self, portname):
         return { 'upstream' : { 'task' : self, 'port' : portname } }
 

@@ -45,7 +45,7 @@ class DoWebRequest(luigipp.LuigiPPTask):
     upstream_target = luigi.Parameter()
 
     def output(self):
-        return { 'done_flagfile' : luigi.LocalTarget(self.get_path('upstream_target') + '.webrequest_done' ) }
+        return { 'done_flagfile' : self.new_target(dep='upstream_target', ext='.webrequest_done') }
 
     def run(self):
         resp = requests.get('http://bils.se')
@@ -68,8 +68,9 @@ class SplitAFile(luigipp.LuigiPPTask):
     indata_target = luigi.Parameter()
 
     def output(self):
-        return { 'part1' : luigi.LocalTarget(self.get_path('indata_target') + '.part1'),
-                 'part2' : luigi.LocalTarget(self.get_path('indata_target') + '.part2') }
+        return { 'part1' : self.new_target(dep='indata_target', ext='.part1'),
+                 'part2' : self.new_target(dep='indata_target', ext='.part2') }
+
 
     def run(self):
         cmd = 'wc -l {f}'.format(f=self.get_path('indata_target') )
