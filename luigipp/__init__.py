@@ -70,6 +70,9 @@ class LuigiPPExternalTask(luigi.ExternalTask):
         else:
             return param
 
+    def outport(self, portname):
+        return { 'upstream' : { 'task' : self, 'port' : portname } }
+
 # ==============================================================================
 
 class HPCHelpers():
