@@ -1,9 +1,11 @@
 import luigi
 import luigipp
+import math
 from subprocess import call
-import time
-import requests
+import subprocess as sub
 import sys
+import requests
+import time
 
 # ------------------------------------------------------------------------
 # Task classes
@@ -60,7 +62,7 @@ class ExistingData(luigipp.LuigiPPExternalTask):
     def output(self):
         return { 'acgt' : luigi.LocalTarget('data/' + self.file_name) }
 
-class SplitAFile(luigipp.LuigiPPExternalTask):
+class SplitAFile(luigipp.LuigiPPTask):
     indata_target = luigi.Parameter()
 
     def output(self):
@@ -68,18 +70,23 @@ class SplitAFile(luigipp.LuigiPPExternalTask):
                  'part2' : luigi.LocalTarget(self.get_path('indata_target') + '.part2') }
 
     def run(self):
-        lines_cnt = int(sub.check_output('wc -l {f}'.format(
-            f=self.get_path('indata_target')),
-        shell=True))
+        cmd = 'wc -l {f}'.format(f=self.get_path('indata_target') )
+        wc_output = sub.check_output(cmd, shell=True)
+        lines_cnt = int(wc_output.split(' ')[0])
+        head_cnt = int(math.ceil(lines_cnt / 2))
+        tail_cnt = int(math.floor(lines_cnt / 2))
 
-        sub.call('head -n {i} > {part1}'.format(
-            n=self.get_path('indata_target'),
-            part1=self.output()['part1'].path),
-        shell=True)
-
-        sub.call('tail -n {i} > {part2}'.format(
+        cmd_head = 'head -n {cnt} {i} > {part1}'.format(
             i=self.get_path('indata_target'),
-            part1=self.output()['part2'].path),
+            cnt=head_cnt,
+            part1=self.output()['part1'].path)
+        print("COMMAND: " + cmd_head)
+        sub.call(cmd_head, shell=True)
+
+        sub.call('tail -n {cnt} {i} {cnt} > {part2}'.format(
+            i=self.get_path('indata_target'),
+            cnt=tail_cnt,
+            part2=self.output()['part2'].path),
         shell=True)
 
 
