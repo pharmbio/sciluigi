@@ -157,11 +157,11 @@ class DahlbergTest(luigi.Task):
 
         #Kor samma program pa de tva resultaten
         tasks['dosth1'] = DoSomething(
-                indata_target = tasks['split_indata'].outport('part1')
+                indata_target = tasks['split'].outport('part1')
                 )
 
         tasks['dosth2'] = DoSomething(
-                indata_target = tasks['split_indata'].outport('part2')
+                indata_target = tasks['split'].outport('part2')
                 )
 
         #Merga resultaten
