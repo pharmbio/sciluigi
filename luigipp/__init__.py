@@ -1,6 +1,11 @@
+import luigi
+import time
+import random
+import string
+
 # ==============================================================================
 
-class DependencyHelpers(luigi.Task):
+class LuigiPPTask(luigi.Task):
     '''
     A Luigi task meta-class, implementing methods for supporting
     dynamic definition of upstream targets, in Luigi
@@ -41,9 +46,12 @@ class DependencyHelpers(luigi.Task):
         else:
             return param
 
+    def outport(self, portname):
+        return { 'upstream' : { 'task' : self, 'port' : portname } }
+
 # ==============================================================================
 
-class DependencyHelpersExternal(luigi.ExternalTask):
+class LuigiPPExternalTask(luigi.ExternalTask):
     '''
     The same as DependencyHelpers, for luigi.ExternalTask rather than
     luigi.Task
