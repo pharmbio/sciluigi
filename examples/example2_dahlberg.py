@@ -36,6 +36,8 @@ class Run10MinuteSleep(luigipp.LuigiPPTask):
 
     def run(self):
         time.sleep(10)
+        with self.output()['done_flagfile'].open('w') as flagfile:
+            flagfile.write('Done!')
 
 
 #Perform a web request
