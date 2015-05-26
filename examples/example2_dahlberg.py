@@ -30,7 +30,7 @@ class Run10MinuteSleep(luigipp.LuigiPPTask):
     upstream_target = luigi.Parameter()
 
     def output(self):
-        return { 'done_flagfile' : luigi.LocalTarget(self.get_input('upstream_target').path + '.10mintask_done' ) }
+        return { 'done_flagfile' : luigi.LocalTarget(self.get_path('upstream_target') + '.10mintask_done' ) }
 
     def run(self):
         time.sleep(10)
@@ -41,7 +41,7 @@ class DoWebRequest(luigipp.LuigiPPTask):
     upstream_target = luigi.Parameter()
 
     def output(self):
-        return { 'done_flagfile' : luigi.LocalTarget(self.get_input('upstream_target').path + '.webrequest_done' ) }
+        return { 'done_flagfile' : luigi.LocalTarget(self.get_path('upstream_target') + '.webrequest_done' ) }
 
     def run(self):
         resp = requests.get('http://bils.se')
@@ -64,21 +64,21 @@ class SplitAFile(luigipp.LuigiPPExternalTask):
     indata_target = luigi.Parameter()
 
     def output(self):
-        return { 'part1' : luigi.LocalTarget(self.get_input('indata_target').path + '.part1'),
-                 'part2' : luigi.LocalTarget(self.get_input('indata_target').path + '.part2') }
+        return { 'part1' : luigi.LocalTarget(self.get_path('indata_target') + '.part1'),
+                 'part2' : luigi.LocalTarget(self.get_path('indata_target') + '.part2') }
 
     def run(self):
         lines_cnt = int(sub.check_output('wc -l {f}'.format(
-            f=self.get_input('indata_target').path),
+            f=self.get_path('indata_target')),
         shell=True))
 
         sub.call('head -n {i} > {part1}'.format(
-            n=self.get_input('indata_target').path,
+            n=self.get_path('indata_target'),
             part1=self.output()['part1'].path),
         shell=True)
 
         sub.call('tail -n {i} > {part2}'.format(
-            i=self.get_input('indata_target').path,
+            i=self.get_path('indata_target'),
             part1=self.output()['part2'].path),
         shell=True)
 
@@ -88,7 +88,7 @@ class DoSomething(luigipp.LuigiPPTask):
     indata_target = luigi.Parameter()
 
     def output(self):
-        return { 'outdata' : luigi.LocalTarget(self.get_input('indata_target').path + '.something_done' ) }
+        return { 'outdata' : luigi.LocalTarget(self.get_path('indata_target') + '.something_done' ) }
 
     def run(self):
         with self.get_input('indata_target').open() as infile, self.output()['outdata'].open('w') as outfile:

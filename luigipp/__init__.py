@@ -31,6 +31,9 @@ class LuigiPPTask(luigi.Task):
         else:
             return param
 
+    def get_path(self, input_name):
+        return self.get_input(input_name).path
+
     def get_value(self, input_name):
         param = self.param_kwargs[input_name]
         if type(param) is dict and 'upstream' in param:
