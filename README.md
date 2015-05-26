@@ -98,7 +98,6 @@ class MyWorkflow(luigi.Task):
 		# Split a file
 
         tasks['split_indata'] = ExistingData()
-
         tasks['split'] = SplitAFile(
                 indata_target = tasks['split_indata'].outport('acgt'))
 
@@ -106,7 +105,6 @@ class MyWorkflow(luigi.Task):
 
         tasks['dosth1'] = DoSomething(
                 indata_target = tasks['split'].outport('part1'))
-
         tasks['dosth2'] = DoSomething(
                 indata_target = tasks['split'].outport('part2'))
 
@@ -114,8 +112,7 @@ class MyWorkflow(luigi.Task):
 
         tasks['merge'] = MergeFiles(
                 part1_target = tasks['dosth1'].outport('outdata'),
-                part2_target = tasks['dosth2'].outport('outdata')
-                )
+                part2_target = tasks['dosth2'].outport('outdata'))
 
         return tasks[self.task]
 
