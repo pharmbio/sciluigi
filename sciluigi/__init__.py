@@ -53,10 +53,6 @@ class DependencyHelpers():
     def requires(self):
         return self._upstream_tasks()
 
-    def output(self):
-        import pdb; pdb.set_trace()
-        print 'hey'
-
     def _upstream_tasks(self):
         upstream_tasks = []
         for param_val in self.param_args:
