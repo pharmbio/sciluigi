@@ -100,7 +100,7 @@ class WorkflowTask(luigi.Task):
         return luigi.LocalTarget('workflow_' + clsname.lower() + '_completed_at_{t}'.format(t=timestamp))
 
     def run(self):
-        timestamp = time.strftime('%Y%m%d.%H%M%S', time.localtime())
+        timestamp = time.strftime('%Y-%m-%d, %H:%M:%S', time.localtime())
         with self.output().open('w') as outfile:
             outfile.write('workflow finished at {t}'.format(t=timestamp))
 
