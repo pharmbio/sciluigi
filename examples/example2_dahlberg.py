@@ -1,5 +1,5 @@
 import luigi
-import sciluigi
+import sciluigi as sl
 import math
 from subprocess import call
 import subprocess as sub
@@ -12,13 +12,14 @@ import time
 # ------------------------------------------------------------------------
 
 #Rsync a folder
-class RSyncAFolder(sciluigi.SciLuigiTask):
+class RSyncAFolder(sl.SciLuigiTask):
     src_dir_path = luigi.Parameter()
     dest_dir_path = luigi.Parameter()
 
     def output(self):
         # TODO: Let's see if a folder can be used as a target ...
-        return { 'dest_dir' : luigi.LocalTarget(self.dest_dir_path) }
+        return sl.create_file_targets(
+            dest_dir = self.dest_dir_path)
 
     def run(self):
         call('rsync -a {src}/ {dest}/'.format(
@@ -28,24 +29,26 @@ class RSyncAFolder(sciluigi.SciLuigiTask):
 
 
 #Run a program that takes 10 minutes (seconds now, for a try) to run
-class Run10MinuteSleep(sciluigi.SciLuigiTask):
-    upstream = sciluigi.TargetSpecParameter()
+class Run10MinuteSleep(sl.SciLuigiTask):
+    upstream = sl.TargetSpecParameter()
 
     def output(self):
-        return { 'done_flagfile' : luigi.LocalTarget(self.get_path('upstream') + '.10mintask_done' ) }
+        return sl.create_file_targets(
+            doneflag = self.input('upstream').path + '.10mintask_done')
 
     def run(self):
         time.sleep(10)
-        with self.output()['done_flagfile'].open('w') as flagfile:
+        with self.output()['doneflag'].open('w') as flagfile:
             flagfile.write('Done!')
 
 
 #Perform a web request
-class DoWebRequest(sciluigi.SciLuigiTask):
-    upstream = sciluigi.TargetSpecParameter()
+class DoWebRequest(sl.SciLuigiTask):
+    upstream = sl.TargetSpecParameter()
 
     def output(self):
-        return { 'done_flagfile' : self.new_target(dep='upstream', ext='.webrequest_done') }
+        return sl.create_file_targets(
+            doneflag = self.input('upstream').path + '.webrequest_done')
 
     def run(self):
         resp = requests.get('http://bils.se')
@@ -53,23 +56,25 @@ class DoWebRequest(sciluigi.SciLuigiTask):
             raise Exception('Web request failed!')
             sys.exit()
         else:
-            with self.output()['done_flagfile'].open('w') as flagfile:
+            with self.output()['doneflag'].open('w') as flagfile:
                 flagfile.write('Web Request Task Done!')
 
 
 #Split a file
-class ExistingData(sciluigi.SciLuigiExternalTask):
+class ExistingData(sl.SciLuigiExternalTask):
     file_name = luigi.Parameter(default='acgt.txt')
 
     def output(self):
-        return { 'acgt' : luigi.LocalTarget('data/' + self.file_name) }
+        return sl.create_file_targets(
+             acgt = 'data/' + self.file_name)
 
-class SplitAFile(sciluigi.SciLuigiTask):
-    indata = sciluigi.TargetSpecParameter()
+class SplitAFile(sl.SciLuigiTask):
+    indata = sl.TargetSpecParameter()
 
     def output(self):
-        return { 'part1' : self.new_target(dep='indata', ext='.part1'),
-                 'part2' : self.new_target(dep='indata', ext='.part2') }
+        return sl.create_file_targets(
+            part1 = self.input('indata').path + '.part1',
+            part2 = self.input('indata').path + '.part2')
 
 
     def run(self):
@@ -94,11 +99,12 @@ class SplitAFile(sciluigi.SciLuigiTask):
 
 
 #Run the same program on both parts of the split
-class DoSomething(sciluigi.SciLuigiTask):
-    indata = sciluigi.TargetSpecParameter()
+class DoSomething(sl.SciLuigiTask):
+    indata = sl.TargetSpecParameter()
 
     def output(self):
-        return { 'outdata' : luigi.LocalTarget(self.get_path('indata') + '.something_done' ) }
+        return sl.create_file_targets(
+            outdata = self.get_path('indata') + '.something_done')
 
     def run(self):
         with self.input('indata').open() as infile, self.output()['outdata'].open('w') as outfile:
@@ -107,12 +113,14 @@ class DoSomething(sciluigi.SciLuigiTask):
 
 
 #Merge the results of the programs
-class MergeFiles(sciluigi.SciLuigiTask):
-    part1 = sciluigi.TargetSpecParameter()
-    part2 = sciluigi.TargetSpecParameter()
+class MergeFiles(sl.SciLuigiTask):
+    part1 = sl.TargetSpecParameter()
+    part2 = sl.TargetSpecParameter()
 
     def output(self):
-        return { 'merged' : luigi.LocalTarget(self.input('part1').path + '.merged' ) }
+        return sl.create_file_targets(
+            merged = self.input('part1').path + '.merged'
+        )
 
     def run(self):
         sub.call('cat {f1} {f2} > {out}'.format(
@@ -146,7 +154,7 @@ class DahlbergTest(luigi.Task):
 
         # Do a web request
         tasks['webreq'] = DoWebRequest(
-                upstream = tasks['run10min'].outspec('done_flagfile'))
+                upstream = tasks['run10min'].outspec('doneflag'))
 
         tasks['rawdata'] = ExistingData()
 

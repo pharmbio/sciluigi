@@ -5,6 +5,27 @@ import string
 from collections import namedtuple
 
 # ==============================================================================
+# Methods for simplifying creation of (output) targets
+
+def create_file_targets(target_spec=None, **kwargs):
+    if len(kwargs) > 0:
+        return {name : luigi.LocalTarget(path) for name, path in kwargs.iteritems()}
+    else:
+        return {name : luigi.LocalTarget(path) for name, path in target_spec.iteritems()}
+
+
+#TODO: Decide if this method really adds anything of value ...
+def new_target(self, basestr=None, **kwargs):
+    if 'dep' in kwargs:
+        path = self.get_path(kwargs['dep'])
+        if 'ext' in kwargs:
+            path += kwargs['ext']
+    elif basestr is not None:
+        path = basestr
+
+    return luigi.LocalTarget(path)
+
+# ==============================================================================
 
 # Named tuple, used for sending specification of which target, from which
 # task, to use, when stitching workflow tasks' outputs and inputs together.
@@ -18,7 +39,7 @@ class TargetSpecParameter(luigi.Parameter):
     '''
 
     def parse(self, s):
-        # NOTE: One could maybe do something more fancy here?
+        # One could maybe do something more fancy here?
         return s
 
 # ==============================================================================
@@ -31,6 +52,10 @@ class DependencyHelpers():
 
     def requires(self):
         return self._upstream_tasks()
+
+    def output(self):
+        import pdb; pdb.set_trace()
+        print 'hey'
 
     def _upstream_tasks(self):
         upstream_tasks = []
@@ -57,7 +82,6 @@ class DependencyHelpers():
         '''
         return self.output_spec(output_name)
 
-    # TODO: Rename to input() and simply override the default method?
     def input(self, input_name):
         '''
         Retrieve the task
@@ -71,16 +95,6 @@ class DependencyHelpers():
     def get_path(self, input_name):
         return self.input(input_name).path
 
-    #TODO: Decide if this method really adds anything of value ...
-    def new_target(self, basestr=None, **kwargs):
-        if 'dep' in kwargs:
-            path = self.get_path(kwargs['dep'])
-            if 'ext' in kwargs:
-                path += kwargs['ext']
-        elif basestr is not None:
-            path = basestr
-
-        return luigi.LocalTarget(path)
 
 # ==============================================================================
 
