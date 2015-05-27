@@ -133,7 +133,7 @@ class MergeFiles(sl.SciLuigiTask):
 # Workflow class
 # ------------------------------------------------------------------------
 
-class DahlbergTest(luigi.Task):
+class DahlbergTest(sl.WorkflowTask):
 
     task = luigi.Parameter()
 

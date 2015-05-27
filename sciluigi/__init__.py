@@ -108,6 +108,20 @@ class SciLuigiExternalTask(DependencyHelpers, luigi.ExternalTask):
 
 # ==============================================================================
 
+class WorkflowTask(luigi.Task):
+
+    def output(self):
+        timestamp = time.strftime('%Y%m%d_%H%M%S', time.localtime())
+        clsname = self.__class__.__name__
+        return luigi.LocalTarget('workflow_' + clsname.lower() + '_completed_at_{t}'.format(t=timestamp))
+
+    def run(self):
+        timestamp = time.strftime('%Y%m%d.%H%M%S', time.localtime())
+        with self.output().open('w') as outfile:
+            outfile.write('workflow finished at {t}'.format(t=timestamp))
+
+# ==============================================================================
+
 class HPCHelpers():
     '''
     Mixin with various convenience methods that most tasks need, such as for executing SLURM
