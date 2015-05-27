@@ -169,7 +169,7 @@ class HPCHelpers():
             raise Exception('Command failed: {cmd}\nOutput:\n{output}'.format(cmd=command, output=output))
         return (status, output)
 
-    def execute_hpcjob(self, command, accounted_project, time_limit='4:00:00', partition='node', cores=16, jobname='LuigiNodeJob', threads=16):
+    def execute_hpcjob(self, command, accounted_project, time_limit='4:00:00', partition='node', cores=16, jobname='LuigiHPCJob', threads=16):
 
         slurm_part = 'salloc -A {pr} -p {pt} -n {c} -t {t} -J {m} srun -n 1 -c {thr} '.format(
                 pr  = accounted_project,
