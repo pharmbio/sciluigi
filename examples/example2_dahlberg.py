@@ -138,40 +138,33 @@ class DahlbergTest(luigi.Task):
         #Rsync en mapp
         tasks['rsync'] = RSyncAFolder(
                 src_dir_path = 'data',
-                dest_dir_path = 'data_rsynced_copy'
-                )
+                dest_dir_path = 'data_rsynced_copy')
 
         #Kor ett program som tar 10 minuter att kora
         tasks['run10min'] = Run10MinuteSleep(
-                upstream = tasks['rsync'].outspec('dest_dir')
-                )
+                upstream = tasks['rsync'].outspec('dest_dir'))
 
         #Gora en http request ut
         tasks['webreq'] = DoWebRequest(
-                upstream = tasks['run10min'].outspec('done_flagfile')
-                )
+                upstream = tasks['run10min'].outspec('done_flagfile'))
 
         tasks['rawdata'] = ExistingData()
 
         #Splitta en fil
         tasks['split'] = SplitAFile(
-                indata = tasks['rawdata'].outspec('acgt')
-                )
+                indata = tasks['rawdata'].outspec('acgt'))
 
         #Kor samma program pa de tva resultaten
         tasks['dosth1'] = DoSomething(
-                indata = tasks['split'].outspec('part1')
-                )
+                indata = tasks['split'].outspec('part1'))
 
         tasks['dosth2'] = DoSomething(
-                indata = tasks['split'].outspec('part2')
-                )
+                indata = tasks['split'].outspec('part2'))
 
         #Merga resultaten
         tasks['merge'] = MergeFiles(
                 part1 = tasks['dosth1'].outspec('outdata'),
-                part2 = tasks['dosth2'].outspec('outdata')
-                )
+                part2 = tasks['dosth2'].outspec('outdata'))
 
         return tasks[self.task]
 
