@@ -135,33 +135,33 @@ class DahlbergTest(luigi.Task):
 
         # Workflow definition goes here!
 
-        #Rsync en mapp
+        # Rsync a folder
         tasks['rsync'] = RSyncAFolder(
                 src_dir_path = 'data',
                 dest_dir_path = 'data_rsynced_copy')
 
-        #Kor ett program som tar 10 minuter att kora
+        # Run a program that takes 10 minutes (seconds)
         tasks['run10min'] = Run10MinuteSleep(
                 upstream = tasks['rsync'].outspec('dest_dir'))
 
-        #Gora en http request ut
+        # Do a web request
         tasks['webreq'] = DoWebRequest(
                 upstream = tasks['run10min'].outspec('done_flagfile'))
 
         tasks['rawdata'] = ExistingData()
 
-        #Splitta en fil
+        # Split a file
         tasks['split'] = SplitAFile(
                 indata = tasks['rawdata'].outspec('acgt'))
 
-        #Kor samma program pa de tva resultaten
+        # Run the same task on the two splits
         tasks['dosth1'] = DoSomething(
                 indata = tasks['split'].outspec('part1'))
 
         tasks['dosth2'] = DoSomething(
                 indata = tasks['split'].outspec('part2'))
 
-        #Merga resultaten
+        # Merge the results
         tasks['merge'] = MergeFiles(
                 part1 = tasks['dosth1'].outspec('outdata'),
                 part2 = tasks['dosth2'].outspec('outdata'))
