@@ -13,18 +13,6 @@ def create_file_targets(target_spec=None, **kwargs):
     else:
         return {name : luigi.LocalTarget(path) for name, path in target_spec.iteritems()}
 
-
-#TODO: Decide if this method really adds anything of value ...
-def new_target(self, basestr=None, **kwargs):
-    if 'dep' in kwargs:
-        path = self.get_path(kwargs['dep'])
-        if 'ext' in kwargs:
-            path += kwargs['ext']
-    elif basestr is not None:
-        path = basestr
-
-    return luigi.LocalTarget(path)
-
 # ==============================================================================
 
 # Named tuple, used for sending specification of which target, from which
