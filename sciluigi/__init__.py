@@ -51,7 +51,7 @@ class DependencyHelpers():
         #return { 'upstream' : { 'task' : self, 'port' : portname } }
         return TargetSpec(task=self, output=output_name)
 
-    def out(self, output_name):
+    def outspec(self, output_name):
         '''
         Short version of output_spec()
         '''
