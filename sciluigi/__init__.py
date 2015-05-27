@@ -113,39 +113,43 @@ class HPCHelpers():
     '''
     accounted_project = luigi.Parameter()
 
+    JOBTYPE_LOCAL = 'jobtype_local'
+    JOBTYPE_HPC = 'jobtype_hpc'
+    JOBTYPE_MPI = 'jobtype_mpi'
+
     # Main Execution methods
     def execute_in_configured_mode(self, command):
         '''Execute either locally or via SLURM, depending on config'''
 
-        if self.get_task_config("runmode") == "local":
+        if self.get_task_config('runmode') == JOBTYPE_LOCAL:
             self.execute_command(command)
 
-        elif self.get_task_config("runmode") == "nodejob":
-            train_size = "NA"
+        elif self.get_task_config('runmode') == JOBTYPE_HPC:
+            train_size = 'NA'
             if hasattr(self, 'train_size'):
                 train_size = self.train_size
-            replicate_id = "NA"
+            replicate_id = 'NA'
             if hasattr(self, 'replicate_id'):
                 replicate_id = self.replicate_id
 
             self.execute_hpcjob(command,
                     accounted_project = self.accounted_project,
-                    time_limit = self.get_task_config("time_limit"),
-                    partition  = self.get_task_config("partition"),
-                    cores      = self.get_task_config("cores"),
-                    jobname    = "".join([train_size,
+                    time_limit = self.get_task_config('time_limit'),
+                    partition  = self.get_task_config('partition'),
+                    cores      = self.get_task_config('cores'),
+                    jobname    = ''.join([train_size,
                                           replicate_id,
                                           self.dataset_name,
                                           self.task_family]),
-                    threads    = self.get_task_config("threads"))
+                    threads    = self.get_task_config('threads'))
 
-        elif self.get_task_config("runmode") == "mpijob":
+        elif self.get_task_config('runmode') == JOBTYPE_MPI:
             self.execute_mpijob(command,
                     accounted_project = self.accounted_project,
-                    time_limit = self.get_task_config("time_limit"),
-                    partition  = self.get_task_config("partition"),
-                    cores      = self.get_task_config("cores"),
-                    jobname    = "".join([self.train_size,
+                    time_limit = self.get_task_config('time_limit'),
+                    partition  = self.get_task_config('partition'),
+                    cores      = self.get_task_config('cores'),
+                    jobname    = ''.join([self.train_size,
                                           self.replicate_id,
                                           self.dataset_name,
                                           self.task_family]))
@@ -153,21 +157,21 @@ class HPCHelpers():
     def execute_command(self, command):
 
         if isinstance(command, list):
-            command = " ".join(command)
+            command = ' '.join(command)
 
-        log.info("Executing command: " + str(command))
+        log.info('Executing command: ' + str(command))
         (status, output) = commands.getstatusoutput(command)
-        log.info("STATUS: " + str(status))
-        log.info("OUTPUT: " + "; ".join(str(output).split("\n")))
+        log.info('STATUS: ' + str(status))
+        log.info('OUTPUT: ' + '; '.join(str(output).split('\n')))
         if status != 0:
-            log.error("Command failed: {cmd}".format(cmd=command))
-            log.error("OUTPUT OF FAILED COMMAND: " + "; \n".join(str(output).split("\n")))
-            raise Exception("Command failed: {cmd}\nOutput:\n{output}".format(cmd=command, output=output))
+            log.error('Command failed: {cmd}'.format(cmd=command))
+            log.error('OUTPUT OF FAILED COMMAND: ' + '; \n'.join(str(output).split('\n')))
+            raise Exception('Command failed: {cmd}\nOutput:\n{output}'.format(cmd=command, output=output))
         return (status, output)
 
-    def execute_hpcjob(self, command, accounted_project, time_limit="4:00:00", partition="node", cores=16, jobname="LuigiNodeJob", threads=16):
+    def execute_hpcjob(self, command, accounted_project, time_limit='4:00:00', partition='node', cores=16, jobname='LuigiNodeJob', threads=16):
 
-        slurm_part = "salloc -A {pr} -p {pt} -n {c} -t {t} -J {m} srun -n 1 -c {thr} ".format(
+        slurm_part = 'salloc -A {pr} -p {pt} -n {c} -t {t} -J {m} srun -n 1 -c {thr} '.format(
                 pr  = accounted_project,
                 pt  = partition,
                 c   = cores,
@@ -176,16 +180,16 @@ class HPCHelpers():
                 thr = threads)
 
         if isinstance(command, list):
-            command = " ".join(command)
+            command = ' '.join(command)
 
         (status, output) = self.execute_command(slurm_part + command)
         self.log_slurm_info(output)
 
         return (status, output)
 
-    def execute_mpijob(self, command, accounted_project, time_limit="4-00:00:00", partition="node", cores=32, jobname="LuigiMPIJob", cores_per_node=16):
+    def execute_mpijob(self, command, accounted_project, time_limit='4-00:00:00', partition='node', cores=32, jobname='LuigiMPIJob', cores_per_node=16):
 
-        slurm_part = "salloc -A {pr} -p {pt} -n {c} -t {t} -J {m} mpirun -v -np {c} ".format(
+        slurm_part = 'salloc -A {pr} -p {pt} -n {c} -t {t} -J {m} mpirun -v -np {c} '.format(
                 pr = accounted_project,
                 pt = partition,
                 c  = cores,
@@ -193,7 +197,7 @@ class HPCHelpers():
                 m  = jobname)
 
         if isinstance(command, list):
-            command = " ".join(command)
+            command = ' '.join(command)
 
         (status, output) = self.execute_command(slurm_part + command)
         self.log_slurm_info(output)
@@ -216,11 +220,11 @@ class HPCHelpers():
     # Various convenience methods
 
     def assert_matches_character_class(self, char_class, a_string):
-        if not bool(re.match("^{c}+$".format(c=char_class), a_string)):
-            raise Exception("String {s} does not match character class {cc}".format(s=a_string, cc=char_class))
+        if not bool(re.match('^{c}+$'.format(c=char_class), a_string)):
+            raise Exception('String {s} does not match character class {cc}'.format(s=a_string, cc=char_class))
 
     def clean_filename(self, filename):
-        return re.sub("[^A-Za-z0-9\_\ ]", '_', str(filename)).replace(' ', '_')
+        return re.sub('[^A-Za-z0-9\_\ ]', '_', str(filename)).replace(' ', '_')
 
     def get_task_config(self, name):
         return luigi.configuration.get_config().get(self.task_family, name)
