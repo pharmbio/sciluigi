@@ -12,6 +12,17 @@ TargetSpec = namedtuple('TargetSpec', ['task', 'output'], rename=True)
 
 # ==============================================================================
 
+class TargetSpecParameter(luigi.Parameter):
+    '''
+    Parameter whose value is a Target, or actually a TargetSpec
+    '''
+
+    def parse(self, s):
+        # NOTE: One could maybe do something more fancy here?
+        return s
+
+# ==============================================================================
+
 class DependencyHelpers():
     '''
     Mixin implementing methods for supporting dynamic, and target-based

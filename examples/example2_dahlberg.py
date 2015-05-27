@@ -29,10 +29,10 @@ class RSyncAFolder(sciluigi.SciLuigiTask):
 
 #Run a program that takes 10 minutes (seconds now, for a try) to run
 class Run10MinuteSleep(sciluigi.SciLuigiTask):
-    upstream_target = luigi.Parameter()
+    upstream = sciluigi.TargetSpecParameter()
 
     def output(self):
-        return { 'done_flagfile' : luigi.LocalTarget(self.get_path('upstream_target') + '.10mintask_done' ) }
+        return { 'done_flagfile' : luigi.LocalTarget(self.get_path('upstream') + '.10mintask_done' ) }
 
     def run(self):
         time.sleep(10)
@@ -42,10 +42,10 @@ class Run10MinuteSleep(sciluigi.SciLuigiTask):
 
 #Perform a web request
 class DoWebRequest(sciluigi.SciLuigiTask):
-    upstream_target = luigi.Parameter()
+    upstream = sciluigi.TargetSpecParameter()
 
     def output(self):
-        return { 'done_flagfile' : self.new_target(dep='upstream_target', ext='.webrequest_done') }
+        return { 'done_flagfile' : self.new_target(dep='upstream', ext='.webrequest_done') }
 
     def run(self):
         resp = requests.get('http://bils.se')
@@ -65,29 +65,29 @@ class ExistingData(sciluigi.SciLuigiExternalTask):
         return { 'acgt' : luigi.LocalTarget('data/' + self.file_name) }
 
 class SplitAFile(sciluigi.SciLuigiTask):
-    indata_target = luigi.Parameter()
+    indata = sciluigi.TargetSpecParameter()
 
     def output(self):
-        return { 'part1' : self.new_target(dep='indata_target', ext='.part1'),
-                 'part2' : self.new_target(dep='indata_target', ext='.part2') }
+        return { 'part1' : self.new_target(dep='indata', ext='.part1'),
+                 'part2' : self.new_target(dep='indata', ext='.part2') }
 
 
     def run(self):
-        cmd = 'wc -l {f}'.format(f=self.get_path('indata_target') )
+        cmd = 'wc -l {f}'.format(f=self.get_path('indata') )
         wc_output = sub.check_output(cmd, shell=True)
         lines_cnt = int(wc_output.split(' ')[0])
         head_cnt = int(math.ceil(lines_cnt / 2))
         tail_cnt = int(math.floor(lines_cnt / 2))
 
         cmd_head = 'head -n {cnt} {i} > {part1}'.format(
-            i=self.get_path('indata_target'),
+            i=self.get_path('indata'),
             cnt=head_cnt,
             part1=self.output()['part1'].path)
         print("COMMAND: " + cmd_head)
         sub.call(cmd_head, shell=True)
 
         sub.call('tail -n {cnt} {i} {cnt} > {part2}'.format(
-            i=self.get_path('indata_target'),
+            i=self.get_path('indata'),
             cnt=tail_cnt,
             part2=self.output()['part2'].path),
         shell=True)
@@ -95,29 +95,29 @@ class SplitAFile(sciluigi.SciLuigiTask):
 
 #Run the same program on both parts of the split
 class DoSomething(sciluigi.SciLuigiTask):
-    indata_target = luigi.Parameter()
+    indata = sciluigi.TargetSpecParameter()
 
     def output(self):
-        return { 'outdata' : luigi.LocalTarget(self.get_path('indata_target') + '.something_done' ) }
+        return { 'outdata' : luigi.LocalTarget(self.get_path('indata') + '.something_done' ) }
 
     def run(self):
-        with self.input('indata_target').open() as infile, self.output()['outdata'].open('w') as outfile:
+        with self.input('indata').open() as infile, self.output()['outdata'].open('w') as outfile:
             for line in infile:
                 outfile.write(line.lower() + '\n')
 
 
 #Merge the results of the programs
 class MergeFiles(sciluigi.SciLuigiTask):
-    part1_target = luigi.Parameter()
-    part2_target = luigi.Parameter()
+    part1 = sciluigi.TargetSpecParameter()
+    part2 = sciluigi.TargetSpecParameter()
 
     def output(self):
-        return { 'merged' : luigi.LocalTarget(self.input('part1_target').path + '.merged' ) }
+        return { 'merged' : luigi.LocalTarget(self.input('part1').path + '.merged' ) }
 
     def run(self):
         sub.call('cat {f1} {f2} > {out}'.format(
-            f1=self.input('part1_target').path,
-            f2=self.input('part2_target').path,
+            f1=self.input('part1').path,
+            f2=self.input('part2').path,
             out=self.output()['merged'].path),
         shell=True)
 
@@ -143,34 +143,34 @@ class DahlbergTest(luigi.Task):
 
         #Kor ett program som tar 10 minuter att kora
         tasks['run10min'] = Run10MinuteSleep(
-                upstream_target = tasks['rsync'].out('dest_dir')
+                upstream = tasks['rsync'].outspec('dest_dir')
                 )
 
         #Gora en http request ut
         tasks['webreq'] = DoWebRequest(
-                upstream_target = tasks['run10min'].out('done_flagfile')
+                upstream = tasks['run10min'].outspec('done_flagfile')
                 )
 
-        tasks['split_indata'] = ExistingData()
+        tasks['rawdata'] = ExistingData()
 
         #Splitta en fil
         tasks['split'] = SplitAFile(
-                indata_target = tasks['split_indata'].out('acgt')
+                indata = tasks['rawdata'].outspec('acgt')
                 )
 
         #Kor samma program pa de tva resultaten
         tasks['dosth1'] = DoSomething(
-                indata_target = tasks['split'].out('part1')
+                indata = tasks['split'].outspec('part1')
                 )
 
         tasks['dosth2'] = DoSomething(
-                indata_target = tasks['split'].out('part2')
+                indata = tasks['split'].outspec('part2')
                 )
 
         #Merga resultaten
         tasks['merge'] = MergeFiles(
-                part1_target = tasks['dosth1'].out('outdata'),
-                part2_target = tasks['dosth2'].out('outdata')
+                part1 = tasks['dosth1'].outspec('outdata'),
+                part2 = tasks['dosth2'].outspec('outdata')
                 )
 
         return tasks[self.task]
