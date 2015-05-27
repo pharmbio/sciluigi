@@ -98,18 +98,18 @@ class MyWorkflow(luigi.Task):
 		# Split a file
         tasks['split_indata'] = ExistingData()
         tasks['split'] = SplitAFile(
-                indata = tasks['split_indata'].out('acgt'))
+                indata = tasks['split_indata'].outspec('acgt'))
 
 		# Run the same program on both parts of the split
         tasks['dosth1'] = DoSomething(
-                indata = tasks['split'].out('part1'))
+                indata = tasks['split'].outspec('part1'))
         tasks['dosth2'] = DoSomething(
-                indata = tasks['split'].out('part2'))
+                indata = tasks['split'].outspec('part2'))
 
 		# Merge the results of the programs
         tasks['merge'] = MergeFiles(
-                part1 = tasks['dosth1'].out('outdata'),
-                part2 = tasks['dosth2'].out('outdata'))
+                part1 = tasks['dosth1'].outspec('outdata'),
+                part2 = tasks['dosth2'].outspec('outdata'))
 
 		# Return task asked for with --task flag on command line
         return tasks[self.task]
