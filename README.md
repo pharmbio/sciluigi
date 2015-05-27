@@ -8,7 +8,7 @@ in the following way:
 
 ```python
 import luigi
-import sciluigi
+import sciluigi as sl
 import math
 from subprocess import call
 import subprocess as sub
@@ -20,19 +20,22 @@ import time
 # Task classes
 # ------------------------------------------------------------------------
 
-class ExistingData(sciluigi.SciLuigiExternalTask):
+# Split a file
+class ExistingData(sl.SciLuigiExternalTask):
     file_name = luigi.Parameter(default='acgt.txt')
 
     def output(self):
-        return { 'acgt' : luigi.LocalTarget('data/' + self.file_name) }
+        return sl.create_file_targets(
+             acgt = 'data/' + self.file_name)
 
-
-class SplitAFile(sciluigi.SciLuigiTask):
-    indata = sciluigi.TargetSpecParameter()
+class SplitAFile(sl.SciLuigiTask):
+    indata = sl.TargetSpecParameter()
 
     def output(self):
-        return { 'part1' : self.new_target(dep='indata', ext='.part1'),
-                 'part2' : self.new_target(dep='indata', ext='.part2') }
+        return sl.create_file_targets(
+            part1 = self.input('indata').path + '.part1',
+            part2 = self.input('indata').path + '.part2')
+
 
     def run(self):
         cmd = 'wc -l {f}'.format(f=self.get_path('indata') )
@@ -55,11 +58,13 @@ class SplitAFile(sciluigi.SciLuigiTask):
         shell=True)
 
 
-class DoSomething(sciluigi.SciLuigiTask):
-    indata = sciluigi.TargetSpecParameter()
+# Run the same program on both parts of the split
+class DoSomething(sl.SciLuigiTask):
+    indata = sl.TargetSpecParameter()
 
     def output(self):
-        return { 'outdata' : luigi.LocalTarget(self.get_path('indata') + '.something_done' ) }
+        return sl.create_file_targets(
+            outdata = self.get_path('indata') + '.something_done')
 
     def run(self):
         with self.input('indata').open() as infile, self.output()['outdata'].open('w') as outfile:
@@ -67,12 +72,15 @@ class DoSomething(sciluigi.SciLuigiTask):
                 outfile.write(line.lower() + '\n')
 
 
-class MergeFiles(sciluigi.SciLuigiTask):
-    part1 = luigi.Parameter()
-    part2 = luigi.Parameter()
+# Merge the results of the programs
+class MergeFiles(sl.SciLuigiTask):
+    part1 = sl.TargetSpecParameter()
+    part2 = sl.TargetSpecParameter()
 
     def output(self):
-        return { 'merged' : luigi.LocalTarget(self.input('part1').path + '.merged' ) }
+        return sl.create_file_targets(
+            merged = self.input('part1').path + '.merged'
+        )
 
     def run(self):
         sub.call('cat {f1} {f2} > {out}'.format(
@@ -90,28 +98,28 @@ class MyWorkflow(luigi.Task):
     task = luigi.Parameter()
 
     def requires(self):
-        '''
-		Workflow definition goes here!
-		'''
+
         tasks = {}
 
-		# Split a file
-        tasks['split_indata'] = ExistingData()
-        tasks['split'] = SplitAFile(
-                indata = tasks['split_indata'].outspec('acgt'))
+        # Workflow definition goes here!
 
-		# Run the same program on both parts of the split
+        tasks['rawdata'] = ExistingData()
+
+        # Split a file
+        tasks['split'] = SplitAFile(
+                indata = tasks['rawdata'].outspec('acgt'))
+
+        # Run the same task on the two splits
         tasks['dosth1'] = DoSomething(
                 indata = tasks['split'].outspec('part1'))
         tasks['dosth2'] = DoSomething(
                 indata = tasks['split'].outspec('part2'))
 
-		# Merge the results of the programs
+        # Merge the results
         tasks['merge'] = MergeFiles(
                 part1 = tasks['dosth1'].outspec('outdata'),
                 part2 = tasks['dosth2'].outspec('outdata'))
 
-		# Return task asked for with --task flag on command line
         return tasks[self.task]
 
 # ------------------------------------------------------------------------
