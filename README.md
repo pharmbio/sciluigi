@@ -62,7 +62,7 @@ class DoSomething(sciluigi.SciLuigiTask):
         return { 'outdata' : luigi.LocalTarget(self.get_path('indata_target') + '.something_done' ) }
 
     def run(self):
-        with self.get_input('indata_target').open() as infile, self.output()['outdata'].open('w') as outfile:
+        with self.input('indata_target').open() as infile, self.output()['outdata'].open('w') as outfile:
             for line in infile:
                 outfile.write(line.lower() + '\n')
 
@@ -72,12 +72,12 @@ class MergeFiles(sciluigi.SciLuigiTask):
     part2_target = luigi.Parameter()
 
     def output(self):
-        return { 'merged' : luigi.LocalTarget(self.get_input('part1_target').path + '.merged' ) }
+        return { 'merged' : luigi.LocalTarget(self.input('part1_target').path + '.merged' ) }
 
     def run(self):
         sub.call('cat {f1} {f2} > {out}'.format(
-            f1=self.get_input('part1_target').path,
-            f2=self.get_input('part2_target').path,
+            f1=self.input('part1_target').path,
+            f2=self.input('part2_target').path,
             out=self.output()['merged'].path),
         shell=True)
 
@@ -99,20 +99,20 @@ class MyWorkflow(luigi.Task):
 
         tasks['split_indata'] = ExistingData()
         tasks['split'] = SplitAFile(
-                indata_target = tasks['split_indata'].outport('acgt'))
+                indata_target = tasks['split_indata'].out('acgt'))
 
 		# Run the same program on both parts of the split
 
         tasks['dosth1'] = DoSomething(
-                indata_target = tasks['split'].outport('part1'))
+                indata_target = tasks['split'].out('part1'))
         tasks['dosth2'] = DoSomething(
-                indata_target = tasks['split'].outport('part2'))
+                indata_target = tasks['split'].out('part2'))
 
 		# Merge the results of the programs
 
         tasks['merge'] = MergeFiles(
-                part1_target = tasks['dosth1'].outport('outdata'),
-                part2_target = tasks['dosth2'].outport('outdata'))
+                part1_target = tasks['dosth1'].out('outdata'),
+                part2_target = tasks['dosth2'].out('outdata'))
 
         return tasks[self.task]
 
