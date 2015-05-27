@@ -2,53 +2,65 @@ import luigi
 import time
 import random
 import string
+from collections import namedtuple
 
 # ==============================================================================
 
-class SciLuigiTask(luigi.Task):
-    '''
-    A Luigi task meta-class, implementing methods for supporting
-    dynamic definition of upstream targets, in Luigi
+# Named tuple, used for sending specification of which target, from which
+# task, to use, when stitching workflow tasks' outputs and inputs together.
+TargetSpec = namedtuple('TargetSpec', ['task', 'output'], rename=True)
 
-    This has to be implemented as a meta-class rather than a mixin, since it
-    overrides the requires() of luigi.Task method.
+# ==============================================================================
+
+class DependencyHelpers():
     '''
-    def get_upstream_targets(self):
-        upstream_tasks = []
-        for param_val in self.param_args:
-            if type(param_val) is dict:
-                if 'upstream' in param_val:
-                    upstream_tasks.append(param_val['upstream']['task'])
-        return upstream_tasks
+    Mixin implementing methods for supporting dynamic, and target-based
+    workflow definition, as opposed to the task-based one in vanilla luigi.
+    '''
 
     def requires(self):
-        return self.get_upstream_targets()
+        return self._upstream_tasks()
 
-    def get_input(self, input_name):
+    def _upstream_tasks(self):
+        upstream_tasks = []
+        for param_val in self.param_args:
+            if type(param_val) is TargetSpec:
+                upstream_tasks.append(param_val[0])
+        return upstream_tasks
+
+    # Methods for dynamic wiring of workflow
+
+    def output_spec(self, output_name):
+        '''
+        Return a specification for an output of a task, to be injected
+        into the target-parameters of downstream tasks, whereafter
+        the specified task can be obtained by the get_input() method
+        of that (downstream task.
+        '''
+        #return { 'upstream' : { 'task' : self, 'port' : portname } }
+        return TargetSpec(task=self, output=output_name)
+
+    def out(self, output_name):
+        '''
+        Short version of output_spec()
+        '''
+        return self.output_spec(output_name)
+
+    # TODO: Rename to input() and simply override the default method?
+    def input(self, input_name):
+        '''
+        Retrieve the task
+        '''
         param = self.param_kwargs[input_name]
-        if type(param) is dict and 'upstream' in param:
-            return param['upstream']['task'].output()[param['upstream']['port']]
+        if type(param) is TargetSpec:
+            return param[0].output()[param[1]]
         else:
             return param
 
     def get_path(self, input_name):
-        return self.get_input(input_name).path
+        return self.input(input_name).path
 
-    def get_value(self, input_name):
-        param = self.param_kwargs[input_name]
-        if type(param) is dict and 'upstream' in param:
-            input_target = param['upstream']['task'].output()[param['upstream']['port']]
-            if os.path.isfile(input_target.path):
-                with input_target.open() as infile:
-                    csv_reader = csv.reader(infile)
-                    for row in csv_reader:
-                        if row[0] == param['upstream']['key']:
-                            return row[1]
-            else:
-                return 'NA'
-        else:
-            return param
-
+    #TODO: Decide if this method really adds anything of value ...
     def new_target(self, basestr=None, **kwargs):
         if 'dep' in kwargs:
             path = self.get_path(kwargs['dep'])
@@ -59,33 +71,15 @@ class SciLuigiTask(luigi.Task):
 
         return luigi.LocalTarget(path)
 
+# ==============================================================================
 
-    def outport(self, portname):
-        return { 'upstream' : { 'task' : self, 'port' : portname } }
+class SciLuigiTask(DependencyHelpers, luigi.Task):
+    pass
 
 # ==============================================================================
 
-class SciLuigiExternalTask(luigi.ExternalTask):
-    '''
-    The same as DependencyHelpers, for luigi.ExternalTask rather than
-    luigi.Task
-    '''
-    def requires(self):
-        upstream_tasks = []
-        for param_val in self.param_args:
-            if 'upstream' in param_val:
-                upstream_tasks.append(param_val['upstream']['task'])
-        return upstream_tasks
-
-    def get_input(self, input_name):
-        param = self.param_kwargs[input_name]
-        if type(param) is dict and 'upstream' in param:
-            return param['upstream']['task'].output()[param['upstream']['port']]
-        else:
-            return param
-
-    def outport(self, portname):
-        return { 'upstream' : { 'task' : self, 'port' : portname } }
+class SciLuigiExternalTask(DependencyHelpers, luigi.ExternalTask):
+    pass
 
 # ==============================================================================
 

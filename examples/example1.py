@@ -8,16 +8,16 @@ from subprocess import call
 
 class RawData(sciluigi.SciLuigiExternalTask):
     def output(self):
-        return { 'rawdata' : luigi.LocalTarget('rawdata') }
+        return { 'rawdata' : luigi.LocalTarget('data/acgt.txt') }
 
 class AToT(sciluigi.SciLuigiTask):
     indata = luigi.Parameter()
 
     def output(self):
-        return { 'atotreplaced' : luigi.LocalTarget(self.get_input('indata').path + '.atot') }
+        return { 'atotreplaced' : luigi.LocalTarget(self.get_path('indata') + '.atot') }
 
     def run(self):
-        cmd ='cat ' + self.get_input('indata').path + ' | sed "s/A/T/g" > ' + self.output()['atotreplaced'].path
+        cmd ='cat ' + self.input('indata').path + ' | sed "s/A/T/g" > ' + self.output()['atotreplaced'].path
         print("COMMAND: " + cmd)
         call(cmd, shell=True)
 
@@ -32,7 +32,7 @@ class MyWorkflow(luigi.Task):
         # Workflow definition
         rawdata = RawData()
         atot = AToT(
-                indata=rawdata.outport('rawdata')
+                indata=rawdata.out('rawdata')
                )
 
         return atot
