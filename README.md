@@ -93,7 +93,7 @@ class MergeFiles(sl.SciLuigiTask):
 # Workflow class
 # ------------------------------------------------------------------------
 
-class MyWorkflow(luigi.Task):
+class MyWorkflow(sl.WorkflowTask):
 
     task = luigi.Parameter()
 
