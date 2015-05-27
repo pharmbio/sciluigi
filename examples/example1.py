@@ -6,11 +6,11 @@ from subprocess import call
 # Task classes
 # ------------------------------------------------------------------------
 
-class RawData(sciluigi.SciLuigiExternalTask):
+class RawData(sciluigi.ExternalTask):
     def output(self):
         return { 'rawdata' : luigi.LocalTarget('data/acgt.txt') }
 
-class AToT(sciluigi.SciLuigiTask):
+class AToT(sciluigi.Task):
     indata = luigi.Parameter()
 
     def output(self):

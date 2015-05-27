@@ -12,7 +12,7 @@ import time
 # ------------------------------------------------------------------------
 
 #Rsync a folder
-class RSyncAFolder(sl.SciLuigiTask):
+class RSyncAFolder(sl.Task):
     src_dir_path = luigi.Parameter()
     dest_dir_path = luigi.Parameter()
 
@@ -29,7 +29,7 @@ class RSyncAFolder(sl.SciLuigiTask):
 
 
 #Run a program that takes 10 minutes (seconds now, for a try) to run
-class Run10MinuteSleep(sl.SciLuigiTask):
+class Run10MinuteSleep(sl.Task):
     upstream = sl.TargetSpecParameter()
 
     def output(self):
@@ -43,7 +43,7 @@ class Run10MinuteSleep(sl.SciLuigiTask):
 
 
 #Perform a web request
-class DoWebRequest(sl.SciLuigiTask):
+class DoWebRequest(sl.Task):
     upstream = sl.TargetSpecParameter()
 
     def output(self):
@@ -61,14 +61,14 @@ class DoWebRequest(sl.SciLuigiTask):
 
 
 #Split a file
-class ExistingData(sl.SciLuigiExternalTask):
+class ExistingData(sl.ExternalTask):
     file_name = luigi.Parameter(default='acgt.txt')
 
     def output(self):
         return sl.create_file_targets(
              acgt = 'data/' + self.file_name)
 
-class SplitAFile(sl.SciLuigiTask):
+class SplitAFile(sl.Task):
     indata = sl.TargetSpecParameter()
 
     def output(self):
@@ -99,7 +99,7 @@ class SplitAFile(sl.SciLuigiTask):
 
 
 #Run the same program on both parts of the split
-class DoSomething(sl.SciLuigiTask):
+class DoSomething(sl.Task):
     indata = sl.TargetSpecParameter()
 
     def output(self):
@@ -113,7 +113,7 @@ class DoSomething(sl.SciLuigiTask):
 
 
 #Merge the results of the programs
-class MergeFiles(sl.SciLuigiTask):
+class MergeFiles(sl.Task):
     part1 = sl.TargetSpecParameter()
     part2 = sl.TargetSpecParameter()
 

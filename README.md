@@ -8,7 +8,7 @@ in the following way:
 
 ```python
 import luigi
-import sciluigi as sl
+import sciluigi
 import math
 from subprocess import call
 import subprocess as sub
@@ -21,18 +21,18 @@ import time
 # ------------------------------------------------------------------------
 
 # Split a file
-class ExistingData(sl.SciLuigiExternalTask):
+class ExistingData(sciluigi.ExternalTask):
     file_name = luigi.Parameter(default='acgt.txt')
 
     def output(self):
-        return sl.create_file_targets(
+        return sciluigi.create_file_targets(
              acgt = 'data/' + self.file_name)
 
-class SplitAFile(sl.SciLuigiTask):
-    indata = sl.TargetSpecParameter()
+class SplitAFile(sciluigi.Task):
+    indata = sciluigi.TargetSpecParameter()
 
     def output(self):
-        return sl.create_file_targets(
+        return sciluigi.create_file_targets(
             part1 = self.input('indata').path + '.part1',
             part2 = self.input('indata').path + '.part2')
 
@@ -59,11 +59,11 @@ class SplitAFile(sl.SciLuigiTask):
 
 
 # Run the same program on both parts of the split
-class DoSomething(sl.SciLuigiTask):
-    indata = sl.TargetSpecParameter()
+class DoSomething(sciluigi.Task):
+    indata = sciluigi.TargetSpecParameter()
 
     def output(self):
-        return sl.create_file_targets(
+        return sciluigi.create_file_targets(
             outdata = self.get_path('indata') + '.something_done')
 
     def run(self):
@@ -73,12 +73,12 @@ class DoSomething(sl.SciLuigiTask):
 
 
 # Merge the results of the programs
-class MergeFiles(sl.SciLuigiTask):
-    part1 = sl.TargetSpecParameter()
-    part2 = sl.TargetSpecParameter()
+class MergeFiles(sciluigi.Task):
+    part1 = sciluigi.TargetSpecParameter()
+    part2 = sciluigi.TargetSpecParameter()
 
     def output(self):
-        return sl.create_file_targets(
+        return sciluigi.create_file_targets(
             merged = self.input('part1').path + '.merged'
         )
 
@@ -93,7 +93,7 @@ class MergeFiles(sl.SciLuigiTask):
 # Workflow class
 # ------------------------------------------------------------------------
 
-class MyWorkflow(sl.WorkflowTask):
+class MyWorkflow(sciluigi.WorkflowTask):
 
     task = luigi.Parameter()
 
