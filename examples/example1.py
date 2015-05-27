@@ -32,9 +32,8 @@ class MyWorkflow(luigi.Task):
         # Workflow definition
         rawdata = RawData()
         atot = AToT(
-                indata=rawdata.out('rawdata')
+                indata=rawdata.outspec('rawdata')
                )
-
         return atot
 
 # ------------------------------------------------------------------------
