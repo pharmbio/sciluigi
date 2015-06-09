@@ -26,10 +26,11 @@ class MyWorkflow(sciluigi.WorkflowTask):
 
     def requires(self):
 
+		# ----------------------------------------------------------------
+        # Workflow definition goes below!
+		# ----------------------------------------------------------------
+
         tasks = {}
-
-        # Workflow definition goes here!
-
         tasks['rawdata'] = ExistingData()
 
         # Split a file
@@ -47,6 +48,7 @@ class MyWorkflow(sciluigi.WorkflowTask):
                 part1 = tasks['dosth1'].outspec('outdata'),
                 part2 = tasks['dosth2'].outspec('outdata'))
 
+		# Make the task to return selectable, with the self.task parameter
         return tasks[self.task]
 
 # ------------------------------------------------------------------------
