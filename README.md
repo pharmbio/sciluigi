@@ -20,34 +20,32 @@ import time
 # Workflow class
 # ------------------------------------------------------------------------
 
-class MyWorkflow(luigi.Task):
+class MyWorkflow(sciluigi.WorkflowTask):
 
     task = luigi.Parameter()
 
     def requires(self):
-        '''
-		Workflow definition goes here!
-		'''
+
         tasks = {}
 
-		# Split a file
+        # Workflow definition goes here!
 
-        tasks['split_indata'] = ExistingData()
+        tasks['rawdata'] = ExistingData()
+
+        # Split a file
         tasks['split'] = SplitAFile(
-                indata_target = tasks['split_indata'].outport('acgt'))
+                indata = tasks['rawdata'].outspec('acgt'))
 
-		# Run the same program on both parts of the split
-
+        # Run the same task on the two splits
         tasks['dosth1'] = DoSomething(
-                indata_target = tasks['split'].outport('part1'))
+                indata = tasks['split'].outspec('part1'))
         tasks['dosth2'] = DoSomething(
-                indata_target = tasks['split'].outport('part2'))
+                indata = tasks['split'].outspec('part2'))
 
-		# Merge the results of the programs
-
+        # Merge the results
         tasks['merge'] = MergeFiles(
-                part1_target = tasks['dosth1'].outport('outdata'),
-                part2_target = tasks['dosth2'].outport('outdata'))
+                part1 = tasks['dosth1'].outspec('outdata'),
+                part2 = tasks['dosth2'].outspec('outdata'))
 
         return tasks[self.task]
 
