@@ -55,64 +55,72 @@ class MyWorkflow(luigi.Task):
 # Task classes
 # ------------------------------------------------------------------------
 
-class ExistingData(sciluigi.SciLuigiExternalTask):
+# Split a file
+class ExistingData(sciluigi.ExternalTask):
     file_name = luigi.Parameter(default='acgt.txt')
 
     def output(self):
-        return { 'acgt' : luigi.LocalTarget('data/' + self.file_name) }
+        return sciluigi.create_file_targets(
+             acgt = 'data/' + self.file_name)
 
-
-class SplitAFile(sciluigi.SciLuigiTask):
-    indata_target = luigi.Parameter()
+class SplitAFile(sciluigi.Task):
+    indata = sciluigi.TargetSpecParameter()
 
     def output(self):
-        return { 'part1' : self.new_target(dep='indata_target', ext='.part1'),
-                 'part2' : self.new_target(dep='indata_target', ext='.part2') }
+        return sciluigi.create_file_targets(
+            part1 = self.input('indata').path + '.part1',
+            part2 = self.input('indata').path + '.part2')
+
 
     def run(self):
-        cmd = 'wc -l {f}'.format(f=self.get_path('indata_target') )
+        cmd = 'wc -l {f}'.format(f=self.get_path('indata') )
         wc_output = sub.check_output(cmd, shell=True)
         lines_cnt = int(wc_output.split(' ')[0])
         head_cnt = int(math.ceil(lines_cnt / 2))
         tail_cnt = int(math.floor(lines_cnt / 2))
 
         cmd_head = 'head -n {cnt} {i} > {part1}'.format(
-            i=self.get_path('indata_target'),
+            i=self.get_path('indata'),
             cnt=head_cnt,
             part1=self.output()['part1'].path)
         print("COMMAND: " + cmd_head)
         sub.call(cmd_head, shell=True)
 
         sub.call('tail -n {cnt} {i} {cnt} > {part2}'.format(
-            i=self.get_path('indata_target'),
+            i=self.get_path('indata'),
             cnt=tail_cnt,
             part2=self.output()['part2'].path),
         shell=True)
 
 
-class DoSomething(sciluigi.SciLuigiTask):
-    indata_target = luigi.Parameter()
+# Run the same program on both parts of the split
+class DoSomething(sciluigi.Task):
+    indata = sciluigi.TargetSpecParameter()
 
     def output(self):
-        return { 'outdata' : luigi.LocalTarget(self.get_path('indata_target') + '.something_done' ) }
+        return sciluigi.create_file_targets(
+            outdata = self.get_path('indata') + '.something_done')
 
     def run(self):
-        with self.get_input('indata_target').open() as infile, self.output()['outdata'].open('w') as outfile:
+        with self.input('indata').open() as infile, self.output()['outdata'].open('w') as outfile:
             for line in infile:
                 outfile.write(line.lower() + '\n')
 
 
-class MergeFiles(sciluigi.SciLuigiTask):
-    part1_target = luigi.Parameter()
-    part2_target = luigi.Parameter()
+# Merge the results of the programs
+class MergeFiles(sciluigi.Task):
+    part1 = sciluigi.TargetSpecParameter()
+    part2 = sciluigi.TargetSpecParameter()
 
     def output(self):
-        return { 'merged' : luigi.LocalTarget(self.get_input('part1_target').path + '.merged' ) }
+        return sciluigi.create_file_targets(
+            merged = self.input('part1').path + '.merged'
+        )
 
     def run(self):
         sub.call('cat {f1} {f2} > {out}'.format(
-            f1=self.get_input('part1_target').path,
-            f2=self.get_input('part2_target').path,
+            f1=self.input('part1').path,
+            f2=self.input('part2').path,
             out=self.output()['merged'].path),
         shell=True)
 
