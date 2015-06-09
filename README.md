@@ -17,6 +17,41 @@ import requests
 import time
 
 # ------------------------------------------------------------------------
+# Workflow class
+# ------------------------------------------------------------------------
+
+class MyWorkflow(luigi.Task):
+
+    task = luigi.Parameter()
+
+    def requires(self):
+        '''
+		Workflow definition goes here!
+		'''
+        tasks = {}
+
+		# Split a file
+
+        tasks['split_indata'] = ExistingData()
+        tasks['split'] = SplitAFile(
+                indata_target = tasks['split_indata'].outport('acgt'))
+
+		# Run the same program on both parts of the split
+
+        tasks['dosth1'] = DoSomething(
+                indata_target = tasks['split'].outport('part1'))
+        tasks['dosth2'] = DoSomething(
+                indata_target = tasks['split'].outport('part2'))
+
+		# Merge the results of the programs
+
+        tasks['merge'] = MergeFiles(
+                part1_target = tasks['dosth1'].outport('outdata'),
+                part2_target = tasks['dosth2'].outport('outdata'))
+
+        return tasks[self.task]
+
+# ------------------------------------------------------------------------
 # Task classes
 # ------------------------------------------------------------------------
 
@@ -80,41 +115,6 @@ class MergeFiles(sciluigi.SciLuigiTask):
             f2=self.get_input('part2_target').path,
             out=self.output()['merged'].path),
         shell=True)
-
-# ------------------------------------------------------------------------
-# Workflow class
-# ------------------------------------------------------------------------
-
-class MyWorkflow(luigi.Task):
-
-    task = luigi.Parameter()
-
-    def requires(self):
-        '''
-		Workflow definition goes here!
-		'''
-        tasks = {}
-
-		# Split a file
-
-        tasks['split_indata'] = ExistingData()
-        tasks['split'] = SplitAFile(
-                indata_target = tasks['split_indata'].outport('acgt'))
-
-		# Run the same program on both parts of the split
-
-        tasks['dosth1'] = DoSomething(
-                indata_target = tasks['split'].outport('part1'))
-        tasks['dosth2'] = DoSomething(
-                indata_target = tasks['split'].outport('part2'))
-
-		# Merge the results of the programs
-
-        tasks['merge'] = MergeFiles(
-                part1_target = tasks['dosth1'].outport('outdata'),
-                part2_target = tasks['dosth2'].outport('outdata'))
-
-        return tasks[self.task]
 
 # ------------------------------------------------------------------------
 # Run this file as a script
