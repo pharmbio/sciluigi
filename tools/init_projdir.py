@@ -1,4 +1,7 @@
+import inspect
 import os
+import shutil
+import luigi
 
 projdir_struct = {
     'bin':None,
@@ -22,6 +25,9 @@ projdir_struct = {
     'raw':None,
     'results':None,
     'src':None }
+
+def get_file_dir():
+    return os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 
 def print_dirs(dir_structure, padding, padstep):
     if type(dir_structure) is dict:
@@ -47,5 +53,16 @@ def print_and_create_projdirs():
     create_dirs(projdir_struct)
     print('-'*80)
 
+
+class InitProj(luigi.Task):
+    projname = luigi.Parameter()
+
+    def output(self):
+        return luigi.LocalTarget(self.projname)
+
+    def run(self):
+        shutil.copytree(get_file_dir() + '/../.projtpl', self.projname)
+
 if __name__ == '__main__':
-    pass
+    luigi.run()
+    #print get_file_dir()
