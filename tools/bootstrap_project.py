@@ -1,3 +1,5 @@
+import os
+import shutil
 # TODO: Implement!
 
 '''
@@ -26,7 +28,7 @@ We want a folder structure something like this:
 \-src
 '''
 
-projdir_structure = {
+projdir_struct = {
     'bin':None,
     'conf':None,
     'doc' : { 'paper': None },
@@ -58,4 +60,13 @@ def print_dirs(dir_structure, padding, padstep):
             print str(' ' * padding) + k
             print_dirs(v, padding+padstep, padstep)
 
-print_dirs(projdir_structure, 0, 2)
+def create_dirs(dirtree):
+    if type(dirtree) is dict:
+        for dir,subtree in dirtree.iteritems():
+            os.makedirs(dir)
+            if subtree is not None:
+              os.chdir(dir)
+              create_dirs(subtree)
+              os.chdir('..')
+
+create_dirs(projdir_struct)
