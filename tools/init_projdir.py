@@ -39,10 +39,13 @@ def create_dirs(dirtree):
               create_dirs(subtree)
               os.chdir('..')
 
-if __name__ == '__main__':
+def print_and_create_projdirs():
     print('Now creating the following directory structure:')
     print('-'*80)
     print_dirs(projdir_struct, 0, 2)
     print('-'*80)
     create_dirs(projdir_struct)
     print('-'*80)
+
+if __name__ == '__main__':
+    pass
