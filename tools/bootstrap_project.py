@@ -63,6 +63,7 @@ def print_dirs(dir_structure, padding, padstep):
 def create_dirs(dirtree):
     if type(dirtree) is dict:
         for dir,subtree in dirtree.iteritems():
+            print('Creating ' + dir + ' ...')
             os.makedirs(dir)
             if subtree is not None:
               os.chdir(dir)
