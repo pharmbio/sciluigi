@@ -70,4 +70,9 @@ def create_dirs(dirtree):
               create_dirs(subtree)
               os.chdir('..')
 
+print('Now creating the following directory structure:')
+print('-'*80)
+print_dirs(projdir_struct, 0, 2)
+print('-'*80)
 create_dirs(projdir_struct)
+print('-'*80)
