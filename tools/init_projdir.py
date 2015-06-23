@@ -1,58 +1,27 @@
 import os
-import shutil
-# TODO: Implement!
-
-'''
-We want a folder structure something like this:
-
-|-bin
-|-conf
-|-doc
-| \-paper
-|-experiments
-| \-2000-01-01-example
-|   |-audit
-|   |-bin
-|   |-conf
-|   |-data
-|   |-doc
-|   |-lib
-|   |-log
-|   |-raw
-|   |-results
-|   |-run
-|   \-tmp
-|-lib
-|-raw
-|-results
-\-src
-'''
 
 projdir_struct = {
     'bin':None,
     'conf':None,
-    'doc' : { 'paper': None },
+    'doc' : 
+        { 'paper': None },
     'experiments' :
         { '2000-01-01-example' :
-            {
-                'audit':None,
-                'bin':None,
-                'conf':None,
-                'data':None,
-                'doc':None,
-                'lib':None,
-                'log':None,
-                'raw':None,
-                'results':None,
-                'run':None,
-                'tmp':None
-            }
-        },
+            { 'audit':None,
+              'bin':None,
+              'conf':None,
+              'data':None,
+              'doc':None,
+              'lib':None,
+              'log':None,
+              'raw':None,
+              'results':None,
+              'run':None,
+              'tmp':None }},
     'lib':None,
     'raw':None,
     'results':None,
-    'src':None
-}
+    'src':None }
 
 def print_dirs(dir_structure, padding, padstep):
     if type(dir_structure) is dict:
@@ -70,9 +39,10 @@ def create_dirs(dirtree):
               create_dirs(subtree)
               os.chdir('..')
 
-print('Now creating the following directory structure:')
-print('-'*80)
-print_dirs(projdir_struct, 0, 2)
-print('-'*80)
-create_dirs(projdir_struct)
-print('-'*80)
+if __name__ == '__main__':
+    print('Now creating the following directory structure:')
+    print('-'*80)
+    print_dirs(projdir_struct, 0, 2)
+    print('-'*80)
+    create_dirs(projdir_struct)
+    print('-'*80)
