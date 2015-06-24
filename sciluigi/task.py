@@ -10,13 +10,13 @@ from collections import namedtuple
 class Task(dependencies.DependencyHelpers, luigi.Task):
     sid = luigi.Parameter(default=None)
 
-    def __init__(self, *args, **kwargs):
-        '''
-        Adding a custom random id, to ensure uniqueness of tasks that would
-        otherwise not seem unique
-        '''
-        kwargs['sid'] = str(random.random())[2:]
-        super(Task, self).__init__(*args, **kwargs)
+#    def __init__(self, *args, **kwargs):
+#        '''
+#        Adding a custom random id, to ensure uniqueness of tasks that would
+#        otherwise not seem unique
+#        '''
+#        kwargs['sid'] = str(random.random())[2:]
+#        super(Task, self).__init__(*args, **kwargs)
 
 # ==============================================================================
 
