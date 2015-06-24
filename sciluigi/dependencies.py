@@ -7,7 +7,7 @@ import string
 
 # Class to be used for sending specification of which target, from which
 # task, to use, when stitching workflow tasks' outputs and inputs together.
-class TargetSpec(object):
+class TargetInfo(object):
     task = None
     path = None
     target = None
@@ -35,7 +35,7 @@ class DependencyHelpers():
     def _upstream_tasks(self):
         upstream_tasks = []
         for attrname, attrval in self.__dict__.iteritems():
-            if type(attrval) is TargetSpec:
+            if type(attrval) is TargetInfo:
                 upstream_tasks.append(attrval.task)
         return upstream_tasks
 

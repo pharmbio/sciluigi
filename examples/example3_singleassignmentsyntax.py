@@ -16,7 +16,7 @@ class WF(sciluigi.WorkflowTask):
 class T1(sciluigi.Task):
 
     def out_data1(self):
-        return sciluigi.TargetSpec(self, 'outdata1.txt') # TODO: Of course make the target spec into an object with "get target" method!
+        return sciluigi.TargetInfo(self, 'outdata1.txt') # TODO: Of course make the target spec into an object with "get target" method!
 
     # ------------------------------------------------
 
@@ -30,7 +30,7 @@ class T2(sciluigi.Task):
     in_data1 = None
 
     def out_data2(self): 
-        return sciluigi.TargetSpec(self, self.in_data1.path + '.outdata2.txt')
+        return sciluigi.TargetInfo(self, self.in_data1.path + '.outdata2.txt')
 
     # ------------------------------------------------
 

@@ -4,9 +4,7 @@ from sciluigi import task
 #from sciluigi import audit
 
 # dependencies module
-create_file_targets = dependencies.create_file_targets
-TargetSpec = dependencies.TargetSpec
-TargetSpecParameter = dependencies.TargetSpecParameter
+TargetInfo = dependencies.TargetInfo
 DependencyHelpers = dependencies.DependencyHelpers
 
 # task module
