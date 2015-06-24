@@ -16,16 +16,13 @@ class WF(sciluigi.WorkflowTask):
 class T1(sciluigi.Task):
 
     def out_data1(self):
-        return sciluigi.TargetSpec(self, 'outdata1') # TODO: Of course make the target spec into an object with "get target" method!
+        return sciluigi.TargetSpec(self, 'outdata1.txt') # TODO: Of course make the target spec into an object with "get target" method!
 
     # ------------------------------------------------
 
-    def output(self):
-        return { 'outdata1': luigi.LocalTarget('outdata1.txt') }
-
     def run(self):
-        with self.out_data1().resolve().open('w') as outfile:
-            outfile.write('hej')
+        with self.out_data1().target.open('w') as outfile:
+            outfile.write('hej\n')
 
 # ========================================================================
 
@@ -33,20 +30,13 @@ class T2(sciluigi.Task):
     in_data1 = None
 
     def out_data2(self): 
-        return sciluigi.TargetSpec(self, 'outdata2')
+        return sciluigi.TargetSpec(self, self.in_data1.path + '.outdata2.txt')
 
     # ------------------------------------------------
 
-    def output(self):
-        for k,v in self.out().iteritems():
-            return { k: luigi.LocalTarget(v) }
-
-    def out(self):
-        return { 'outdata2': 'outdata2.txt' }
-
     def run(self):
-        with self.in_data1.resolve().open() as infile:
-            with self.out_data2().resolve().open('w') as outfile:
+        with self.in_data1.target.open() as infile:
+            with self.out_data2().target.open('w') as outfile:
                 for row in infile:
                     outfile.write('tjo ' + row + '\n')
 
