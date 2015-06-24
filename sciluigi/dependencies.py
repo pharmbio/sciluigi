@@ -15,9 +15,18 @@ def create_file_targets(target_spec=None, **kwargs):
 
 # ==============================================================================
 
-# Named tuple, used for sending specification of which target, from which
+# Class to be used for sending specification of which target, from which
 # task, to use, when stitching workflow tasks' outputs and inputs together.
-TargetSpec = namedtuple('TargetSpec', ['task', 'output'], rename=True)
+class TargetSpec(object):
+    def __init__(self, task, output):
+        self.task = task
+        self.output = output
+
+    def resolve(self):
+        return self.task.output()[self.output]
+
+    def res(self):
+        return self.resolve()
 
 # ==============================================================================
 
@@ -43,9 +52,9 @@ class DependencyHelpers():
 
     def _upstream_tasks(self):
         upstream_tasks = []
-        for param_val in self.param_args:
-            if type(param_val) is TargetSpec:
-                upstream_tasks.append(param_val[0])
+        for attrname, attrval in self.__dict__.iteritems():
+            if type(attrval) is TargetSpec:
+                upstream_tasks.append(attrval.task)
         return upstream_tasks
 
     # Methods for dynamic wiring of workflow
