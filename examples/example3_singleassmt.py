@@ -8,16 +8,20 @@ class TestWF(sciluigi.WorkflowTask):
 
     def requires(self):
         t1a = T1(text='hej_hopp')
-        t1b = T1(text='hopp_hej')
-
-        mrg1 = Merge()
-        mrg2 = Merge()
-
         print "T1a task id: " + t1a.task_id
         print "T1a hash   : " + str(t1a.__hash__())
 
+        t1b = T1(text='hopp_hej')
         print "T1b task id: " + t1b.task_id
         print "T1b hash   : " + str(t1b.__hash__())
+
+        mrg1 = Merge()
+        print "Mrg1 task id: " + mrg1.task_id
+        print "Mrg1 hash   : " + str(mrg1.__hash__())
+
+        mrg2 = mrg1.clone()
+        print "Mrg2 task id: " + mrg2.task_id
+        print "Mrg2 hash   : " + str(mrg2.__hash__())
 
         # Workflow definition
         mrg1.in_data1 = t1a.out_data1()
@@ -25,12 +29,6 @@ class TestWF(sciluigi.WorkflowTask):
 
         mrg2.in_data1 = t1b.out_data1()
         mrg2.in_data2 = t1a.out_data1()
-
-        print "Mrg1 task id: " + mrg1.task_id
-        print "Mrg1 hash   : " + str(mrg1.__hash__())
-
-        print "Mrg2 task id: " + mrg2.task_id
-        print "Mrg2 hash   : " + str(mrg2.__hash__())
 
         return [mrg1, mrg2]
 
