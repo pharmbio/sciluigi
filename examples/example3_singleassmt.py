@@ -1,25 +1,38 @@
 import luigi
 import sciluigi
+import time
 
 # ========================================================================
 
 class TestWF(sciluigi.WorkflowTask):
 
     def requires(self):
-        # Task instantiations
-        t1a = T1(text='hej\nhopp')
-        t1b = T1(text='hej\nhopp')
-        mrg = Merge()
+        t1a = T1(text='hej_hopp')
+        t1b = T1(text='hopp_hej')
+
+        mrg1 = Merge()
+        mrg2 = Merge()
 
         print "T1a task id: " + t1a.task_id
+        print "T1a hash   : " + str(t1a.__hash__())
+
         print "T1b task id: " + t1b.task_id
+        print "T1b hash   : " + str(t1b.__hash__())
 
         # Workflow definition
-        mrg.in_data1 = t1a.out_data1()
-        mrg.in_data2 = t1b.out_data1()
+        mrg1.in_data1 = t1a.out_data1()
+        mrg1.in_data2 = t1b.out_data1()
 
-        # Which task to run up to
-        return mrg
+        mrg2.in_data1 = t1b.out_data1()
+        mrg2.in_data2 = t1a.out_data1()
+
+        print "Mrg1 task id: " + mrg1.task_id
+        print "Mrg1 hash   : " + str(mrg1.__hash__())
+
+        print "Mrg2 task id: " + mrg2.task_id
+        print "Mrg2 hash   : " + str(mrg2.__hash__())
+
+        return [mrg1, mrg2]
 
 # ========================================================================
 
@@ -32,7 +45,7 @@ class T1(sciluigi.Task):
     # ------------------------------------------------
 
     def out_data1(self):
-        return sciluigi.TargetInfo(self, 'outdata1.txt') # TODO: Of course make the target spec into an object with "get target" method!
+        return sciluigi.TargetInfo(self, self.text + '.txt') # TODO: Of course make the target spec into an object with "get target" method!
 
     # ------------------------------------------------
 
@@ -66,4 +79,4 @@ class Merge(sciluigi.Task):
 # ========================================================================
 
 if __name__ == '__main__':
-    luigi.run()
+    luigi.run(local_scheduler=True)
