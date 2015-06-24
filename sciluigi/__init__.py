@@ -5,6 +5,7 @@ from sciluigi import task
 
 # dependencies module
 TargetInfo = dependencies.TargetInfo
+TargetInfoParameter = dependencies.TargetInfoParameter
 DependencyHelpers = dependencies.DependencyHelpers
 
 # task module

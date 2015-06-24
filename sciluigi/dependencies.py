@@ -5,6 +5,11 @@ import string
 
 # ==============================================================================
 
+class TargetInfoParameter(luigi.Parameter):
+    pass
+
+# ==============================================================================
+
 # Class to be used for sending specification of which target, from which
 # task, to use, when stitching workflow tasks' outputs and inputs together.
 class TargetInfo(object):
