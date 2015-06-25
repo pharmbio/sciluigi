@@ -4,22 +4,23 @@ import time
 
 # ========================================================================
 
+
 class TestWF(sciluigi.WorkflowTask):
 
-    def requires(self):
-        t1a = T1(text='hej_hopp')
+    def workflow(self):
+        t1a = sciluigi.new_task(T1, text='hej_hopp')
         print "T1a task id: " + t1a.task_id
         print "T1a hash   : " + str(t1a.__hash__())
 
-        t1b = T1(text='hopp_hej')
+        t1b = sciluigi.new_task(T1, text='hopp_hej')
         print "T1b task id: " + t1b.task_id
         print "T1b hash   : " + str(t1b.__hash__())
 
-        mrg1 = Merge()
+        mrg1 = sciluigi.new_task(Merge)
         print "Mrg1 task id: " + mrg1.task_id
         print "Mrg1 hash   : " + str(mrg1.__hash__())
 
-        mrg2 = mrg1.clone()
+        mrg2 = sciluigi.new_task(Merge)
         print "Mrg2 task id: " + mrg2.task_id
         print "Mrg2 hash   : " + str(mrg2.__hash__())
 
