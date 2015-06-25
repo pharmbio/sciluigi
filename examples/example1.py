@@ -1,6 +1,21 @@
 import luigi
-import sciluigi
+import sciluigi as sl
 from subprocess import call
+# ------------------------------------------------------------------------
+# Workflow class(es)
+# ------------------------------------------------------------------------
+
+class MyWorkflow(sl.WorkflowTask):
+
+    def workflow(self):
+        rawdata = sl.new_task(RawData)
+        atot = sl.new_task(ATOT)
+
+        atot.in_
+
+        #        indata=rawdata.outspec('rawdata')
+        
+        return atot
 
 # ------------------------------------------------------------------------
 # Task classes
@@ -11,7 +26,7 @@ class RawData(sciluigi.ExternalTask):
         return { 'rawdata' : luigi.LocalTarget('data/acgt.txt') }
 
 class AToT(sciluigi.Task):
-    indata = luigi.Parameter()
+    in_data = None
 
     def output(self):
         return { 'atotreplaced' : luigi.LocalTarget(self.get_path('indata') + '.atot') }
@@ -21,22 +36,7 @@ class AToT(sciluigi.Task):
         print("COMMAND: " + cmd)
         call(cmd, shell=True)
 
-# ------------------------------------------------------------------------
-# Workflow class(es)
-# ------------------------------------------------------------------------
 
-class MyWorkflow(luigi.Task):
-
-    def requires(self):
-
-        # Workflow definition
-        rawdata = RawData()
-        atot = AToT(
-                indata=rawdata.outspec('rawdata')
-               )
-        return atot
-
-# ------------------------------------------------------------------------
 # Run this file as script
 # ------------------------------------------------------------------------
 
