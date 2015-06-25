@@ -1,23 +1,22 @@
 import luigi
-import sciluigi
+import sciluigi as sl
 import os
 
 TESTFILE_PATH = '/tmp/test.out'
 
-class TestTask(sciluigi.Task):
+class TestTask(sl.Task):
 
-    def output(self):
-        return sciluigi.create_file_targets(
-                out = TESTFILE_PATH)
+    def out_data(self):
+        return sl.TargetInfo(self, TESTFILE_PATH)
 
     def run(self):
-        with self.output()['out'].open('w') as outfile:
+        with self.out_data().open('w') as outfile:
             outfile.write('File written by luigi\n')
 
-class TestConcatenate2Files():
+class TestRunTask():
 
     def setup(self):
-        self.t = TestTask()
+        self.t = sl.new_task(TestTask)
 
     def teardown(self):
         self.t = None
