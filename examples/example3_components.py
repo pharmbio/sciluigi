@@ -16,7 +16,7 @@ class T1(sl.Task):
     # Implementation
 
     def run(self):
-        with self.out_data1().target.open('w') as outfile:
+        with self.out_data1().open('w') as outfile:
             outfile.write(self.text)
 
 # ========================================================================
@@ -34,7 +34,8 @@ class Merge(sl.Task):
     # Implementation
 
     def run(self):
-        with self.in_data1().target.open() as in1, self.in_data2().target.open() as in2, self.out_merged().target.open('w') as outfile:
+        with self.in_data1().open() as in1, self.in_data2().open() as in2, self.out_merged().open('w') as outfile:
+
             for row in in1:
                 outfile.write(row+'\n')
             for row in in2:
