@@ -40,8 +40,8 @@ class DependencyHelpers():
     def _upstream_tasks(self):
         upstream_tasks = []
         for attrname, attrval in self.__dict__.iteritems():
-            if type(attrval) is TargetInfo:
-                upstream_tasks.append(attrval.task)
+            if callable(attrval) and type(attrval()) is TargetInfo:
+                upstream_tasks.append(attrval().task)
         return upstream_tasks
 
     # --------------------------------------------------------
