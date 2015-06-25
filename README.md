@@ -8,132 +8,122 @@ in the following way:
 
 ```python
 import luigi
-import sciluigi
+import sciluigi as sl
 import math
-from subprocess import call
 import subprocess as sub
-import sys
-import requests
-import time
 
 # ------------------------------------------------------------------------
-# Workflow class
+# Workflow
 # ------------------------------------------------------------------------
 
-class MyWorkflow(sciluigi.WorkflowTask):
+class MyWorkflow(sl.WorkflowTask):
+    task = luigi.Parameter() # Task to return, chosable on commandline
 
-    task = luigi.Parameter()
-
-    def requires(self):
-
-		# ----------------------------------------------------------------
-        # Workflow definition goes below!
-		# ----------------------------------------------------------------
-
-        tasks = {}
-        tasks['rawdata'] = ExistingData()
-
+    def workflow(self):
         # Split a file
-        tasks['split'] = SplitAFile(
-                indata = tasks['rawdata'].outspec('acgt'))
+        rawdata = sl.new_task(ExistingData, file_name='acgt.txt')
+
+        split = sl.new_task(SplitAFile)
+        split.in_data = rawdata.out_acgt
 
         # Run the same task on the two splits
-        tasks['dosth1'] = DoSomething(
-                indata = tasks['split'].outspec('part1'))
-        tasks['dosth2'] = DoSomething(
-                indata = tasks['split'].outspec('part2'))
+        dosth1 = sl.new_task(DoSomething)
+        dosth1.in_data = split.out_part1
+
+        dosth2 = sl.new_task(DoSomething)
+        dosth2.in_data = split.out_part2
 
         # Merge the results
-        tasks['merge'] = MergeFiles(
-                part1 = tasks['dosth1'].outspec('outdata'),
-                part2 = tasks['dosth2'].outspec('outdata'))
+        merge = sl.new_task(MergeFiles)
+        merge.in_part1 = dosth1.out_data
+        merge.in_part2 = dosth2.out_data
 
-		# Make the task to return selectable, with the self.task parameter
-        return tasks[self.task]
+        return locals()[self.task]
 
 # ------------------------------------------------------------------------
-# Task classes
+# Task components
 # ------------------------------------------------------------------------
 
-# Split a file
-class ExistingData(sciluigi.ExternalTask):
+class ExistingData(sl.ExternalTask):
+    # Parameters
     file_name = luigi.Parameter(default='acgt.txt')
 
-    def output(self):
-        return sciluigi.create_file_targets(
-             acgt = 'data/' + self.file_name)
-
-class SplitAFile(sciluigi.Task):
-    indata = sciluigi.TargetSpecParameter()
-
-    def output(self):
-        return sciluigi.create_file_targets(
-            part1 = self.input('indata').path + '.part1',
-            part2 = self.input('indata').path + '.part2')
+    # Inputs/Outputs
+    def out_acgt(self):
+        return sl.TargetInfo(self, 'data/' + self.file_name)
 
 
+class SplitAFile(sl.Task):
+    # Inputs/Outputs
+    in_data = None
+
+    def out_part1(self):
+        return sl.TargetInfo(self, self.in_data().path + '.part1')
+    def out_part2(self):
+        return sl.TargetInfo(self, self.in_data().path + '.part2')
+
+    # What the task does
     def run(self):
-        cmd = 'wc -l {f}'.format(f=self.get_path('indata') )
+        cmd = 'wc -l {f}'.format(f=self.in_data().path )
         wc_output = sub.check_output(cmd, shell=True)
         lines_cnt = int(wc_output.split(' ')[0])
         head_cnt = int(math.ceil(lines_cnt / 2))
         tail_cnt = int(math.floor(lines_cnt / 2))
 
         cmd_head = 'head -n {cnt} {i} > {part1}'.format(
-            i=self.get_path('indata'),
+            i=self.in_data().path,
             cnt=head_cnt,
-            part1=self.output()['part1'].path)
+            part1=self.out_part1().path)
         print("COMMAND: " + cmd_head)
         sub.call(cmd_head, shell=True)
 
         sub.call('tail -n {cnt} {i} {cnt} > {part2}'.format(
-            i=self.get_path('indata'),
+            i=self.in_data().path,
             cnt=tail_cnt,
-            part2=self.output()['part2'].path),
+            part2=self.out_part2().path),
         shell=True)
 
 
-# Run the same program on both parts of the split
-class DoSomething(sciluigi.Task):
-    indata = sciluigi.TargetSpecParameter()
+class DoSomething(sl.Task):
+    # Inputs/Outputs
+    in_data = None
 
-    def output(self):
-        return sciluigi.create_file_targets(
-            outdata = self.get_path('indata') + '.something_done')
+    def out_data(self):
+        return sl.TargetInfo(self, self.in_data().path + '.something_done')
 
+    # What the task does
     def run(self):
-        with self.input('indata').open() as infile, self.output()['outdata'].open('w') as outfile:
+        with self.in_data().open() as infile, self.out_data().open('w') as outfile:
             for line in infile:
                 outfile.write(line.lower() + '\n')
 
 
-# Merge the results of the programs
-class MergeFiles(sciluigi.Task):
-    part1 = sciluigi.TargetSpecParameter()
-    part2 = sciluigi.TargetSpecParameter()
+class MergeFiles(sl.Task):
+    # Inputs/Outputs
+    in_part1 = None
+    in_part2 = None
 
-    def output(self):
-        return sciluigi.create_file_targets(
-            merged = self.input('part1').path + '.merged'
-        )
+    def out_merged(self):
+        return sl.TargetInfo(self, self.in_part1().path + '.merged')
 
+    # What the task does
     def run(self):
         sub.call('cat {f1} {f2} > {out}'.format(
-            f1=self.input('part1').path,
-            f2=self.input('part2').path,
-            out=self.output()['merged'].path),
+            f1=self.in_part1().path,
+            f2=self.in_part2().path,
+            out=self.out_merged().path),
         shell=True)
 
 # ------------------------------------------------------------------------
-# Run this file as a script
+# Run as script
 # ------------------------------------------------------------------------
 
 if __name__ == '__main__':
-    luigi.run()
+    sl.run_locally()
 ```
 
 Then you would run this as:
 
 ```bash
-python example.py --local-scheduler MyWorkflow --task merge
+python myworkflow.py MyWorkflow --task merge
 ```
