@@ -9,6 +9,7 @@ TargetInfoParameter = dependencies.TargetInfoParameter
 DependencyHelpers = dependencies.DependencyHelpers
 
 # task module
+new_task = task.new_task
 Task = task.Task
 ExternalTask = task.ExternalTask
 WorkflowTask = task.WorkflowTask

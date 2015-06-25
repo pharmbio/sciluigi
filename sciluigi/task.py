@@ -7,16 +7,12 @@ from collections import namedtuple
 
 # ==============================================================================
 
+def new_task(cls, **kwargs):
+    kwargs['sid'] = str(random.random())[2:]
+    return cls.from_str_params(kwargs)
+
 class Task(dependencies.DependencyHelpers, luigi.Task):
     sid = luigi.Parameter(default=None)
-
-#    def __init__(self, *args, **kwargs):
-#        '''
-#        Adding a custom random id, to ensure uniqueness of tasks that would
-#        otherwise not seem unique
-#        '''
-#        kwargs['sid'] = str(random.random())[2:]
-#        super(Task, self).__init__(*args, **kwargs)
 
 # ==============================================================================
 
