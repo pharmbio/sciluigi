@@ -23,6 +23,12 @@ class ExternalTask(dependencies.DependencyHelpers, luigi.ExternalTask):
 
 class WorkflowTask(luigi.Task):
 
+    def workflow(self):
+        raise WorkflowNotImplementedException('workflow() method is not implemented, for ' + str(self))
+
+    def requires(self):
+        return self.workflow()
+
     def output(self):
         timestamp = time.strftime('%Y%m%d_%H%M%S', time.localtime())
         clsname = self.__class__.__name__
@@ -32,3 +38,6 @@ class WorkflowTask(luigi.Task):
         timestamp = time.strftime('%Y-%m-%d, %H:%M:%S', time.localtime())
         with self.output().open('w') as outfile:
             outfile.write('workflow finished at {t}'.format(t=timestamp))
+
+class WorkflowNotImplementedException(Exception):
+    pass
