@@ -78,4 +78,5 @@ class Merge(sciluigi.Task):
 # ========================================================================
 
 if __name__ == '__main__':
+    #luigi.task_register.Register.disable_instance_cache()
     luigi.run(local_scheduler=True)
