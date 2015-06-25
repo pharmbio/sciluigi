@@ -1,4 +1,6 @@
 import luigi
+import audit
+from util import *
 import dependencies
 import time
 import random
@@ -7,21 +9,30 @@ from collections import namedtuple
 
 # ==============================================================================
 
-def new_task(cls, **kwargs):
+def new_task(workflow_task=None, cls=None, name=None, **kwargs):
+    if None in [workflow_task, cls, name]:
+        raise Exception('workflow_task, cls or name not set when calling new_task()')
     kwargs['sid'] = str(random.random())[2:]
-    return cls.from_str_params(kwargs)
+    t = cls.from_str_params(kwargs)
+    t.workflow_task = workflow_task
+    t.task_name = name
+    return t
 
-class Task(dependencies.DependencyHelpers, luigi.Task):
-    pass
+class Task(audit.AuditTrailHelpers, dependencies.DependencyHelpers, luigi.Task):
+    workflow_task = None
+    task_name = None
 
 # ==============================================================================
 
-class ExternalTask(dependencies.DependencyHelpers, luigi.ExternalTask):
-    pass
+class ExternalTask(audit.AuditTrailHelpers, dependencies.DependencyHelpers, luigi.ExternalTask):
+    workflow_task = None
+    task_name = None
 
 # ==============================================================================
 
-class WorkflowTask(luigi.Task):
+class WorkflowTask(audit.AuditTrailHelpers, luigi.Task):
+
+    _auditlog = []
 
     def workflow(self):
         raise WorkflowNotImplementedException('workflow() method is not implemented, for ' + str(self))
@@ -32,12 +43,22 @@ class WorkflowTask(luigi.Task):
     def output(self):
         timestamp = time.strftime('%Y%m%d_%H%M%S', time.localtime())
         clsname = self.__class__.__name__
-        return luigi.LocalTarget('workflow_' + clsname.lower() + '_completed_at_{t}'.format(t=timestamp))
+        return luigi.LocalTarget('workflow_' + clsname.lower() + '_completed_at_{t}.txt'.format(t=timestamp))
 
     def run(self):
-        timestamp = time.strftime('%Y-%m-%d, %H:%M:%S', time.localtime())
         with self.output().open('w') as outfile:
-            outfile.write('workflow finished at {t}'.format(t=timestamp))
+            outfile.writelines([line + '\n' for line in self._auditlog])
+            outfile.write('-'*80 + '\n')
+            outfile.write('{time}: {wfname} workflow finished\n'.format(
+                            wfname=self.task_family,
+                            time=timelog()))
+
+    def new_task(self, cls, **kwargs):
+        return new_task(self, cls, **kwargs)
+
+    def log_audit(self, line):
+        self._auditlog.append(line)
+
 
 class WorkflowNotImplementedException(Exception):
     pass

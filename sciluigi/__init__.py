@@ -1,8 +1,9 @@
 from sciluigi import dependencies
 from sciluigi import task
 from sciluigi import interface
+from sciluigi import util
+from sciluigi import audit
 #from sciluigi import slurm
-#from sciluigi import audit
 
 # interface
 run = interface.run
@@ -23,4 +24,8 @@ WorkflowTask = task.WorkflowTask
 # TODO: Import ...
 
 # audit module
-# TODO: Import ...
+AuditTrailHelpers = audit.AuditTrailHelpers
+
+# Util module
+timestamp = util.timestamp
+timepath = util.timepath
