@@ -6,6 +6,8 @@ from example3_components import T1, Merge
 
 class TestWF(sl.WorkflowTask):
 
+    task = luigi.Parameter()
+
     def workflow(self):
         t1a = sl.new_task(T1, text='hej_hopp')
         t1b = sl.new_task(T1, text='hopp_hej')
@@ -32,8 +34,7 @@ class TestWF(sl.WorkflowTask):
         print "Mrg2 task id: " + mrg2.task_id
         print "Mrg2 hash   : " + str(mrg2.__hash__())
 
-        return [mrg1, mrg2]
+        return locals()[self.task]
 
 if __name__ == '__main__':
-    #luigi.task_register.Register.disable_instance_cache()
-    luigi.run(local_scheduler=True)
+    sl.run_locally()

@@ -22,6 +22,9 @@ class TargetInfo(object):
         self.path = path
         self.target = luigi.LocalTarget(path)
 
+    def open(self, *args, **kwargs):
+        return self.target.open(*args, **kwargs)
+
 # ==============================================================================
 
 class DependencyHelpers():
