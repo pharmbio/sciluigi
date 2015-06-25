@@ -33,6 +33,8 @@ class DependencyHelpers():
     workflow definition, as opposed to the task-based one in vanilla luigi.
     '''
 
+    sid = luigi.Parameter(default=None)
+
     # --------------------------------------------------------
     # Handle inputs
     # --------------------------------------------------------

@@ -12,7 +12,7 @@ def new_task(cls, **kwargs):
     return cls.from_str_params(kwargs)
 
 class Task(dependencies.DependencyHelpers, luigi.Task):
-    sid = luigi.Parameter(default=None)
+    pass
 
 # ==============================================================================
 
