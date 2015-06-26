@@ -9,24 +9,22 @@ from collections import namedtuple
 
 # ==============================================================================
 
-def new_task(workflow_task=None, cls=None, name=None, **kwargs):
-    if None in [workflow_task, cls, name]:
-        raise Exception('workflow_task, cls or name not set when calling new_task()')
+def new_task(workflow_task, cls, name, **kwargs):
     kwargs['sid'] = str(random.random())[2:]
     t = cls.from_str_params(kwargs)
     t.workflow_task = workflow_task
-    t.task_name = name
+    t.instance_name = name
     return t
 
 class Task(audit.AuditTrailHelpers, dependencies.DependencyHelpers, luigi.Task):
     workflow_task = None
-    task_name = None
+    instance_name = None
 
 # ==============================================================================
 
 class ExternalTask(audit.AuditTrailHelpers, dependencies.DependencyHelpers, luigi.ExternalTask):
     workflow_task = None
-    task_name = None
+    instance_name = None
 
 # ==============================================================================
 
