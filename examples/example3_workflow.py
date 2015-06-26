@@ -22,17 +22,12 @@ class TestWF(sl.WorkflowTask):
         mrg2.in_data1 = t1b.out_data1
         mrg2.in_data2 = t1a.out_data1
 
-        print "T1a task id: " + t1a.task_id
-        print "T1a hash   : " + str(t1a.__hash__())
-
-        print "T1b task id: " + t1b.task_id
-        print "T1b hash   : " + str(t1b.__hash__())
-
-        print "Mrg1 task id: " + mrg1.task_id
-        print "Mrg1 hash   : " + str(mrg1.__hash__())
-
-        print "Mrg2 task id: " + mrg2.task_id
-        print "Mrg2 hash   : " + str(mrg2.__hash__())
+        for name, instance in locals().iteritems():
+            if issubclass(type(instance), sl.Task):
+                print '{n} task id: {taskid}\n{n} hash   : {h}'.format(
+                        n = name,
+                        taskid = instance.task_id,
+                        h = instance.__hash__())
 
         return locals()[self.task]
 
