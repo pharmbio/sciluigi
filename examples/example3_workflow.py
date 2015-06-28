@@ -9,11 +9,11 @@ class TestWF(sl.WorkflowTask):
     task = luigi.Parameter()
 
     def workflow(self):
-        t1a = sl.new_task(self, T1, 't1a', text='hej_hopp')
-        t1b = sl.new_task(self, T1, 't1b', text='hopp_hej')
+        t1a = sl.new_task(T1, 't1a', self, text='hej_hopp')
+        t1b = sl.new_task(T1, 't1b', self, text='hopp_hej')
 
-        mrg1 = sl.new_task(self, Merge, 'mrg1')
-        mrg2 = sl.new_task(self, Merge, 'mrg2')
+        mrg1 = sl.new_task(Merge, 'mrg1', self)
+        mrg2 = sl.new_task(Merge, 'mrg2', self)
 
         # Workflow definition
         mrg1.in_data1 = t1a.out_data1

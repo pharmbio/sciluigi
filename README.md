@@ -21,20 +21,20 @@ class MyWorkflow(sl.WorkflowTask):
 
     def workflow(self):
         # Split a file
-        rawdata = sl.new_task(ExistingData, file_name='acgt.txt')
+        rawdata = sl.new_task(ExistingData, 'rawdata', self, file_name='acgt.txt')
 
-        split = sl.new_task(SplitAFile)
+        split = sl.new_task(SplitAFile, 'split', self)
         split.in_data = rawdata.out_acgt
 
         # Run the same task on the two splits
-        dosth1 = sl.new_task(DoSomething)
+        dosth1 = sl.new_task(DoSomething, 'split', self)
         dosth1.in_data = split.out_part1
 
-        dosth2 = sl.new_task(DoSomething)
+        dosth2 = sl.new_task(DoSomething, 'split', self)
         dosth2.in_data = split.out_part2
 
         # Merge the results
-        merge = sl.new_task(MergeFiles)
+        merge = sl.new_task(MergeFiles, 'split', self)
         merge.in_part1 = dosth1.out_data
         merge.in_part2 = dosth2.out_data
 

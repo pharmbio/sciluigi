@@ -9,7 +9,7 @@ from collections import namedtuple
 
 # ==============================================================================
 
-def new_task(workflow_task, cls, name, **kwargs):
+def new_task(cls, name, workflow_task, **kwargs): # TODO: Raise exceptions if params not of right type
     kwargs['sid'] = str(random.random())[2:]
     t = cls.from_str_params(kwargs)
     t.workflow_task = workflow_task
