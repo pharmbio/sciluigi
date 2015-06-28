@@ -16,33 +16,34 @@ class NGITestWF(sl.WorkflowTask):
 
     def workflow(self):
         # Rsync a folder
-        rsync = sl.new_task(RSyncAFolder,
+        rsync = sl.new_task(RSyncAFolder, 'rsync', self,
                 src_dir_path = 'data',
                 dest_dir_path = 'data_rsynced_copy')
 
         # Run a program that takes 10 minutes (seconds)
-        run10min = sl.new_task(Run10MinuteSleep)
+        run10min = sl.new_task(Run10MinuteSleep, 'run10min', self)
         run10min.in_upstream = rsync.out_destdir
 
         # Do a web request
-        webreq = sl.new_task(DoWebRequest)
+        webreq = sl.new_task(DoWebRequest, 'run10min', self)
         webreq.in_upstream = run10min.out_doneflag
 
         # Split a file
-        rawdata = sl.new_task(ExistingData, file_name='acgt.txt')
+        rawdata = sl.new_task(ExistingData, 'rawdata', self,
+                file_name='acgt.txt')
 
-        split = sl.new_task(SplitAFile)
+        split = sl.new_task(SplitAFile, 'run10min', self)
         split.in_data = rawdata.out_acgt
 
         # Run the same task on the two splits
-        dosth1 = sl.new_task(DoSomething)
+        dosth1 = sl.new_task(DoSomething, 'dosth1', self)
         dosth1.in_data = split.out_part1
 
-        dosth2 = sl.new_task(DoSomething)
+        dosth2 = sl.new_task(DoSomething, 'dosth2', self)
         dosth2.in_data = split.out_part2
 
         # Merge the results
-        merge = sl.new_task(MergeFiles)
+        merge = sl.new_task(MergeFiles, 'merge', self)
         merge.in_part1 = dosth1.out_data
         merge.in_part2 = dosth2.out_data
 
