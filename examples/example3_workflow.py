@@ -31,5 +31,29 @@ class TestWF(sl.WorkflowTask):
 
         return locals()[self.task]
 
+slurm_conf = {
+               'default' :    {
+                                 't1a'  : sl.SlurmInfo('core', 1, '1:00:00'),
+                                 't1b'  : sl.SlurmInfo('core', 1, '1:00:00'),
+                                 'mrg1' : sl.SlurmInfo('core', 1, '1:00:00'),
+                                 'mrg2' : sl.SlurmInfo('core', 1, '2:00:00'),
+                              },
+               # ----------------------------------------------------------------
+               'medium' :     {
+                                 't1a'  : sl.SlurmInfo('core', 1, '1:00:00'),
+                                 't1b'  : sl.SlurmInfo('core', 1, '1:00:00'),
+                                 'mrg1' : sl.SlurmInfo('core', 1, '1:00:00'),
+                                 'mrg2' : sl.SlurmInfo('core', 1, '2:00:00'),
+                              },
+               # ----------------------------------------------------------------
+               'production' : {
+                                 't1a'  : sl.SlurmInfo('core', 1, '1:00:00'),
+                                 't1b'  : sl.SlurmInfo('core', 1, '1:00:00'),
+                                 'mrg1' : sl.SlurmInfo('core', 1, '1:00:00'),
+                                 'mrg2' : sl.SlurmInfo('core', 1, '2:00:00'),
+                              },
+             }
+
 if __name__ == '__main__':
     sl.run_locally()
+
