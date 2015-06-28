@@ -1,8 +1,9 @@
-from sciluigi import dependencies
-from sciluigi import task
-from sciluigi import interface
-from sciluigi import util
 from sciluigi import audit
+from sciluigi import dependencies
+from sciluigi import interface
+from sciluigi import slurm
+from sciluigi import task
+from sciluigi import util
 #from sciluigi import slurm
 
 # interface
@@ -21,7 +22,7 @@ ExternalTask = task.ExternalTask
 WorkflowTask = task.WorkflowTask
 
 # slurm module
-# TODO: Import ...
+SlurmInfo = slurm.SlurmInfo
 
 # audit module
 AuditTrailHelpers = audit.AuditTrailHelpers
