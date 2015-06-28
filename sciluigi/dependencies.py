@@ -33,8 +33,6 @@ class DependencyHelpers():
     workflow definition, as opposed to the task-based one in vanilla luigi.
     '''
 
-    sid = luigi.Parameter(default=None)
-
     # --------------------------------------------------------
     # Handle inputs
     # --------------------------------------------------------
@@ -45,7 +43,7 @@ class DependencyHelpers():
     def _upstream_tasks(self):
         upstream_tasks = []
         for attrname, attrval in self.__dict__.iteritems():
-            if callable(attrval) and type(attrval()) is TargetInfo:
+            if callable(attrval) and 'in_' in attrname:
                 upstream_tasks.append(attrval().task)
         return upstream_tasks
 

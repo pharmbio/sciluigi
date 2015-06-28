@@ -10,21 +10,21 @@ from collections import namedtuple
 # ==============================================================================
 
 def new_task(workflow_task, cls, name, **kwargs):
-    kwargs['sid'] = str(random.random())[2:]
+    #kwargs['sid'] = str(random.random())[2:]
+    kwargs['workflow_task'] = workflow_task
+    kwargs['instance_name'] = name
     t = cls.from_str_params(kwargs)
-    t.workflow_task = workflow_task
-    t.instance_name = name
     return t
 
 class Task(audit.AuditTrailHelpers, dependencies.DependencyHelpers, luigi.Task):
-    workflow_task = None
-    instance_name = None
+    workflow_task = luigi.Parameter()
+    instance_name = luigi.Parameter()
 
 # ==============================================================================
 
 class ExternalTask(audit.AuditTrailHelpers, dependencies.DependencyHelpers, luigi.ExternalTask):
-    workflow_task = None
-    instance_name = None
+    workflow_task = luigi.Parameter()
+    instance_name = luigi.Parameter()
 
 # ==============================================================================
 
