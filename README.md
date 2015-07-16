@@ -1,6 +1,8 @@
 Scientific Luigi
 ================
 
+**Note: This is work in progress, with a rapidly changing API! (See feature branches for new functionality and APIs being developed). API expected to stabilize during summer 2015.**
+
 Extra helper methods for writing scientific workflows in [Luigi](http://github.com/spotify/luigi).
 
 More info is coming, but this library enables to define luigi tasks and workflows
