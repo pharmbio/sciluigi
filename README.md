@@ -29,14 +29,14 @@ class MyWorkflow(sl.WorkflowTask):
         split.in_data = rawdata.out_acgt
 
         # Run the same task on the two splits
-        dosth1 = sl.new_task(DoSomething, 'split', self)
+        dosth1 = sl.new_task(DoSomething, 'dosth1', self)
         dosth1.in_data = split.out_part1
 
-        dosth2 = sl.new_task(DoSomething, 'split', self)
+        dosth2 = sl.new_task(DoSomething, 'dosth2', self)
         dosth2.in_data = split.out_part2
 
         # Merge the results
-        merge = sl.new_task(MergeFiles, 'split', self)
+        merge = sl.new_task(MergeFiles, 'merge', self)
         merge.in_part1 = dosth1.out_data
         merge.in_part2 = dosth2.out_data
 
