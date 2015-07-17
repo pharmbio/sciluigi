@@ -16,7 +16,7 @@ class TestTask(sl.Task):
 class TestRunTask():
 
     def setup(self):
-        self.t = sl.new_task(self, TestTask, 'testtask')
+        self.t = sl.new_task(TestTask, 'testtask', self)
 
     def teardown(self):
         self.t = None
