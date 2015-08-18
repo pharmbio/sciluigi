@@ -9,9 +9,9 @@ from collections import namedtuple
 
 # ==============================================================================
 
-def new_task(cls, name, workflow_task, **kwargs): # TODO: Raise exceptions if params not of right type
-    kwargs['workflow_task'] = workflow_task
+def new_task(name, cls, workflow_task, **kwargs): # TODO: Raise exceptions if params not of right type
     kwargs['instance_name'] = name
+    kwargs['workflow_task'] = workflow_task
     t = cls.from_str_params(kwargs)
     return t
 
