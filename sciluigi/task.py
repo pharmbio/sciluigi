@@ -50,8 +50,8 @@ class WorkflowTask(audit.AuditTrailHelpers, luigi.Task):
                             wfname=self.task_family,
                             time=timelog()))
 
-    def new_task(self, cls, **kwargs):
-        return new_task(self, cls, **kwargs)
+    def new_task(self, instance_name, cls, **kwargs):
+        return new_task(instance_name, cls, self, **kwargs)
 
     def log_audit(self, line):
         self._auditlog.append(line)

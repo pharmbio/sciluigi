@@ -8,8 +8,8 @@ from subprocess import call
 class MyWorkflow(sl.WorkflowTask):
 
     def workflow(self):
-        rawdata = sl.new_task('rawdata', RawData, self)
-        atot = sl.new_task('atot', AToT, self)
+        rawdata = self.new_task('rawdata', RawData)
+        atot = self.new_task('atot', AToT)
 
         atot.in_data = rawdata.out_rawdata
 
