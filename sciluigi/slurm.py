@@ -4,6 +4,13 @@ import time
 # ================================================================================
 
 class SlurmInfo(object):
+    project = None
+    partition = None
+    cores = None
+    time = None
+    jobname = None
+    threads = None
+
     def __init__(self, project, partition, cores, time, jobname, threads):
         self.project = project
         self.partition = partition
@@ -12,10 +19,25 @@ class SlurmInfo(object):
         self.jobname = jobname
         self.threads = threads
 
-    def get_argstr(self):
+    def get_argstr_hpc(self):
         '''
         Return a formatted string with arguments and option flags to SLURM
-        commands such as salloc and sbatch.
+        commands such as salloc and sbatch, for non-MPI, HPC jobs.
+        '''
+        #FIXME: Double-check the format of this one!
+        argstr = ' -A {pr} -p {pt} -n {c} -t {t} -J {j} '.format(
+                pr = self.project,
+                pt = self.partition,
+                c = self.cores,
+                t = self.time,
+                j = self.jobname,
+                thr = self.threads)
+        return argstr
+
+    def get_argstr_mpi(self):
+        '''
+        Return a formatted string with arguments and option flags to SLURM
+        commands such as salloc and sbatch, for MPI jobs.
         '''
         argstr = ' -A {pr} -p {pt} -n {c} -t {t} -J {j} srun -n 1 -c {thr} '.format(
                 pr = self.project,
@@ -27,119 +49,77 @@ class SlurmInfo(object):
         return argstr
 
 
+# ================================================================================
+
+
 class SlurmHelpers():
     '''
     Mixin with various convenience methods for executing jobs via SLURM
     '''
+    # Luigi parameters
     accounted_project = luigi.Parameter()
 
+    # Other class-fields
+    slurminfo = None # Class: SlurmInfo
+    runmode = None # One of RUNMODE_LOCAL|RUNMODE_HPC|RUNMODE_MPI
+
     # A few 'constants'
-    JOBTYPE_LOCAL = 'jobtype_local'
-    JOBTYPE_HPC = 'jobtype_hpc'
-    JOBTYPE_MPI = 'jobtype_mpi'
+    RUNMODE_LOCAL = 'runmode_local'
+    RUNMODE_HPC = 'runmode_hpc'
+    RUNMODE_MPI = 'runmode_mpi'
 
     # Main Execution methods
-    def execute_in_configured_mode(self, command):
-       '''Execute either locally or via SLURM, depending on config'''
+    def exec(self, command):
+        '''
+        Execute either locally or via SLURM, depending on config
+        '''
+        if self.runmode == self.RUNMODE_LOCAL:
+            self.exec_local(command)
+        elif self.runmode == self.RUNMODE_HPC:
+            self.exec_hpc(command)
+        elif self.runmode == self.RUNMODE_MPI:
+            self.exec_mpi(command)
 
-        if self.get_task_config('runmode') == self.JOBTYPE_LOCAL:
-            self.execute_command(command)
 
-        elif self.get_task_config('runmode') == self.JOBTYPE_HPC:
-            train_size = 'NA'
-            if hasattr(self, 'train_size'):
-                train_size = self.train_size
-            replicate_id = 'NA'
-            if hasattr(self, 'replicate_id'):
-                replicate_id = self.replicate_id
-
-            self.execute_hpcjob(command,
-                    accounted_project = self.accounted_project,
-                    time_limit = self.get_task_config('time_limit'),
-                    partition  = self.get_task_config('partition'),
-                    cores      = self.get_task_config('cores'),
-                    jobname    = ''.join([train_size,
-                                          replicate_id,
-                                          self.dataset_name,
-                                          self.task_family]),
-                    threads    = self.get_task_config('threads'))
-
-        elif self.get_task_config('runmode') == self.JOBTYPE_MPI:
-            self.execute_mpijob(command,
-                    accounted_project = self.accounted_project,
-                    time_limit = self.get_task_config('time_limit'),
-                    partition  = self.get_task_config('partition'),
-                    cores      = self.get_task_config('cores'),
-                    jobname    = ''.join([self.train_size,
-                                          self.replicate_id,
-                                          self.dataset_name,
-                                          self.task_family]))
-
-    def execute_command(self, command):
-
+    def exec_local(self, command):
+        # If list, convert to string
         if isinstance(command, list):
             command = ' '.join(command)
 
         log.info('Executing command: ' + str(command))
-        (status, output) = commands.getstatusoutput(command)
-        log.info('STATUS: ' + str(status))
-        log.info('OUTPUT: ' + '; '.join(str(output).split('\n')))
+        (status, output) = commands.getstatusoutput(command) # TODO: Replace with subprocess call!
+
+        # Take care of errors
         if status != 0:
-            log.error('Command failed: {cmd}'.format(cmd=command))
-            log.error('OUTPUT OF FAILED COMMAND: ' + '; \n'.join(str(output).split('\n')))
-            raise Exception('Command failed: {cmd}\nOutput:\n{output}'.format(cmd=command, output=output))
+            msg = 'Command failed: {cmd}\nOutput:\n{output}'.format(cmd=command, output=output)
+            log.error(msg)
+            raise Exception(msg)
+
         return (status, output)
 
-    def execute_hpcjob(self, command, accounted_project, time_limit='4:00:00', partition='node', cores=16, jobname='LuigiHPCJob', threads=16):
 
-        slurm_part = 'salloc -A {pr} -p {pt} -n {c} -t {t} -J {m} srun -n 1 -c {thr} '.format(
-                pr  = accounted_project,
-                pt  = partition,
-                c   = cores,
-                t   = time_limit,
-                m   = jobname,
-                thr = threads)
-
+    def exec_hpc(self, command):
         if isinstance(command, list):
             command = ' '.join(command)
 
-        (status, output) = self.execute_command(slurm_part + command)
+        (status, output) = self.exec_local(slurm_part + command)
 
         # TODO: Do this only if audit logging is activated!
         self.log_slurm_info(output)
-
         return (status, output)
 
-    def execute_mpijob(self, command, accounted_project, time_limit='4-00:00:00', partition='node', cores=32, jobname='LuigiMPIJob', cores_per_node=16):
 
-        slurm_part = 'salloc -A {pr} -p {pt} -n {c} -t {t} -J {m} mpirun -v -np {c} '.format(
-                pr = accounted_project,
-                pt = partition,
-                c  = cores,
-                t  = time_limit,
-                m  = jobname)
-
+    def exec_mpi(self, command):
         if isinstance(command, list):
             command = ' '.join(command)
 
-        (status, output) = self.execute_command(slurm_part + command)
+        fullcommand = 'salloc %s %s' % (self.slurminfo.get_argstr_mpi(), command)
+
+        (status, output) = self.exec_local(fullcommand)
 
         # TODO: Do this only if audit logging is activated!
         self.log_slurm_info(output)
-
         return (status, output)
-
-    def execute_locally(self, command):
-        '''Execute locally only'''
-        return self.execute_command(command)
-
-    def x(self, command):
-        '''A short-hand alias around the execute_in_configured_mode method'''
-        return self.execute_in_configured_mode(command)
-
-    def lx(self, command):
-        '''Short-hand alias around the execute_locally method'''
-        return self.execute_locally(command)
 
 
     # Various convenience methods
@@ -151,9 +131,10 @@ class SlurmHelpers():
     def clean_filename(self, filename):
         return re.sub('[^A-Za-z0-9\_\ ]', '_', str(filename)).replace(' ', '_')
 
-    def get_task_config(self, name):
-        return luigi.configuration.get_config().get(self.task_family, name)
+    #def get_task_config(self, name):
+    #    return luigi.configuration.get_config().get(self.task_family, name)
 
+    #FIXME: Fix this big mess below!
     def log_slurm_info(self, command_output):
         matches = re.search('[0-9]+', command_output)
         if matches:
@@ -163,7 +144,7 @@ class SlurmHelpers():
                 tsv_writer = csv.writer(alog, delimiter='\t')
                 tsv_writer.writerow(['slurm_jobid', jobid])
                 # Write slurm execution time to audit log
-                (jobinfo_status, jobinfo_output) = self.execute_command('/usr/bin/sacct -j {jobid} --noheader --format=elapsed'.format(jobid=jobid))
+                (jobinfo_status, jobinfo_output) = self.exec_local('/usr/bin/sacct -j {jobid} --noheader --format=elapsed'.format(jobid=jobid))
                 last_line = jobinfo_output.split('\n')[-1]
                 sacct_matches = re.search('([0-9\:\-]+)',last_line)
                 if sacct_matches:
