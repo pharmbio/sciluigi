@@ -23,6 +23,7 @@ WorkflowTask = task.WorkflowTask
 
 # slurm module
 SlurmInfo = slurm.SlurmInfo
+SlurmHelpers = slurm.SlurmHelpers
 
 # audit module
 AuditTrailHelpers = audit.AuditTrailHelpers
