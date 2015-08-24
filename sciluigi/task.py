@@ -14,8 +14,7 @@ def new_task(name, cls, workflow_task, **kwargs): # TODO: Raise exceptions if pa
         if not isinstance(k, basestring):
             raise Exception("Key in kwargs to new_task is not string. Must be string: %s" % k)
         if not isinstance(v, basestring):
-            # Force conversion into string:
-            kwargs[k] = str(v)
+            kwargs[k] = str(v) # Force conversion into string
     kwargs['instance_name'] = name
     kwargs['workflow_task'] = workflow_task
     t = cls.from_str_params(kwargs)
