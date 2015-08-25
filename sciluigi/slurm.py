@@ -1,4 +1,5 @@
 import luigi
+import parameter
 import time
 
 # ================================================================================
@@ -60,13 +61,19 @@ class SlurmInfo():
 
 # ================================================================================
 
+class SlurmInfoParameter(parameter.Parameter):
+    def parse(self, x):
+        # TODO: Possibly do something more fancy here
+        return x
+
+# ================================================================================
 
 class SlurmHelpers():
     '''
     Mixin with various convenience methods for executing jobs via SLURM
     '''
     # Other class-fields
-    slurminfo = luigi.Parameter(default=None) # Class: SlurmInfo
+    slurminfo = SlurmInfoParameter(default=None) # Class: SlurmInfo
 
     # Main Execution methods
     def ex(self, command):

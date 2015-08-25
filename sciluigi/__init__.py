@@ -1,6 +1,7 @@
 from sciluigi import audit
 from sciluigi import dependencies
 from sciluigi import interface
+from sciluigi import parameter
 from sciluigi import slurm
 from sciluigi import task
 from sciluigi import util
