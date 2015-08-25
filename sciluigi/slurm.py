@@ -56,11 +56,8 @@ class SlurmHelpers():
     '''
     Mixin with various convenience methods for executing jobs via SLURM
     '''
-    # Luigi parameters
-    accounted_project = luigi.Parameter()
-
     # Other class-fields
-    slurminfo = None # Class: SlurmInfo
+    slurminfo = luigi.Parameter() # Class: SlurmInfo
     runmode = None # One of RUNMODE_LOCAL|RUNMODE_HPC|RUNMODE_MPI
 
     # A few 'constants'
