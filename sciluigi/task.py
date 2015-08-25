@@ -21,7 +21,7 @@ def new_task(name, cls, workflow_task, **kwargs): # TODO: Raise exceptions if pa
     t = cls.from_str_params(kwargs)
     return t
 
-class Task(slurm.SlurmHelpers, audit.AuditTrailHelpers, dependencies.DependencyHelpers, luigi.Task):
+class Task(audit.AuditTrailHelpers, dependencies.DependencyHelpers, luigi.Task):
     workflow_task = luigi.Parameter()
     instance_name = luigi.Parameter()
 
