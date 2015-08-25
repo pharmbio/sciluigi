@@ -1,5 +1,6 @@
 import luigi
 import parameter
+import re
 import time
 
 # ================================================================================
@@ -55,7 +56,6 @@ class SlurmInfo():
                 t = self.time,
                 j = self.jobname)
         return argstr
-
 
 # ================================================================================
 
