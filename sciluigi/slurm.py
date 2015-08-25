@@ -69,19 +69,19 @@ class SlurmHelpers():
     RUNMODE_MPI = 'runmode_mpi'
 
     # Main Execution methods
-    def exec(self, command):
+    def ex(self, command):
         '''
         Execute either locally or via SLURM, depending on config
         '''
         if self.runmode == self.RUNMODE_LOCAL:
-            self.exec_local(command)
+            self.ex_local(command)
         elif self.runmode == self.RUNMODE_HPC:
-            self.exec_hpc(command)
+            self.ex_hpc(command)
         elif self.runmode == self.RUNMODE_MPI:
-            self.exec_mpi(command)
+            self.ex_mpi(command)
 
 
-    def exec_local(self, command):
+    def ex_local(self, command):
         # If list, convert to string
         if isinstance(command, list):
             command = ' '.join(command)
@@ -98,24 +98,24 @@ class SlurmHelpers():
         return (status, output)
 
 
-    def exec_hpc(self, command):
+    def ex_hpc(self, command):
         if isinstance(command, list):
             command = ' '.join(command)
 
-        (status, output) = self.exec_local(slurm_part + command)
+        (status, output) = self.ex_local(slurm_part + command)
 
         # TODO: Do this only if audit logging is activated!
         self.log_slurm_info(output)
         return (status, output)
 
 
-    def exec_mpi(self, command):
+    def ex_mpi(self, command):
         if isinstance(command, list):
             command = ' '.join(command)
 
         fullcommand = 'salloc %s %s' % (self.slurminfo.get_argstr_mpi(), command)
 
-        (status, output) = self.exec_local(fullcommand)
+        (status, output) = self.ex_local(fullcommand)
 
         # TODO: Do this only if audit logging is activated!
         self.log_slurm_info(output)
@@ -144,7 +144,7 @@ class SlurmHelpers():
                 tsv_writer = csv.writer(alog, delimiter='\t')
                 tsv_writer.writerow(['slurm_jobid', jobid])
                 # Write slurm execution time to audit log
-                (jobinfo_status, jobinfo_output) = self.exec_local('/usr/bin/sacct -j {jobid} --noheader --format=elapsed'.format(jobid=jobid))
+                (jobinfo_status, jobinfo_output) = self.ex_local('/usr/bin/sacct -j {jobid} --noheader --format=elapsed'.format(jobid=jobid))
                 last_line = jobinfo_output.split('\n')[-1]
                 sacct_matches = re.search('([0-9\:\-]+)',last_line)
                 if sacct_matches:
