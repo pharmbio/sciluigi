@@ -68,6 +68,7 @@ class ExternalTask(audit.AuditTrailHelpers, dependencies.DependencyHelpers, luig
 class WorkflowTask(audit.AuditTrailHelpers, luigi.Task):
 
     _auditlog = []
+    _auditinfo = {}
 
     def workflow(self):
         raise WorkflowNotImplementedException('workflow() method is not implemented, for ' + str(self))
@@ -93,6 +94,18 @@ class WorkflowTask(audit.AuditTrailHelpers, luigi.Task):
 
     def log_audit(self, line):
         self._auditlog.append(line)
+
+    def add_auditinfo(self, instance_name, infotype, infoval):
+        if not instance_name in self._auditinfo:
+            self._auditinfo[instance_name] = {}
+        self._auditinfo[instance_name][infotype] = infoval
+
+    def get_auditinfo(self, instance_name, infotype, infoval):
+        if not instance_name in self._auditinfo:
+            raise Exception('Audit info not available for task %s' % instance_name)
+        if not infotype in self._auditinfo[instance_name]:
+            raise Exception('Info %s not available for task %s' % (infotype, instance_name))
+        return self._auditinfo[instance_name][infotype]
 
 
 class WorkflowNotImplementedException(Exception):
