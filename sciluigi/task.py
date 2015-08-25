@@ -70,21 +70,44 @@ class ExternalTask(audit.AuditTrailHelpers, dependencies.DependencyHelpers, luig
 
 class WorkflowTask(audit.AuditTrailHelpers, luigi.Task):
 
-    _auditlog = []
+    instance_name = luigi.Parameter(default='sciluigi_workflow')
+
     _auditinfo = {}
+    _wflogpath = ''
+
+    def _get_wflogpath(self):
+        if self._wflogpath == '':
+            clsname = self.__class__.__name__.lower()
+            timestamp = time.strftime('%Y%m%d_%H%M%S', time.localtime())
+            self._wflogpath = 'workflow_' + clsname + '_started_{t}.log'.format(t=timestamp)
+        return self._wflogpath
+
+    def _add_auditinfo(self, infotype, infoval):
+        self.add_auditinfo(self.instance_name, infotype, infoval)
+
+    def add_auditinfo(self, instance_name, infotype, infoval):
+        if not instance_name in self._auditinfo:
+            self._auditinfo[instance_name] = {}
+        self._auditinfo[instance_name][infotype] = infoval
 
     def workflow(self):
         raise WorkflowNotImplementedException('workflow() method is not implemented, for ' + str(self))
 
     def requires(self):
+        wflog = logging.getLogger('sciluigi-interface')
+        wflog_formatter = logging.Formatter('%(asctime)s: %(message)s','%Y-%m-%d %H:%M:%S')
+        wflog_file_handler = logging.FileHandler(self.output()['log'].path)
+        wflog_file_handler.setLevel(logging.INFO)
+        wflog_file_handler.setFormatter(wflog_formatter)
+        wflog.addHandler(wflog_file_handler)
         return self.workflow()
 
     def output(self):
         timestamp = time.strftime('%Y%m%d_%H%M%S', time.localtime())
-        clsname = self.__class__.__name__
-        basename = 'workflow_' + clsname.lower() + '_completed_{t}'.format(t=timestamp)
-        return {'log': luigi.LocalTarget(basename + '.log'),
-                'audit': luigi.LocalTarget(basename + '.audit')}
+        clsname = self.__class__.__name__.lower()
+        auditlogname = 'workflow_' + clsname + '_stopped_{t}.audit'.format(t=timestamp)
+        return {'log': luigi.LocalTarget(self._get_wflogpath()),
+                'audit': luigi.LocalTarget(auditlogname)}
 
     def run(self):
         # Write Audit log file
@@ -93,23 +116,9 @@ class WorkflowTask(audit.AuditTrailHelpers, luigi.Task):
                 auditfile.write('\n[%s]\n' % taskname)
                 for infotype, infoval in self._auditinfo[taskname].iteritems():
                     auditfile.write('%s: %s\n' % (infotype, infoval))
-        # Write log file
-        with self.output()['log'].open('w') as logfile:
-            logfile.writelines([line + '\n' for line in self._auditlog])
-            logfile.write('{time}: {wfname} workflow finished\n'.format(
-                            wfname=self.task_family,
-                            time=timelog()))
 
     def new_task(self, instance_name, cls, **kwargs):
         return new_task(instance_name, cls, self, **kwargs)
-
-    def log_audit(self, line):
-        self._auditlog.append(line)
-
-    def add_auditinfo(self, instance_name, infotype, infoval):
-        if not instance_name in self._auditinfo:
-            self._auditinfo[instance_name] = {}
-        self._auditinfo[instance_name][infotype] = infoval
 
     def get_auditinfo(self, instance_name, infotype, infoval):
         if not instance_name in self._auditinfo:
