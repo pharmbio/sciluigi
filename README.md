@@ -121,7 +121,7 @@ class MergeFiles(sl.Task):
 # ------------------------------------------------------------------------
 
 if __name__ == '__main__':
-    sl.run_locally()
+    sl.run_local()
 ```
 
 Then you would run this as:
