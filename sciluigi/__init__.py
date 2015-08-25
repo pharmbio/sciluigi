@@ -9,7 +9,7 @@ from sciluigi import util
 
 # interface
 run = interface.run
-run_locally = interface.run_locally
+run_local = interface.run_local
 
 # dependencies module
 TargetInfo = dependencies.TargetInfo
