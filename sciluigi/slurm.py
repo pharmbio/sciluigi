@@ -3,7 +3,15 @@ import time
 
 # ================================================================================
 
-class SlurmInfo(object):
+# A few 'constants'
+RUNMODE_LOCAL = 'runmode_local'
+RUNMODE_HPC = 'runmode_hpc'
+RUNMODE_MPI = 'runmode_mpi'
+
+# ================================================================================
+
+class SlurmInfo():
+    runmode = None # One of RUNMODE_LOCAL|RUNMODE_HPC|RUNMODE_MPI
     project = None
     partition = None
     cores = None
@@ -11,7 +19,8 @@ class SlurmInfo(object):
     jobname = None
     threads = None
 
-    def __init__(self, project, partition, cores, time, jobname, threads):
+    def __init__(self, runmode, project, partition, cores, time, jobname, threads):
+        self.runmode = runmode
         self.project = project
         self.partition = partition
         self.cores = cores
@@ -57,13 +66,7 @@ class SlurmHelpers():
     Mixin with various convenience methods for executing jobs via SLURM
     '''
     # Other class-fields
-    slurminfo = luigi.Parameter() # Class: SlurmInfo
-    runmode = None # One of RUNMODE_LOCAL|RUNMODE_HPC|RUNMODE_MPI
-
-    # A few 'constants'
-    RUNMODE_LOCAL = 'runmode_local'
-    RUNMODE_HPC = 'runmode_hpc'
-    RUNMODE_MPI = 'runmode_mpi'
+    slurminfo = luigi.Parameter(default=None) # Class: SlurmInfo
 
     # Main Execution methods
     def ex(self, command):
