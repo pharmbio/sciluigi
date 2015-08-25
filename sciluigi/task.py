@@ -1,12 +1,14 @@
-import luigi
 import audit
-from util import *
+from collections import namedtuple
+import commands
 import dependencies
-import time
+import luigi
+import logging as log
 import random
 import slurm
 import string
-from collections import namedtuple
+import time
+from util import *
 
 # ==============================================================================
 
