@@ -2,13 +2,16 @@ import audit
 from collections import namedtuple
 import commands
 import dependencies
+import interface
 import luigi
-import logging as log
+import logging
 import random
 import slurm
 import string
 import time
 from util import *
+
+log = logging.getLogger('sciluigi-interface')
 
 # ==============================================================================
 
