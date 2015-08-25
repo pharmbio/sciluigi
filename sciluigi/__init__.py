@@ -15,6 +15,9 @@ TargetInfo = dependencies.TargetInfo
 TargetInfoParameter = dependencies.TargetInfoParameter
 DependencyHelpers = dependencies.DependencyHelpers
 
+# parameter module
+Parameter = parameter.Parameter
+
 # task module
 new_task = task.new_task
 Task = task.Task
