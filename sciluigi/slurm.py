@@ -74,28 +74,11 @@ class SlurmHelpers():
         Execute either locally or via SLURM, depending on config
         '''
         if self.runmode == self.RUNMODE_LOCAL:
-            self.ex_local(command)
+            self.ex_local(command) # Defined in task.py
         elif self.runmode == self.RUNMODE_HPC:
             self.ex_hpc(command)
         elif self.runmode == self.RUNMODE_MPI:
             self.ex_mpi(command)
-
-
-    def ex_local(self, command):
-        # If list, convert to string
-        if isinstance(command, list):
-            command = ' '.join(command)
-
-        log.info('Executing command: ' + str(command))
-        (status, output) = commands.getstatusoutput(command) # TODO: Replace with subprocess call!
-
-        # Take care of errors
-        if status != 0:
-            msg = 'Command failed: {cmd}\nOutput:\n{output}'.format(cmd=command, output=output)
-            log.error(msg)
-            raise Exception(msg)
-
-        return (status, output)
 
 
     def ex_hpc(self, command):

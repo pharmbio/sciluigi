@@ -25,6 +25,28 @@ class Task(audit.AuditTrailHelpers, dependencies.DependencyHelpers, luigi.Task):
     workflow_task = luigi.Parameter()
     instance_name = luigi.Parameter()
 
+    def ex_local(self, command):
+        # If list, convert to string
+        if isinstance(command, list):
+            command = ' '.join(command)
+
+        log.info('Executing command: ' + str(command))
+        (status, output) = commands.getstatusoutput(command) # TODO: Replace with subprocess call!
+
+        # Take care of errors
+        if status != 0:
+            msg = 'Command failed: {cmd}\nOutput:\n{output}'.format(cmd=command, output=output)
+            log.error(msg)
+            raise Exception(msg)
+
+        return (status, output)
+
+    def ex(self, command):
+        '''
+        This is a short-hand function, to be overridden e.g. if supporting execution via SLURM
+        '''
+        return self.ex_local(command)
+
 # ==============================================================================
 
 class ExternalTask(audit.AuditTrailHelpers, dependencies.DependencyHelpers, luigi.ExternalTask):
