@@ -34,8 +34,7 @@ class SlurmInfo():
         Return a formatted string with arguments and option flags to SLURM
         commands such as salloc and sbatch, for non-MPI, HPC jobs.
         '''
-        #FIXME: Double-check the format of this one!
-        argstr = ' -A {pr} -p {pt} -n {c} -t {t} -J {j} '.format(
+        argstr = ' -A {pr} -p {pt} -n {c} -t {t} -J {j} srun -n 1 -c {thr} '.format(
                 pr = self.project,
                 pt = self.partition,
                 c = self.cores,
@@ -49,13 +48,12 @@ class SlurmInfo():
         Return a formatted string with arguments and option flags to SLURM
         commands such as salloc and sbatch, for MPI jobs.
         '''
-        argstr = ' -A {pr} -p {pt} -n {c} -t {t} -J {j} srun -n 1 -c {thr} '.format(
+        argstr = ' -A {pr} -p {pt} -n {c} -t {t} -J {j} mpirun -v -np {c} '.format(
                 pr = self.project,
                 pt = self.partition,
                 c = self.cores,
                 t = self.time,
-                j = self.jobname,
-                thr = self.threads)
+                j = self.jobname)
         return argstr
 
 
@@ -92,7 +90,8 @@ class SlurmHelpers():
         if isinstance(command, list):
             command = ' '.join(command)
 
-        (status, output) = self.ex_local(slurm_part + command)
+        fullcommand = 'salloc %s %s' % (self.slurminfo.get_argstr_hpc(), command)
+        (status, output) = self.ex_local(fullcommand)
 
         # TODO: Do this only if audit logging is activated!
         self.log_slurm_info(output)
@@ -104,7 +103,6 @@ class SlurmHelpers():
             command = ' '.join(command)
 
         fullcommand = 'salloc %s %s' % (self.slurminfo.get_argstr_mpi(), command)
-
         (status, output) = self.ex_local(fullcommand)
 
         # TODO: Do this only if audit logging is activated!
