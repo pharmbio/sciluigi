@@ -129,21 +129,23 @@ class SlurmHelpers():
         matches = re.search('[0-9]+', command_output)
         if matches:
             jobid = matches.group(0)
-            with open(self.auditlog_file, 'a') as alog:
-                # Write jobid to audit log
-                tsv_writer = csv.writer(alog, delimiter='\t')
-                tsv_writer.writerow(['slurm_jobid', jobid])
-                # Write slurm execution time to audit log
-                (jobinfo_status, jobinfo_output) = self.ex_local('/usr/bin/sacct -j {jobid} --noheader --format=elapsed'.format(jobid=jobid))
-                last_line = jobinfo_output.split('\n')[-1]
-                sacct_matches = re.search('([0-9\:\-]+)',last_line)
-                if sacct_matches:
-                    slurm_exectime_fmted = sacct_matches.group(1)
-                    # Date format needs to be handled differently if the days field is included
-                    if '-' in slurm_exectime_fmted:
-                        t = time.strptime(slurm_exectime_fmted, '%d-%H:%M:%S')
-                        self.slurm_exectime_sec = int(datetime.timedelta(t.tm_mday, t.tm_sec, 0, 0, t.tm_min, t.tm_hour).total_seconds())
-                    else:
-                        t = time.strptime(slurm_exectime_fmted, '%H:%M:%S')
-                        self.slurm_exectime_sec = int(datetime.timedelta(0, t.tm_sec, 0, 0, t.tm_min, t.tm_hour).total_seconds())
-                    tsv_writer.writerow(['slurm_exectime_sec', int(self.slurm_exectime_sec)])
+            self.workflow_task.add_auditinfo(self.instance_name, 'slurm_jobid', jobid)
+
+            # Write slurm execution time to audit log
+            (jobinfo_status, jobinfo_output) = self.ex_local('/usr/bin/sacct -j {jobid} --noheader --format=elapsed'.format(jobid=jobid))
+            last_line = jobinfo_output.split('\n')[-1]
+            sacct_matches = re.search('([0-9\:\-]+)',last_line)
+
+            if sacct_matches:
+                slurm_exectime_fmted = sacct_matches.group(1)
+                # Date format needs to be handled differently if the days field is included
+                if '-' in slurm_exectime_fmted:
+                    t = time.strptime(slurm_exectime_fmted, '%d-%H:%M:%S')
+                    self.slurm_exectime_sec = int(datetime.timedelta(t.tm_mday, t.tm_sec, 0, 0, t.tm_min, t.tm_hour).total_seconds())
+                else:
+                    t = time.strptime(slurm_exectime_fmted, '%H:%M:%S')
+                    self.slurm_exectime_sec = int(datetime.timedelta(0, t.tm_sec, 0, 0, t.tm_min, t.tm_hour).total_seconds())
+
+                self.workflow_task.add_auditinfo(self.instance_name, 'slurm_exectime_sec', int(self.slurm_exectime_sec))
+            else:
+                log.warn('No matches from sacct for task %s' % self.instance_name)
