@@ -79,13 +79,21 @@ class WorkflowTask(audit.AuditTrailHelpers, luigi.Task):
     def output(self):
         timestamp = time.strftime('%Y%m%d_%H%M%S', time.localtime())
         clsname = self.__class__.__name__
-        return luigi.LocalTarget('workflow_' + clsname.lower() + '_completed_at_{t}.txt'.format(t=timestamp))
+        basename = 'workflow_' + clsname.lower() + '_completed_{t}'.format(t=timestamp)
+        return {'log': luigi.LocalTarget(basename + '.log'),
+                'audit': luigi.LocalTarget(basename + '.audit')}
 
     def run(self):
-        with self.output().open('w') as outfile:
-            outfile.writelines([line + '\n' for line in self._auditlog])
-            outfile.write('-'*80 + '\n')
-            outfile.write('{time}: {wfname} workflow finished\n'.format(
+        # Write Audit log file
+        with self.output()['audit'].open('w') as auditfile:
+            for taskname, taskinfo in self._auditinfo.iteritems():
+                auditfile.write('\n[%s]\n' % taskname)
+                for infotype, infoval in self._auditinfo[taskname].iteritems():
+                    auditfile.write('%s: %s\n' % (infotype, infoval))
+        # Write log file
+        with self.output()['log'].open('w') as logfile:
+            logfile.writelines([line + '\n' for line in self._auditlog])
+            logfile.write('{time}: {wfname} workflow finished\n'.format(
                             wfname=self.task_family,
                             time=timelog()))
 
