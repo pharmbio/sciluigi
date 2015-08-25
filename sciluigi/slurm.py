@@ -1,11 +1,14 @@
 import datetime
-import logging as log
+import logging
 import luigi
 import parameter
 import re
 import time
 
 # ================================================================================
+
+# Setup logging
+log = logging.getLogger('sciluigi-interface')
 
 # A few 'constants'
 RUNMODE_LOCAL = 'runmode_local'
@@ -80,11 +83,15 @@ class SlurmHelpers():
         '''
         Execute either locally or via SLURM, depending on config
         '''
+        command_str = ' '.join(command)
         if self.slurminfo.runmode == RUNMODE_LOCAL:
+            log.info('Executing command in local mode: %s' % command_str)
             self.ex_local(command) # Defined in task.py
         elif self.slurminfo.runmode == RUNMODE_HPC:
+            log.info('Executing command in HPC mode: %s' % command_str)
             self.ex_hpc(command)
         elif self.slurminfo.runmode == RUNMODE_MPI:
+            log.info('Executing command in MPI mode: %s' % command_str)
             self.ex_mpi(command)
 
 
@@ -147,7 +154,7 @@ class SlurmHelpers():
 
                 self.workflow_task.add_auditinfo(self.instance_name, 'slurm_exectime_sec', int(self.slurm_exectime_sec))
             else:
-                log.warn('No matches from sacct for task %s' % self.instance_name)
+                log.error('No matches from sacct for task %s' % self.instance_name)
 
             # Write this last, so as to get the main task exectime and slurm exectime together in audit log later
             self.workflow_task.add_auditinfo(self.instance_name, 'slurm_jobid', jobid)
