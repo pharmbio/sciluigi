@@ -129,7 +129,6 @@ class SlurmHelpers():
         matches = re.search('[0-9]+', command_output)
         if matches:
             jobid = matches.group(0)
-            self.workflow_task.add_auditinfo(self.instance_name, 'slurm_jobid', jobid)
 
             # Write slurm execution time to audit log
             (jobinfo_status, jobinfo_output) = self.ex_local('/usr/bin/sacct -j {jobid} --noheader --format=elapsed'.format(jobid=jobid))
@@ -149,3 +148,6 @@ class SlurmHelpers():
                 self.workflow_task.add_auditinfo(self.instance_name, 'slurm_exectime_sec', int(self.slurm_exectime_sec))
             else:
                 log.warn('No matches from sacct for task %s' % self.instance_name)
+
+            # Write this last, so as to get the main task exectime and slurm exectime together in audit log later
+            self.workflow_task.add_auditinfo(self.instance_name, 'slurm_jobid', jobid)

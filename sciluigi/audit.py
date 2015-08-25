@@ -25,7 +25,7 @@ class AuditTrailHelpers():
     @luigi.Task.event_handler(luigi.Event.START)
     def save_start_time(self):
         if hasattr(self, 'workflow_task') and self.workflow_task is not None:
-            msg = '{time}: {task} started'.format(
+            msg = '{time} {task} started'.format(
                     time = self.get_timestamp(),
                     task = self.get_instance_name())
             self.workflow_task.log_audit(msg)
