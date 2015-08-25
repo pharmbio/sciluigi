@@ -80,11 +80,11 @@ class SlurmHelpers():
         '''
         Execute either locally or via SLURM, depending on config
         '''
-        if self.runmode == self.RUNMODE_LOCAL:
+        if self.slurminfo.runmode == RUNMODE_LOCAL:
             self.ex_local(command) # Defined in task.py
-        elif self.runmode == self.RUNMODE_HPC:
+        elif self.slurminfo.runmode == RUNMODE_HPC:
             self.ex_hpc(command)
-        elif self.runmode == self.RUNMODE_MPI:
+        elif self.slurminfo.runmode == RUNMODE_MPI:
             self.ex_mpi(command)
 
 
