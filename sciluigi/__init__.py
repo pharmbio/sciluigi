@@ -24,6 +24,9 @@ WorkflowTask = task.WorkflowTask
 # slurm module
 SlurmInfo = slurm.SlurmInfo
 SlurmHelpers = slurm.SlurmHelpers
+RUNMODE_LOCAL = slurm.RUNMODE_LOCAL
+RUNMODE_HPC = slurm.RUNMODE_HPC
+RUNMODE_MPI = slurm.RUNMODE_MPI
 
 # audit module
 AuditTrailHelpers = audit.AuditTrailHelpers
