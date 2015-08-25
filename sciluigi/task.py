@@ -11,14 +11,22 @@ from collections import namedtuple
 # ==============================================================================
 
 def new_task(name, cls, workflow_task, **kwargs): # TODO: Raise exceptions if params not of right type
-    for k, v in kwargs.iteritems():
+    for k, v in [(k,v) for k,v in kwargs.iteritems()]:
+        # Handle non-string keys
         if not isinstance(k, basestring):
             raise Exception("Key in kwargs to new_task is not string. Must be string: %s" % k)
-        if not isinstance(v, basestring):
+        # Handle non-string values
+        slurminfo = None
+        if isinstance(v, slurm.SlurmInfo):
+            slurminfo = v
+            kwargs[k] = v
+        elif not isinstance(v, basestring):
             kwargs[k] = str(v) # Force conversion into string
     kwargs['instance_name'] = name
     kwargs['workflow_task'] = workflow_task
     t = cls.from_str_params(kwargs)
+    if slurminfo is not None:
+        t.slurminfo = slurminfo
     return t
 
 class Task(audit.AuditTrailHelpers, dependencies.DependencyHelpers, luigi.Task):
