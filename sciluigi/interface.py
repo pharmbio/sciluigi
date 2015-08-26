@@ -7,8 +7,8 @@ def setup_logging():
     log_path = 'log/sciluigi_run_%s.log' % util.timepath()
 
     # Formatter
-    luigi_log_formatter = logging.Formatter('%(asctime)s %(levelname)s LUIGI    %(message)s','%Y-%m-%d %H:%M:%S')
-    sciluigi_log_formatter = logging.Formatter('%(asctime)s %(levelname)s SCILUIGI %(message)s','%Y-%m-%d %H:%M:%S')
+    luigi_log_formatter = logging.Formatter('%(asctime)s %(levelname)8s    LUIGI %(message)s','%Y-%m-%d %H:%M:%S')
+    sciluigi_log_formatter = logging.Formatter('%(asctime)s %(levelname)8s SCILUIGI %(message)s','%Y-%m-%d %H:%M:%S')
 
     # Stream handler (for STDERR)
     luigi_stream_handler = logging.StreamHandler()
@@ -30,7 +30,7 @@ def setup_logging():
 
     # Loggers
     luigi_logger = logging.getLogger('luigi-interface')
-    luigi_logger.addHandler(luigi_stream_handler)
+    #luigi_logger.addHandler(luigi_stream_handler)
     luigi_logger.addHandler(luigi_file_handler)
     luigi_logger.setLevel(logging.DEBUG)
     luigi.interface.setup_interface_logging.has_run = True

@@ -95,7 +95,7 @@ class WorkflowTask(audit.AuditTrailHelpers, luigi.Task):
 
     def requires(self):
         wflog = logging.getLogger('sciluigi-interface')
-        wflog_formatter = logging.Formatter('%(asctime)s: %(message)s','%Y-%m-%d %H:%M:%S')
+        wflog_formatter = logging.Formatter('%(asctime)s %(message)s','%Y-%m-%d %H:%M:%S')
         wflog_file_handler = logging.FileHandler(self.output()['log'].path)
         wflog_file_handler.setLevel(logging.INFO)
         wflog_file_handler.setFormatter(wflog_formatter)
