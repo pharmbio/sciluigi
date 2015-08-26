@@ -100,11 +100,10 @@ class SlurmHelpers():
             command = ' '.join(command)
 
         fullcommand = 'salloc %s %s' % (self.slurminfo.get_argstr_hpc(), command)
-        (status, output) = self.ex_local(fullcommand)
+        (retcode, stdout, stderr) = self.ex_local(fullcommand)
 
-        # TODO: Do this only if audit logging is activated!
-        self.log_slurm_info(output)
-        return (status, output)
+        self.log_slurm_info(stderr)
+        return (retcode, stdout, stderr)
 
 
     def ex_mpi(self, command):
@@ -112,11 +111,10 @@ class SlurmHelpers():
             command = ' '.join(command)
 
         fullcommand = 'salloc %s %s' % (self.slurminfo.get_argstr_mpi(), command)
-        (status, output) = self.ex_local(fullcommand)
+        (retcode, stdout, stderr) = self.ex_local(fullcommand)
 
-        # TODO: Do this only if audit logging is activated!
-        self.log_slurm_info(output)
-        return (status, output)
+        self.log_slurm_info(stderr)
+        return (retcode, stdout, stderr)
 
 
     # Various convenience methods
@@ -131,19 +129,25 @@ class SlurmHelpers():
     #def get_task_config(self, name):
     #    return luigi.configuration.get_config().get(self.task_family, name)
 
-    #FIXME: Fix this big mess below!
-    def log_slurm_info(self, command_output):
-        matches = re.search('[0-9]+', command_output)
+    def log_slurm_info(self, slurm_stderr):
+        '''
+        Parse information of the following example form:
+        salloc: Granted job allocation 5836263\nsrun: Job step created\nsalloc: Relinquishing job allocation 5836263\nsalloc: Job allocation 5836263 has been revoked.\n
+        '''
+
+        matches = re.search('[0-9]+', slurm_stderr)
         if matches:
             jobid = matches.group(0)
 
             # Write slurm execution time to audit log
-            (jobinfo_status, jobinfo_output) = self.ex_local('/usr/bin/sacct -j {jobid} --noheader --format=elapsed'.format(jobid=jobid))
-            last_line = jobinfo_output.split('\n')[-1]
-            sacct_matches = re.search('([0-9\:\-]+)',last_line)
+            (jobinfo_retcode, jobinfo_stdout, jobinfo_stderr) = self.ex_local('/usr/bin/sacct -j {jobid} --noheader --format=elapsed'.format(jobid=jobid))
+            last_line = jobinfo_stdout.split('\n')[-1]
+            sacct_matches = re.findall('([0-9\:\-]+)', jobinfo_stdout)
 
-            if sacct_matches:
-                slurm_exectime_fmted = sacct_matches.group(1)
+            if len(sacct_matches) < 2:
+                log.warn('Not enough matches from sacct for task %s: %s' % (self.instance_name, ', '.join(['Match: %s' % m for m in sacct_matches])))
+            else:
+                slurm_exectime_fmted = sacct_matches[1]
                 # Date format needs to be handled differently if the days field is included
                 if '-' in slurm_exectime_fmted:
                     t = time.strptime(slurm_exectime_fmted, '%d-%H:%M:%S')
@@ -154,8 +158,6 @@ class SlurmHelpers():
 
                 log.info('Slurm execution time for task %s was %ss' % (self.instance_name, self.slurm_exectime_sec))
                 self.workflow_task.add_auditinfo(self.instance_name, 'slurm_exectime_sec', int(self.slurm_exectime_sec))
-            else:
-                log.error('No matches from sacct for task %s' % self.instance_name)
 
             # Write this last, so as to get the main task exectime and slurm exectime together in audit log later
             self.workflow_task.add_auditinfo(self.instance_name, 'slurm_jobid', jobid)
