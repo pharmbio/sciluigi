@@ -27,6 +27,7 @@ WorkflowTask = task.WorkflowTask
 
 # slurm module
 SlurmInfo = slurm.SlurmInfo
+SlurmTask = slurm.SlurmTask
 SlurmHelpers = slurm.SlurmHelpers
 RUNMODE_LOCAL = slurm.RUNMODE_LOCAL
 RUNMODE_HPC = slurm.RUNMODE_HPC

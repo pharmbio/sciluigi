@@ -3,6 +3,7 @@ import logging
 import luigi
 import parameter
 import re
+import task
 import time
 
 # ================================================================================
@@ -161,3 +162,8 @@ class SlurmHelpers():
 
             # Write this last, so as to get the main task exectime and slurm exectime together in audit log later
             self.workflow_task.add_auditinfo(self.instance_name, 'slurm_jobid', jobid)
+
+# ================================================================================
+
+class SlurmTask(SlurmHelpers, task.Task):
+    pass
