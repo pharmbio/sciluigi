@@ -1,6 +1,5 @@
 import audit
 from collections import namedtuple
-import commands
 import dependencies
 import interface
 import luigi
@@ -8,6 +7,7 @@ import logging
 import random
 import slurm
 import string
+import subprocess as sub
 import time
 from util import *
 
@@ -41,18 +41,28 @@ class Task(audit.AuditTrailHelpers, dependencies.DependencyHelpers, luigi.Task):
     def ex_local(self, command):
         # If list, convert to string
         if isinstance(command, list):
-            command = ' '.join(command)
+            command = sub.list2cmdline(command)
 
         log.info('Executing command: ' + str(command))
-        (status, output) = commands.getstatusoutput(command) # TODO: Replace with subprocess call!
+        proc = sub.Popen(command, shell=True, stdout=sub.PIPE, stderr=sub.PIPE)
+        stdout, stderr = proc.communicate()
+        retcode = proc.returncode
 
-        # Take care of errors
-        if status != 0:
-            msg = 'Command failed: {cmd}\nOutput:\n{output}'.format(cmd=command, output=output)
-            log.error(msg)
-            raise Exception(msg)
+        if len(stderr) > 0:
+            log.debug('Stderr from command: %s' % stderr)
 
-        return (status, output)
+        if retcode != 0:
+            errmsg = ('Command failed (retcode {ret}): {cmd}\n'
+                      'Command output: {out}\n'
+                      'Command stderr: {err}').format(
+                    ret=retcode,
+                    cmd=command,
+                    out=stdout,
+                    err=stderr)
+            log.error(errmsg)
+            raise Exception(errmsg)
+
+        return (retcode, stdout, stderr)
 
     def ex(self, command):
         '''
