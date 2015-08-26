@@ -28,7 +28,8 @@ def setup_logging():
     # Loggers
     luigi_logger = logging.getLogger('luigi-interface')
     luigi_logger.addHandler(luigi_file_handler)
-    luigi_logger.setLevel(logging.DEBUG)
+    luigi_logger.addHandler(stream_handler)
+    luigi_logger.setLevel(logging.WARN)
     luigi.interface.setup_interface_logging.has_run = True
 
     sciluigi_logger = logging.getLogger('sciluigi-interface')
