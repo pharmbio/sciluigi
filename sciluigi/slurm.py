@@ -152,6 +152,7 @@ class SlurmHelpers():
                     t = time.strptime(slurm_exectime_fmted, '%H:%M:%S')
                     self.slurm_exectime_sec = int(datetime.timedelta(0, t.tm_sec, 0, 0, t.tm_min, t.tm_hour).total_seconds())
 
+                log.info('Slurm execution time for task %s was %ss' % (self.instance_name, self.slurm_exectime_sec))
                 self.workflow_task.add_auditinfo(self.instance_name, 'slurm_exectime_sec', int(self.slurm_exectime_sec))
             else:
                 log.error('No matches from sacct for task %s' % self.instance_name)

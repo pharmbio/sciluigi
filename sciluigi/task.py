@@ -66,7 +66,7 @@ class ExternalTask(audit.AuditTrailHelpers, dependencies.DependencyHelpers, luig
     workflow_task = luigi.Parameter()
     instance_name = luigi.Parameter()
 
-# ==============================================================================
+# ================================================================================
 
 class WorkflowTask(audit.AuditTrailHelpers, luigi.Task):
 
@@ -74,12 +74,16 @@ class WorkflowTask(audit.AuditTrailHelpers, luigi.Task):
 
     _auditinfo = {}
     _wflogpath = ''
+    _hasloggedstart = False
+    _hasloggedfinish = False
+    _hasaddedhandler = False
 
     def _get_wflogpath(self):
         if self._wflogpath == '':
             clsname = self.__class__.__name__.lower()
             timestamp = time.strftime('%Y%m%d_%H%M%S', time.localtime())
             self._wflogpath = 'workflow_' + clsname + '_started_{t}.log'.format(t=timestamp)
+            log.info('Logging to %s' % self._wflogpath)
         return self._wflogpath
 
     def _add_auditinfo(self, infotype, infoval):
@@ -94,12 +98,19 @@ class WorkflowTask(audit.AuditTrailHelpers, luigi.Task):
         raise WorkflowNotImplementedException('workflow() method is not implemented, for ' + str(self))
 
     def requires(self):
-        wflog = logging.getLogger('sciluigi-interface')
-        wflog_formatter = logging.Formatter('%(asctime)s %(message)s','%Y-%m-%d %H:%M:%S')
-        wflog_file_handler = logging.FileHandler(self.output()['log'].path)
-        wflog_file_handler.setLevel(logging.INFO)
-        wflog_file_handler.setFormatter(wflog_formatter)
-        wflog.addHandler(wflog_file_handler)
+        if not self._hasaddedhandler:
+            wflog_formatter = logging.Formatter('[%(asctime)s] %(message)s','%Y-%m-%d %H:%M:%S')
+            wflog_file_handler = logging.FileHandler(self.output()['log'].path)
+            wflog_file_handler.setLevel(logging.INFO)
+            wflog_file_handler.setFormatter(wflog_formatter)
+            log.addHandler(wflog_file_handler)
+            self._hasaddedhandler = True
+        clsname = self.__class__.__name__
+        if not self._hasloggedstart:
+            log.info('-'*80)
+            log.info('SciLuigi: %s Workflow Started' % clsname)
+            log.info('-'*80)
+            self._hasloggedstart = True
         return self.workflow()
 
     def output(self):
@@ -116,6 +127,12 @@ class WorkflowTask(audit.AuditTrailHelpers, luigi.Task):
                 auditfile.write('\n[%s]\n' % taskname)
                 for infotype, infoval in self._auditinfo[taskname].iteritems():
                     auditfile.write('%s: %s\n' % (infotype, infoval))
+        clsname = self.__class__.__name__
+        if not self._hasloggedfinish:
+            log.info('-'*80)
+            log.info('SciLuigi: %s Workflow Finished' % clsname)
+            log.info('-'*80)
+            self._hasloggedfinish = True
 
     def new_task(self, instance_name, cls, **kwargs):
         return new_task(instance_name, cls, self, **kwargs)
@@ -127,6 +144,7 @@ class WorkflowTask(audit.AuditTrailHelpers, luigi.Task):
             raise Exception('Info %s not available for task %s' % (infotype, instance_name))
         return self._auditinfo[instance_name][infotype]
 
+# ================================================================================
 
 class WorkflowNotImplementedException(Exception):
     pass
