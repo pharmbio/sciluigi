@@ -114,6 +114,8 @@ class WorkflowTask(audit.AuditTrailHelpers, luigi.Task):
             wflog_file_handler.setLevel(logging.INFO)
             wflog_file_handler.setFormatter(wflog_formatter)
             log.addHandler(wflog_file_handler)
+            luigilog = logging.getLogger('luigi-interface')
+            luigilog.addHandler(wflog_file_handler)
             self._hasaddedhandler = True
         clsname = self.__class__.__name__
         if not self._hasloggedstart:
