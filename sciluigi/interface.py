@@ -7,7 +7,7 @@ def setup_logging():
     log_path = 'log/sciluigi_run_%s.log' % util.timepath()
 
     # Formatter
-    stream_formatter = logging.Formatter('[%(asctime)s] %(message)s','%H:%M:%S')
+    stream_formatter = logging.Formatter('%(asctime)s | %(levelname)8s | %(message)s','%Y-%m-%d %H:%M:%S')
     luigi_log_formatter = logging.Formatter('%(asctime)s %(levelname)8s    LUIGI %(message)s','%Y-%m-%d %H:%M:%S')
     sciluigi_log_formatter = logging.Formatter('%(asctime)s %(levelname)8s SCILUIGI %(message)s','%Y-%m-%d %H:%M:%S')
 
