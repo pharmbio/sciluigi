@@ -11,6 +11,12 @@ from sciluigi import util
 run = interface.run
 run_local = interface.run_local
 
+# Format strings
+logfmt_stream = interface.logfmt_stream
+logfmt_luigi  = interface.logfmt_luigi
+logfmt_sciluigi  = interface.logfmt_sciluigi
+datefmt = interface.datefmt
+
 # dependencies module
 TargetInfo = dependencies.TargetInfo
 TargetInfoParameter = dependencies.TargetInfoParameter
