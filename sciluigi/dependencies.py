@@ -45,8 +45,13 @@ class DependencyHelpers():
     def _upstream_tasks(self):
         upstream_tasks = []
         for attrname, attrval in self.__dict__.iteritems():
-            if callable(attrval) and 'in_' in attrname:
-                upstream_tasks.append(attrval().task)
+            if 'in_' == attrname[0:3]:
+                if callable(attrval):
+                    upstream_tasks.append(attrval().task)
+                elif isinstance(attrval, list):
+                    upstream_tasks.extend([x for x in attrval if callable(x)])
+                else:
+                    raise Exception('Attribute with name pattern "in_*" was neither callable nor list')
         return upstream_tasks
 
     # --------------------------------------------------------
