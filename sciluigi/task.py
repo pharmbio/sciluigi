@@ -29,6 +29,7 @@ def new_task(name, cls, workflow_task, **kwargs): # TODO: Raise exceptions if pa
             kwargs[k] = str(v) # Force conversion into string
     kwargs['instance_name'] = name
     kwargs['workflow_task'] = workflow_task
+    kwargs['slurminfo'] = slurminfo
     t = cls.from_str_params(kwargs)
     if slurminfo is not None:
         t.slurminfo = slurminfo
