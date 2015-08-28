@@ -1,6 +1,10 @@
+import logging
 import luigi
 import sciluigi as sl
 from subprocess import call
+
+log = logging.getLogger('sciluigi-interface')
+
 # ------------------------------------------------------------------------
 # Workflow class(es)
 # ------------------------------------------------------------------------
@@ -35,7 +39,7 @@ class AToT(sl.Task):
 
     def run(self):
         cmd ='cat ' + self.in_data().path + ' | sed "s/A/T/g" > ' + self.out_replatot().path
-        print("COMMAND: " + cmd)
+        log.info("COMMAND TO EXECUTE: " + cmd)
         call(cmd, shell=True)
 
 
@@ -43,5 +47,4 @@ class AToT(sl.Task):
 # ------------------------------------------------------------------------
 
 if __name__ == '__main__':
-    luigi.run(local_scheduler=True)
-
+    luigi.run(local_scheduler=True, main_task_cls=MyWorkflow)
