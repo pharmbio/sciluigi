@@ -10,9 +10,11 @@ class TargetInfoParameter(luigi.Parameter):
 
 # ==============================================================================
 
-# Class to be used for sending specification of which target, from which
-# task, to use, when stitching workflow tasks' outputs and inputs together.
 class TargetInfo(object):
+    '''
+    Class to be used for sending specification of which target, from which
+    task, to use, when stitching workflow tasks' outputs and inputs together.
+    '''
     task = None
     path = None
     target = None
