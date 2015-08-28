@@ -35,9 +35,6 @@ class AuditTrailHelpers():
         if hasattr(self, 'workflow_task') and self.workflow_task is not None:
             msg = 'Task {task} started'.format(
                     task = self.get_instance_name())
-            msgtime = '{time} {msg}'.format(
-                    time = self.get_timestamp(),
-                    msg = msg)
             log.info(msg)
 
     @luigi.Task.event_handler(luigi.Event.PROCESSING_TIME)
@@ -46,8 +43,5 @@ class AuditTrailHelpers():
             msg = 'Task {task} finished after {proctime:.3f}s'.format(
                     task = self.get_instance_name(),
                     proctime = task_exectime_sec)
-            msgtime = '{time} {msg}'.format(
-                    time = self.get_timestamp(),
-                    msg = msg)
-            self._add_auditinfo('task_exectime_sec', '%.3f' % task_exectime_sec)
             log.info(msg)
+            self._add_auditinfo('task_exectime_sec', '%.3f' % task_exectime_sec)
