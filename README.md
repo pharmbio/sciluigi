@@ -1,11 +1,40 @@
 Scientific Luigi
 ================
 
-**Note: This is work in progress, with a rapidly changing API! (See feature branches for new functionality and APIs being developed). API expected to stabilize during summer 2015.**
+**Note: this library is still work in progress, but it is fast nearing completion, and right now being put in production (as of August 29, 2015)**
 
-Extra helper methods for writing scientific workflows in [Luigi](http://github.com/spotify/luigi).
+Scientific Luigi (or SciLuigi, for short) is a light-weight wrapper library around Spotify's [Luigi](http://github.com/spotify/luigi)
+workflow system that aims to make writing scientific workflows consisting of
+numerous interdependent commandline applicatoins, more fluent, flexible and
+modular.
 
-More info is coming, but this library enables to define luigi tasks and workflows
+It was designed to solve some very real problem we were facing when trying
+to use luigi for defining complex workflows for data preprocessing and
+machine-learning, including cross-validation.
+
+Specifically, SciLuigi provides the following features over vanilla Luigi:
+
+- Separates the dependency definitions from the tasks themselves,
+  by defining dependencies "from the outside", in a workflow task,
+  where the tasks are both instantiated, and stitched together.
+- Specify dependencies between individual outputs and inputs of tasks,
+  rather than just between the tasks themselves to better capture the
+  minutiae of the data dependency network. (This also avoids creating
+  accidental dependencies between specific tasks, by task specific
+  lookups of dict structures returned by upstream tasks.)
+- Make all inputs and outputs to behave like object fields, so as to
+  allow auto-completion support to ease the network connection work.
+- Set up good default logging configuration for workflow centric tasks
+  (Luigi internal logging is turned down to only log warnings and errors,
+  while sciluigi by default logs high-level actions such as task starts,
+  finishes, and execution times.)
+- Produce an easy to read audit-log with high level information per task
+  when the workflow task has finished.
+
+The basic idea behind SciLuigi, and a preceding solution to it, was
+presented in [this Workshop talk (YouTube)](https://www.youtube.com/watch?v=f26PqSXZdWM)
+
+In terms of code, SciLuigi enables to define luigi tasks and workflows
 in the following way:
 
 ```python
