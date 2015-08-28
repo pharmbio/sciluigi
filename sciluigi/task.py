@@ -135,11 +135,16 @@ class WorkflowTask(audit.AuditTrailHelpers, luigi.Task):
 
     def run(self):
         # Write Audit log file
-        with self.output()['audit'].open('w') as auditfile:
-            for taskname, taskinfo in self._auditinfo.iteritems():
-                auditfile.write('\n[%s]\n' % taskname)
-                for infotype, infoval in self._auditinfo[taskname].iteritems():
-                    auditfile.write('%s: %s\n' % (infotype, infoval))
+        if self.output()['audit'].exists():
+            errmsg = 'Audit file already exists, when trying to create it: %s' % self.output()['audit'].path
+            log.error(errmsg)
+            raise Exception(errmsg)
+        else:
+            with self.output()['audit'].open('w') as auditfile:
+                for taskname, taskinfo in self._auditinfo.iteritems():
+                    auditfile.write('\n[%s]\n' % taskname)
+                    for infotype, infoval in self._auditinfo[taskname].iteritems():
+                        auditfile.write('%s: %s\n' % (infotype, infoval))
         clsname = self.__class__.__name__
         if not self._hasloggedfinish:
             log.info('-'*80)
