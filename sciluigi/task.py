@@ -16,12 +16,12 @@ log = logging.getLogger('sciluigi-interface')
 # ==============================================================================
 
 def new_task(name, cls, workflow_task, **kwargs): # TODO: Raise exceptions if params not of right type
+    slurminfo = None
     for k, v in [(k,v) for k,v in kwargs.iteritems()]:
         # Handle non-string keys
         if not isinstance(k, basestring):
             raise Exception("Key in kwargs to new_task is not string. Must be string: %s" % k)
         # Handle non-string values
-        slurminfo = None
         if isinstance(v, slurm.SlurmInfo):
             slurminfo = v
             kwargs[k] = v
