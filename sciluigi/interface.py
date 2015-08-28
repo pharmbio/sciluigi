@@ -48,5 +48,5 @@ def run(*args, **kwargs):
     log = logging.getLogger('sciluigi-interface')
     luigi.run(*args, **kwargs)
 
-def run_local():
-    run(local_scheduler=True)
+def run_local(*args, **kwargs):
+    run(local_scheduler=True, *args, **kwargs)

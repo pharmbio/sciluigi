@@ -1,3 +1,4 @@
+import logging
 import luigi
 import sciluigi as sl
 import math
@@ -6,6 +7,12 @@ import subprocess as sub
 import sys
 import requests
 import time
+
+# ------------------------------------------------------------------------
+# Init logging
+# ------------------------------------------------------------------------
+
+log = logging.getLogger('sciluigi-interface')
 
 # ------------------------------------------------------------------------
 # Workflow class
@@ -131,7 +138,8 @@ class SplitAFile(sl.Task):
     # Impl
     def run(self):
         cmd = 'wc -l {f}'.format(f=self.in_data().path )
-        wc_output = sub.check_output(cmd, shell=True)
+        status, wc_output, stderr = self.ex(cmd)
+
         lines_cnt = int(wc_output.split(' ')[0])
         head_cnt = int(math.ceil(lines_cnt / 2))
         tail_cnt = int(math.floor(lines_cnt / 2))
@@ -140,14 +148,13 @@ class SplitAFile(sl.Task):
             i=self.in_data().path,
             cnt=head_cnt,
             part1=self.out_part1().path)
-        print("COMMAND: " + cmd_head)
-        sub.call(cmd_head, shell=True)
+        log.info("COMMAND: " + cmd_head)
+        self.ex(cmd_head)
 
-        sub.call('tail -n {cnt} {i} {cnt} > {part2}'.format(
-            i=self.in_data().path,
+        self.ex('tail -n {cnt} {i} > {part2}'.format(
             cnt=tail_cnt,
-            part2=self.out_part2().path),
-        shell=True)
+            i=self.in_data().path,
+            part2=self.out_part2().path))
 
 
 class DoSomething(sl.Task):
@@ -182,15 +189,14 @@ class MergeFiles(sl.Task):
 
     # Impl
     def run(self):
-        sub.call('cat {f1} {f2} > {out}'.format(
+        self.ex('cat {f1} {f2} > {out}'.format(
             f1=self.in_part1().path,
             f2=self.in_part2().path,
-            out=self.out_merged().path),
-        shell=True)
+            out=self.out_merged().path))
 
 # ------------------------------------------------------------------------
 # Run as script
 # ------------------------------------------------------------------------
 
 if __name__ == '__main__':
-    sl.run_locally()
+    sl.run_local(main_task_cls=NGITestWF, cmdline_args=['--task=merge'])
