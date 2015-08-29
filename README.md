@@ -3,14 +3,22 @@ Scientific Luigi
 
 **Note: this library is still work in progress, but it is fast nearing completion, and right now being put in production (as of August 29, 2015)**
 
-Scientific Luigi (or SciLuigi, for short) is a light-weight wrapper library around Spotify's [Luigi](http://github.com/spotify/luigi)
-workflow system that aims to make writing scientific workflows consisting of
-numerous interdependent commandline applicatoins, more fluent, flexible and
+Scientific Luigi (SciLuigi for short) is a light-weight wrapper library around [Spotify](http://spotify.com)'s [Luigi](http://github.com/spotify/luigi)
+workflow system that aims to make writing scientific workflows (consisting of
+numerous interdependent commandline applications) more fluent, flexible and
 modular.
 
-It was designed to solve some very real problem we were facing when trying
-to use luigi for defining complex workflows for data preprocessing and
-machine-learning, including cross-validation.
+While Luigi is a great, fun-to-use, and very flexible library, its default
+way of defining dependencies, by hard coding them in each task's requires()
+function, is not optimal for the type of workflows that are common in
+scientific fields such as bioinformatics, where multiple inputs and outputs,
+complex dependencies between tools, and the need to quickly try different
+workflow connectivity (such as plugging in extra filtering steps) in an
+explorative fashion, is central to the way of working.
+
+SciLuigi was designed to solve some very real problem we were facing when trying
+to use luigi for defining complex workflows for data preprocessing,
+machine-learning and cross-validation.
 
 Specifically, SciLuigi provides the following features over vanilla Luigi:
 
@@ -20,17 +28,17 @@ Specifically, SciLuigi provides the following features over vanilla Luigi:
   "ports", to allow specifying dependencies between specific inputs
   and outputs rather than just between tasks. This is again to let such
   network definition code reside outside the tasks themselves.
-- Make all inputs and outputs to behave like object fields, so as to
+- All inputs and outputs are object fields or functions, to
   allow auto-completion support to ease the network connection work.
-- Connect inputs and outputs with an intuitive "single assignment-syntax"
-  (Similar to how you assign one value to another, in any programming)
-- Set up good default logging configuration for workflow centric tasks
+- Inputs and outputs are connected with an intuitive "single-assignment syntax"
+  (Similar to how you assign one value to another, in almost all programming)
+- Sets  up good default logging suited to
   (Luigi internal logging is turned down to only log warnings and errors,
-  while sciluigi by default is set to log high-level actions such as
-  task starts, finishes, and execution times.)
-- Produce an easy to read audit-log with high level information per task
+  while sciluigi adds logging of few high-level actions such as when a task starts,
+  finishes, and the execution times of tasks).
+- Produces an easy to read audit-log with high level information per task
   when the workflow task has finished.
-- Provide some integration with HPC workload managers. So far only [SLURM](http://slurm.schedmd.com/)
+- Provides some integration with HPC workload managers. So far only [SLURM](http://slurm.schedmd.com/)
   is supported though.
 
 The basic idea behind SciLuigi, and a preceding solution to it, was
@@ -41,8 +49,12 @@ presented in workshop (e-Infra MPS 2015) talk:
 See also [this collection of links](http://bionics.it/posts/our-experiences-using-spotifys-luigi-for-bioinformatics-workflows), to more of our reported experiences
 using Luigi, which lead up to the creation of SciLuigi.
 
+A code example
+--------------
+
 In terms of code, SciLuigi enables to define luigi tasks and workflows
-in the following way:
+in the following way (see also more examples in the examples folder in the
+source code):
 
 ```python
 import logging
@@ -199,3 +211,12 @@ Then you would run this as:
 ```bash
 python myworkflow.py
 ```
+
+Acknowledgements
+----------------
+This work is funded by:
+- [Faculty grants of the dept. of Pharmaceutical Biosciences, Uppsala University](http://www.farmbio.uu.se)
+- [Bioinformatics Infrastructure for Life Sciences, BILS](https://bils.se)
+
+Many ideas and inspiration for the API is taken from:
+- [John Paul Morrison's invention and works on Flow-Based Programming](jpaulmorrison.com/fbp)
