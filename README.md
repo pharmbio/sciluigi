@@ -34,7 +34,12 @@ Specifically, SciLuigi provides the following features over vanilla Luigi:
   is supported though.
 
 The basic idea behind SciLuigi, and a preceding solution to it, was
-presented in [this Workshop talk (YouTube)](https://www.youtube.com/watch?v=f26PqSXZdWM)
+presented in workshop (e-Infra MPS 2015) talk:
+- [Slides](http://www.slideshare.net/SamuelLampa/building-workflows-with-spotifys-luigi)
+- [Video](https://www.youtube.com/watch?v=f26PqSXZdWM)
+
+See also [this collection of links](http://bionics.it/posts/our-experiences-using-spotifys-luigi-for-bioinformatics-workflows), to more of our reported experiences
+using Luigi, which lead up to the creation of SciLuigi.
 
 In terms of code, SciLuigi enables to define luigi tasks and workflows
 in the following way:
