@@ -49,7 +49,7 @@ class DependencyHelpers():
                 if callable(attrval):
                     upstream_tasks.append(attrval().task)
                 elif isinstance(attrval, list):
-                    upstream_tasks.extend([x for x in attrval if callable(x)])
+                    upstream_tasks.extend([x().task for x in attrval if callable(x)])
                 else:
                     raise Exception('Attribute with name pattern "in_*" was neither callable nor list')
         return upstream_tasks
