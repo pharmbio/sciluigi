@@ -12,14 +12,16 @@ log.setLevel(logging.WARNING)
 
 class MultiInOutWf(sl.WorkflowTask):
     def workflow(self):
-        mo = self.new_task('mout', MultiOutTask)
+        mo = self.new_task('mout', MultiOutTask, an_id='x')
         mi = self.new_task('min', MultiInTask)
         mi.in_multi = mo.out_multi
         return mi
 
 class MultiOutTask(sl.Task):
+    an_id = luigi.Parameter()
+
     def out_multi(self):
-        return [sl.TargetInfo(self, '/tmp/out_%d.txt' % i) for i in xrange(10)]
+        return [sl.TargetInfo(self, '/tmp/out_%s_%d.txt' % (self.an_id, i)) for i in xrange(10)]
     def run(self):
         for otgt in self.out_multi():
             with otgt.open('w') as ofile:
@@ -41,11 +43,18 @@ class TestMultiInOutWorkflow(unittest.TestCase):
 
     def test_methods(self):
         wf = sl.WorkflowTask()
-        tout = wf.new_task('tout', MultiOutTask)
+        touta = wf.new_task('tout', MultiOutTask,
+            an_id='a')
+        toutb = wf.new_task('tout', MultiOutTask,
+            an_id='b')
+        toutc = wf.new_task('tout', MultiOutTask,
+            an_id='c')
         tin = wf.new_task('tout', MultiInTask)
 
+        tin.in_multi = [touta.out_multi, toutb.out_multi, toutc.out_multi]
+
         # Assert outputs returns luigi targets, or list of luigi targets
-        outs = tout.output()
+        outs = touta.output()
         self.assertIsInstance(outs, list)
         for out in outs:
             self.assertIsInstance(out, luigi.Target)
@@ -61,15 +70,15 @@ class TestMultiInOutWorkflow(unittest.TestCase):
         self.w.run()
 
         # Assert outputs exists
-        for p in ['/tmp/out_%d.txt' % i for i in xrange(10)]:
+        for p in ['/tmp/out_%s_%d.txt' % (aid, i) for i in xrange(10) for aid in ['x']]:
             self.assertTrue(os.path.exists(p))
-        for p in ['/tmp/out_%d.txt.daa.txt' % i for i in xrange(10)]:
+        for p in ['/tmp/out_%s_%d.txt.daa.txt' % (aid, i) for i in xrange(10) for aid in ['x']]:
             self.assertTrue(os.path.exists(p))
 
         # Remove
-        for p in ['/tmp/out_%d.txt' % i for i in xrange(10)]:
+        for p in ['/tmp/out_%s_%d.txt' % (aid, i) for i in xrange(10) for aid in ['x']]:
             os.remove(p)
-        for p in ['/tmp/out_%d.txt.daa.txt' % i for i in xrange(10)]:
+        for p in ['/tmp/out_%s_%d.txt.daa.txt' % (aid, i) for i in xrange(10) for aid in ['x']]:
             os.remove(p)
 
     def tearDown(self):

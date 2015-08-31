@@ -42,24 +42,28 @@ class DependencyHelpers():
     def requires(self):
         return self._upstream_tasks()
 
+    def _parse_inputitem(self, val, tasks):
+        '''
+        Recursively loop through lists of TargetInfos, or
+        callables returning TargetInfos, or lists of ...
+        (repeat recursively) ... and return all tasks.
+        '''
+        if callable(val):
+            val = val()
+        if isinstance(val, list):
+            for valitem in val:
+                tasks = self._parse_inputitem(valitem, tasks)
+        elif isinstance(val, TargetInfo):
+            tasks.append(val.task)
+        return tasks
+
     def _upstream_tasks(self):
+
         upstream_tasks = []
         for attrname, attrval in self.__dict__.iteritems():
             if 'in_' == attrname[0:3]:
-                if callable(attrval):
-                    val = attrval()
-                    if isinstance(val, TargetInfo):
-                        upstream_tasks.append(val.task)
-                    elif isinstance(val, list):
-                        for item in val:
-                            if callable(item):
-                                upstream_tasks.append(item().task)
-                            elif isinstance(item, TargetInfo):
-                                upstream_tasks.append(item.task)
-                            else:
-                                raise Exception('Item %s returned by %s is neither callable nor list!' % (item, attrval))
-                else:
-                    raise Exception('Attribute %s is not callable!' % attrname)
+                upstream_tasks = self._parse_inputitem(attrval, upstream_tasks)
+
         return upstream_tasks
 
     # --------------------------------------------------------
