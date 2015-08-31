@@ -63,11 +63,11 @@ class DependencyHelpers():
         '''
         if callable(val):
             val = val()
-        if isinstance(val, list):
+        if isinstance(val, TargetInfo):
+            tasks.append(val.task)
+        elif isinstance(val, list):
             for valitem in val:
                 tasks = self._parse_inputitem(valitem, tasks)
-        elif isinstance(val, TargetInfo):
-            tasks.append(val.task)
         return tasks
 
     # --------------------------------------------------------
