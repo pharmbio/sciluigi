@@ -1,10 +1,10 @@
 import datetime
 import logging
 import luigi
-import parameter
 import re
-import task
 import time
+import sciluigi.parameter
+import sciluigi.task
 
 # ================================================================================
 
@@ -82,7 +82,7 @@ class SlurmInfo():
 
 # ================================================================================
 
-class SlurmInfoParameter(parameter.Parameter):
+class SlurmInfoParameter(sciluigi.parameter.Parameter):
     def parse(self, x):
         # TODO: Possibly do something more fancy here
         return x
@@ -182,5 +182,5 @@ class SlurmHelpers():
 
 # ================================================================================
 
-class SlurmTask(SlurmHelpers, task.Task):
+class SlurmTask(SlurmHelpers, sciluigi.task.Task):
     pass

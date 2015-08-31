@@ -1,15 +1,15 @@
-import audit
 from collections import namedtuple
-import dependencies
-import interface
 import luigi
 import logging
 import random
-import slurm
 import string
 import subprocess as sub
 import time
-from util import *
+from sciluigi.util import *
+import sciluigi.audit
+import sciluigi.interface
+import sciluigi.dependencies
+import sciluigi.slurm
 
 log = logging.getLogger('sciluigi-interface')
 
@@ -22,7 +22,7 @@ def new_task(name, cls, workflow_task, **kwargs): # TODO: Raise exceptions if pa
         if not isinstance(k, basestring):
             raise Exception("Key in kwargs to new_task is not string. Must be string: %s" % k)
         # Handle non-string values
-        if isinstance(v, slurm.SlurmInfo):
+        if isinstance(v, sciluigi.slurm.SlurmInfo):
             slurminfo = v
             kwargs[k] = v
         elif not isinstance(v, basestring):
@@ -35,7 +35,7 @@ def new_task(name, cls, workflow_task, **kwargs): # TODO: Raise exceptions if pa
         t.slurminfo = slurminfo
     return t
 
-class Task(audit.AuditTrailHelpers, dependencies.DependencyHelpers, luigi.Task):
+class Task(sciluigi.audit.AuditTrailHelpers, sciluigi.dependencies.DependencyHelpers, luigi.Task):
     workflow_task = luigi.Parameter()
     instance_name = luigi.Parameter()
 
@@ -73,13 +73,13 @@ class Task(audit.AuditTrailHelpers, dependencies.DependencyHelpers, luigi.Task):
 
 # ==============================================================================
 
-class ExternalTask(audit.AuditTrailHelpers, dependencies.DependencyHelpers, luigi.ExternalTask):
+class ExternalTask(sciluigi.audit.AuditTrailHelpers, sciluigi.dependencies.DependencyHelpers, luigi.ExternalTask):
     workflow_task = luigi.Parameter()
     instance_name = luigi.Parameter()
 
 # ================================================================================
 
-class WorkflowTask(audit.AuditTrailHelpers, luigi.Task):
+class WorkflowTask(sciluigi.audit.AuditTrailHelpers, luigi.Task):
 
     instance_name = luigi.Parameter(default='sciluigi_workflow')
 
@@ -120,7 +120,7 @@ class WorkflowTask(audit.AuditTrailHelpers, luigi.Task):
 
     def requires(self):
         if not self._hasaddedhandler:
-            wflog_formatter = logging.Formatter(interface.logfmt_stream, interface.datefmt)
+            wflog_formatter = logging.Formatter(sciluigi.interface.logfmt_stream, sciluigi.interface.datefmt)
             wflog_file_handler = logging.FileHandler(self.output()['log'].path)
             wflog_file_handler.setLevel(logging.INFO)
             wflog_file_handler.setFormatter(wflog_formatter)

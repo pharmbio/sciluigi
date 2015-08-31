@@ -1,10 +1,10 @@
 import logging
 import luigi
-import time
+import os
 import random
 import string
+import time
 from collections import namedtuple
-from util import *
 
 # ==============================================================================
 

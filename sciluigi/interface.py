@@ -1,6 +1,6 @@
 import luigi
 import logging
-import util
+import sciluigi.util
 
 logfmt_stream   = '%(asctime)s | %(levelname)8s | %(message)s'
 logfmt_luigi    = '%(asctime)s %(levelname)8s    LUIGI %(message)s'
@@ -8,8 +8,8 @@ logfmt_sciluigi = '%(asctime)s %(levelname)8s SCILUIGI %(message)s'
 datefmt = '%Y-%m-%d %H:%M:%S'
 
 def setup_logging():
-    util.ensuredir('log')
-    log_path = 'log/sciluigi_run_%s_detailed.log' % util.timepath()
+    sciluigi.util.ensuredir('log')
+    log_path = 'log/sciluigi_run_%s_detailed.log' % sciluigi.util.timepath()
 
     # Formatter
     stream_formatter = logging.Formatter(logfmt_stream, datefmt)
