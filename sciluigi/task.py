@@ -83,8 +83,7 @@ class WorkflowTask(audit.AuditTrailHelpers, luigi.Task):
 
     instance_name = luigi.Parameter(default='sciluigi_workflow')
 
-    _auditfolderpath = ''
-
+    _tasks = {}
     _wfstart = ''
     _hasloggedstart = False
     _hasloggedfinish = False
@@ -101,11 +100,20 @@ class WorkflowTask(audit.AuditTrailHelpers, luigi.Task):
         log.info('Logging to %s' % logpath)
         return logpath
 
-    def get_audit_dirpath(self):
+    def get_auditdirpath(self):
         self._ensure_timestamp()
         clsname = self.__class__.__name__.lower()
         audit_dirpath = '.audit_%s_%s' % (clsname, self._wfstart)
         return audit_dirpath
+
+    def get_auditlogpath(self):
+        self._ensure_timestamp()
+        clsname = self.__class__.__name__.lower()
+        audit_dirpath = 'workflow_%s_started_%s.audit' % (clsname, self._wfstart)
+        return audit_dirpath
+
+    def add_auditinfo(self, infotype, infolog):
+        return self._add_auditinfo(self.__class__.__name__.lower(), infotype, infolog)
 
     def workflow(self):
         raise WorkflowNotImplementedException('workflow() method is not implemented, for ' + str(self))
@@ -129,24 +137,20 @@ class WorkflowTask(audit.AuditTrailHelpers, luigi.Task):
         return self.workflow()
 
     def output(self):
-        timestamp = time.strftime('%Y%m%d_%H%M%S', time.localtime())
-        clsname = self.__class__.__name__.lower()
-        auditlogname = 'workflow_' + clsname + '_stopped_{t}.audit'.format(t=timestamp)
         return {'log': luigi.LocalTarget(self.get_wflogpath()),
-                'audit': luigi.LocalTarget(auditlogname)}
+                'audit': luigi.LocalTarget(self.get_auditlogpath())}
 
     def run(self):
-        # Write Audit log file
-        #if self.output()['audit'].exists():
-        #    errmsg = 'Audit file already exists, when trying to create it: %s' % self.output()['audit'].path
-        #    log.error(errmsg)
-        #    raise Exception(errmsg)
-        #else:
-        #    with self.output()['audit'].open('w') as auditfile:
-        #        for taskname, taskinfo in self._auditinfo.iteritems():
-        #            auditfile.write('\n[%s]\n' % taskname)
-        #            for infotype, infoval in self._auditinfo[taskname].iteritems():
-        #                auditfile.write('%s: %s\n' % (infotype, infoval))
+        if self.output()['audit'].exists():
+            errmsg = 'Audit file already exists, when trying to create it: %s' % self.output()['audit'].path
+            log.error(errmsg)
+            raise Exception(errmsg)
+        else:
+            with self.output()['audit'].open('w') as auditfile:
+                for taskname, _ in self._tasks.iteritems():
+                    taskaudit_path = os.path.join(self.get_auditdirpath(), taskname)
+                    if os.path.exists(taskaudit_path):
+                        auditfile.write(open(taskaudit_path).read())
         clsname = self.__class__.__name__
         if not self._hasloggedfinish:
             log.info('-'*80)
@@ -155,7 +159,9 @@ class WorkflowTask(audit.AuditTrailHelpers, luigi.Task):
             self._hasloggedfinish = True
 
     def new_task(self, instance_name, cls, **kwargs):
-        return new_task(instance_name, cls, self, **kwargs)
+        t = new_task(instance_name, cls, self, **kwargs)
+        self._tasks[instance_name] = t
+        return t
 
 # ================================================================================
 

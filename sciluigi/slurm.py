@@ -158,10 +158,10 @@ class SlurmHelpers():
                     self.slurm_exectime_sec = int(datetime.timedelta(0, t.tm_sec, 0, 0, t.tm_min, t.tm_hour).total_seconds())
 
                 log.info('Slurm execution time for task %s was %ss' % (self.instance_name, self.slurm_exectime_sec))
-                self.workflow_task.add_auditinfo(self.instance_name, 'slurm_exectime_sec', int(self.slurm_exectime_sec))
+                self.add_auditinfo('slurm_exectime_sec', int(self.slurm_exectime_sec))
 
             # Write this last, so as to get the main task exectime and slurm exectime together in audit log later
-            self.workflow_task.add_auditinfo(self.instance_name, 'slurm_jobid', jobid)
+            self.add_auditinfo('slurm_jobid', jobid)
 
 # ================================================================================
 
