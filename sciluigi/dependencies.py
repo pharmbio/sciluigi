@@ -68,6 +68,9 @@ class DependencyHelpers():
         elif isinstance(val, list):
             for valitem in val:
                 tasks = self._parse_inputitem(valitem, tasks)
+        elif isinstance(val, dict):
+            for _, valitem in val.iteritems():
+                tasks = self._parse_inputitem(valitem, tasks)
         else:
             raise Exception('Input item is neither callable, TargetInfo, nor list: %s' % val)
         return tasks
@@ -105,6 +108,9 @@ class DependencyHelpers():
             targets.append(val.target)
         elif isinstance(val, list):
             for valitem in val:
+                targets = self._parse_outputitem(valitem, targets)
+        elif isinstance(val, dict):
+            for _, valitem in val.iteritems():
                 targets = self._parse_outputitem(valitem, targets)
         else:
             raise Exception('Input item is neither callable, TargetInfo, nor list: %s' % val)
