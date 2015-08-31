@@ -35,3 +35,40 @@ class TestRunTask():
         w.stop()
 
         assert os.path.isfile(TESTFILE_PATH)
+
+class TestMultiOut():
+    wf = None
+    def setup(self):
+        self.wf = MultiOutWf()
+    def teardown(self):
+        del(self.wf)
+    def test_run(self):
+        self.wf.run()
+
+class MultiOutWf(sl.WorkflowTask):
+    def workflow(self):
+        m_out = self.new_task('mout', MultiOutTask)
+        m_in = self.new_task('min', MultiInTask)
+        m_in.in_multi = m_out.out_multi
+        return m_in
+
+class MultiOutTask(sl.Task):
+    def out_multi(self):
+        return [sl.TargetInfo(self, 'out_%d.txt' % i) for i in xrange(10)]
+    def run(self):
+        for otgtg in out_multi():
+            with otgt.open('w') as ofile:
+                ofile.write('hej')
+
+class MultiInTask(sl.Task):
+    in_multi = None
+    def out_multi(self):
+        return [sl.TargetInfo(self, itgt.path + '.daa') for itgt in self.in_multi()]
+    def run(self):
+        for itgt, otgt in zip(in_multi(), out_multi()):
+            with itgt.open() as ifile:
+                with otgt.open('w') as ofile:
+                    ofile.write(ifile.read() + ' daa')
+
+#if __name__ == '__main__':
+#    sl.run_local(main_task_cls=MultiOutWf)
