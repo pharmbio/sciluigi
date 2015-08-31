@@ -40,25 +40,27 @@ To achieve that, SciLuigi provides the following features over vanilla Luigi:
 
 ## Workflow code quick demo
 
-Just to give a quick feel for how a workflow definition might look like in SciLuigi, check this code example:
+Just to give a quick feel for how a workflow definition might look like in SciLuigi, check this code example
+(implementation of tasks hidden here for brevity. See Usage section further below for more details):
 
 ```python
 import sciluigi as sl
+
 class MyWorkflow(sl.WorkflowTask):
     def workflow(self):
         # Initialize tasks:
-        foo = self.new_task('foowriter', MyFooWriter)
-        foorepl = self.new_task('fooreplacer', MyFooReplacer,
+        foowrt = self.new_task('foowriter', MyFooWriter)
+        foorpl = self.new_task('fooreplacer', MyFooReplacer,
             replacement='bar')
 
         # Here we do the *magic*: Connecting outputs to inputs:
-        foo.in_foo = foorepl.out_foo
+        foorpl.in_foo = foowrt.out_foo
 
         # Return the last task(s) in the workflow chain.
-        return rpl
+        return foorpl
 ```
 
-That's it! See the "usage" section just below for a more detailed description of getting to this!
+That's it! And again, see the "usage" section just below for a more detailed description of getting to this!
 
 
 ## Usage
