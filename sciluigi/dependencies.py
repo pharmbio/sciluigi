@@ -42,6 +42,19 @@ class DependencyHelpers():
     def requires(self):
         return self._upstream_tasks()
 
+    def _upstream_tasks(self):
+        '''
+        Extract upstream tasks from the TargetInfo objects
+        or functions returning those (or lists of both the earlier)
+        for use in luigi's requires() method.
+        '''
+        upstream_tasks = []
+        for attrname, attrval in self.__dict__.iteritems():
+            if 'in_' == attrname[0:3]:
+                upstream_tasks = self._parse_inputitem(attrval, upstream_tasks)
+
+        return upstream_tasks
+
     def _parse_inputitem(self, val, tasks):
         '''
         Recursively loop through lists of TargetInfos, or
@@ -56,15 +69,6 @@ class DependencyHelpers():
         elif isinstance(val, TargetInfo):
             tasks.append(val.task)
         return tasks
-
-    def _upstream_tasks(self):
-
-        upstream_tasks = []
-        for attrname, attrval in self.__dict__.iteritems():
-            if 'in_' == attrname[0:3]:
-                upstream_tasks = self._parse_inputitem(attrval, upstream_tasks)
-
-        return upstream_tasks
 
     # --------------------------------------------------------
     # Handle outputs
