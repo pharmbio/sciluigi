@@ -1,8 +1,12 @@
+import logging
 import luigi
 import sciluigi as sl
 import os
 
 TESTFILE_PATH = '/tmp/test.out'
+
+log = logging.getLogger('sciluigi-interface')
+log.setLevel(logging.WARNING)
 
 class TestTask(sl.Task):
 
