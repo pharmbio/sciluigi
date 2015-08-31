@@ -11,45 +11,55 @@ numerous interdependent commandline applications) more fluent, flexible and
 modular.
 
 While Luigi is a great, fun-to-use, and very flexible library, its default
-way of defining dependencies, by hard coding them in each task's requires()
+way of defining dependencies by hard coding them in each task's requires()
 function, is not optimal for the type of workflows that are common in
 scientific fields such as bioinformatics, where multiple inputs and outputs,
 complex dependencies between tools, and the need to quickly try different
 workflow connectivity (such as plugging in extra filtering steps) in an
 explorative fashion, is central to the way of working.
 
-SciLuigi was designed to solve some very real problem we were facing when trying
+SciLuigi was designed to solve these problem we were facing when trying
 to use luigi for defining complex workflows for data preprocessing,
 machine-learning and cross-validation.
 
-Specifically, SciLuigi provides the following features over vanilla Luigi:
+To achieve that, SciLuigi provides the following features over vanilla Luigi:
 
-- Separates the dependency definitions from the tasks themselves,
-  greatly improving modularity and composability of tasks.
-- Make individual inputs and outputs behave as separate fields, a.k.a.
-  "ports", to allow specifying dependencies between specific inputs
-  and outputs rather than just between tasks. This is again to let such
-  network definition code reside outside the tasks themselves.
-- All inputs and outputs are object fields or functions, to
-  allow auto-completion support to ease the network connection work.
-- Inputs and outputs are connected with an intuitive "single-assignment syntax"
-  (Similar to how you assign one value to another, in almost all programming)
-- Sets  up good default logging suited to
-  (Luigi internal logging is turned down to only log warnings and errors,
-  while sciluigi adds logging of few high-level actions such as when a task starts,
-  finishes, and the execution times of tasks).
-- Produces an easy to read audit-log with high level information per task
-  when the workflow task has finished.
-- Provides some integration with HPC workload managers. So far only [SLURM](http://slurm.schedmd.com/)
-  is supported though.
+- Separation of dependency definitions from the tasks themselves,
+  for improved modularity and composability.
+- Inputs and outputs implemented as separate fields, a.k.a.
+  "ports", to allow specifying dependencies between specific input
+  and output-targets rather than just between tasks. This is again to let such
+  details of the network definition reside outside the tasks.
+- The fact that inputs and outputs are object fields, also allows auto-completion
+  support to ease the network connection work (Works great e.g. with [jedi-vim](https://github.com/davidhalter/jedi-vim).
+- Inputs and outputs are connected with an intuitive "single-assignment syntax".
+- Good default high-level logging of workflow tasks and execution times.
+- Produces an easy to read audit-report with high level information per task.
+- Integration with some HPC workload managers.
+  (So far only [SLURM](http://slurm.schedmd.com/) though).
 
-The basic idea behind SciLuigi, and a preceding solution to it, was
-presented in workshop (e-Infra MPS 2015) talk:
-- [Slides](http://www.slideshare.net/SamuelLampa/building-workflows-with-spotifys-luigi)
-- [Video](https://www.youtube.com/watch?v=f26PqSXZdWM)
+## Workflow code quick demo
 
-See also [this collection of links](http://bionics.it/posts/our-experiences-using-spotifys-luigi-for-bioinformatics-workflows), to more of our reported experiences
-using Luigi, which lead up to the creation of SciLuigi.
+Just to give a quick feel for how a workflow definition might look like in SciLuigi, check this code example:
+
+```python
+import sciluigi as sl
+class MyWorkflow(sl.WorkflowTask):
+    def workflow(self):
+        # Initialize tasks:
+        foo = self.new_task('foowriter', MyFooWriter)
+        foorepl = self.new_task('fooreplacer', MyFooReplacer,
+            replacement='bar')
+
+        # Here we do the *magic*: Connecting outputs to inputs:
+        foo.in_foo = foorepl.out_foo
+
+        # Return the last task(s) in the workflow chain.
+        return rpl
+```
+
+That's it! See the "usage" section just below for a more detailed description of getting to this!
+
 
 ## Usage
 
@@ -198,6 +208,16 @@ python myworkflow.py
 ### More Examples
 
 See the [examples folder](https://github.com/samuell/sciluigi/tree/master/examples) for more detailed examples!
+
+### More links, background info etc.
+
+The basic idea behind SciLuigi, and a preceding solution to it, was
+presented in workshop (e-Infra MPS 2015) talk:
+- [Slides](http://www.slideshare.net/SamuelLampa/building-workflows-with-spotifys-luigi)
+- [Video](https://www.youtube.com/watch?v=f26PqSXZdWM)
+
+See also [this collection of links](http://bionics.it/posts/our-experiences-using-spotifys-luigi-for-bioinformatics-workflows), to more of our reported experiences
+using Luigi, which lead up to the creation of SciLuigi.
 
 Acknowledgements
 ----------------
