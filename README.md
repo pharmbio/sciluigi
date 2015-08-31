@@ -1,5 +1,4 @@
-Scientific Luigi
-================
+![SciLuigi Logo](http://i.imgur.com/2aMT04J.png)
 
 **Note: this library is still work in progress, but is currently entering production
 (as of August 31, 2015) and is getting stabler and stabler by the hour.
