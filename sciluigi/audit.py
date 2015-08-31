@@ -28,8 +28,8 @@ class AuditTrailHelpers():
         if not os.path.exists(auditfile):
             with open(auditfile, 'w') as afile:
                 afile.write('[%s]\n' % self.instance_name)
-            with open(auditfile, 'a') as afile:
-                afile.write('%s: %s\n' % (infotype, infoval))
+        with open(auditfile, 'a') as afile:
+            afile.write('%s: %s\n' % (infotype, infoval))
 
     def get_instance_name(self):
         instance_name = None
