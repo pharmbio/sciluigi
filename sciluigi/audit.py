@@ -17,7 +17,16 @@ class AuditTrailHelpers():
     Mixin for luigi.Task:s, with functionality for writing audit logs of running tasks
     '''
     def _add_auditinfo(self, infotype, infoval):
-        self.workflow_task.add_auditinfo(self.instance_name, infotype, infoval)
+        dirpath = self.workflow_task.get_audit_dirpath()
+        if not os.path.exists(dirpath):
+            os.makedirs(dirpath)
+
+        auditfile = os.path.join(dirpath, self.instance_name)
+        if not os.path.exists(auditfile):
+            with open(auditfile, 'w') as afile:
+                afile.write('[%s]\n' % self.instance_name)
+            with open(auditfile, 'a') as afile:
+                afile.write('%s: %s\n' % (infotype, infoval))
 
     def get_instance_name(self):
         instance_name = None
