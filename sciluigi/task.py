@@ -147,10 +147,10 @@ class WorkflowTask(audit.AuditTrailHelpers, luigi.Task):
             raise Exception(errmsg)
         else:
             with self.output()['audit'].open('w') as auditfile:
-                for taskname, _ in self._tasks.iteritems():
+                for taskname in sorted(self._tasks):
                     taskaudit_path = os.path.join(self.get_auditdirpath(), taskname)
                     if os.path.exists(taskaudit_path):
-                        auditfile.write(open(taskaudit_path).read())
+                        auditfile.write(open(taskaudit_path).read() + '\n')
         clsname = self.__class__.__name__
         if not self._hasloggedfinish:
             log.info('-'*80)
