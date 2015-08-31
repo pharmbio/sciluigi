@@ -96,20 +96,20 @@ class WorkflowTask(audit.AuditTrailHelpers, luigi.Task):
     def get_wflogpath(self):
         self._ensure_timestamp()
         clsname = self.__class__.__name__.lower()
-        logpath = 'workflow_' + clsname + '_started_{t}.log'.format(t=self._wfstart)
+        logpath = 'log/workflow_' + clsname + '_started_{t}.log'.format(t=self._wfstart)
         log.info('Logging to %s' % logpath)
         return logpath
 
     def get_auditdirpath(self):
         self._ensure_timestamp()
         clsname = self.__class__.__name__.lower()
-        audit_dirpath = '.audit_%s_%s' % (clsname, self._wfstart)
+        audit_dirpath = 'audit/.audit_%s_%s' % (clsname, self._wfstart)
         return audit_dirpath
 
     def get_auditlogpath(self):
         self._ensure_timestamp()
         clsname = self.__class__.__name__.lower()
-        audit_dirpath = 'workflow_%s_started_%s.audit' % (clsname, self._wfstart)
+        audit_dirpath = 'audit/workflow_%s_started_%s.audit' % (clsname, self._wfstart)
         return audit_dirpath
 
     def add_auditinfo(self, infotype, infolog):

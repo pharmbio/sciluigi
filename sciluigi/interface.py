@@ -9,7 +9,7 @@ datefmt = '%Y-%m-%d %H:%M:%S'
 
 def setup_logging():
     util.ensuredir('log')
-    log_path = 'log/sciluigi_run_%s.log' % util.timepath()
+    log_path = 'log/sciluigi_run_%s_detailed.log' % util.timepath()
 
     # Formatter
     stream_formatter = logging.Formatter(logfmt_stream, datefmt)
