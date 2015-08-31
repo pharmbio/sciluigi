@@ -47,11 +47,19 @@ class DependencyHelpers():
         for attrname, attrval in self.__dict__.iteritems():
             if 'in_' == attrname[0:3]:
                 if callable(attrval):
-                    upstream_tasks.append(attrval().task)
-                elif isinstance(attrval, list):
-                    upstream_tasks.extend([x().task for x in attrval if callable(x)])
+                    val = attrval()
+                    if isinstance(val, TargetInfo):
+                        upstream_tasks.append(val.task)
+                    elif isinstance(val, list):
+                        for item in val:
+                            if callable(item):
+                                upstream_tasks.append(item().task)
+                            elif isinstance(item, TargetInfo):
+                                upstream_tasks.append(item.task)
+                            else:
+                                raise Exception('Item %s returned by %s is neither callable nor list!' % (item, attrval))
                 else:
-                    raise Exception('Attribute with name pattern "in_*" was neither callable nor list')
+                    raise Exception('Attribute %s is not callable!' % attrname)
         return upstream_tasks
 
     # --------------------------------------------------------
@@ -64,6 +72,23 @@ class DependencyHelpers():
     def _output_targets(self):
         outputs = []
         for attrname in dir(self):
-            if callable(getattr(self, attrname)) and 'out_' in attrname:
-                outputs.append(getattr(self, attrname)().target)
+            attrval = getattr(self, attrname)
+            if attrname[0:4] == 'out_':
+                # Function returning list of TargetInfos
+                if callable(attrval):
+                    val = attrval()
+                    if isinstance(val, TargetInfo):
+                        outputs.append(val.target)
+                    elif isinstance(val, list):
+                        for item in val:
+                            if callable(item):
+                                outputs.append(item().target)
+                            elif isinstance(item, TargetInfo):
+                                outputs.append(item.target)
+                            else:
+                                raise Exception('Item in list returned by %s neither function nor TargetInfo!' % attrname)
+                else:
+                    raise Exception('Attribute %s is not callable!' % attrname)
+
+
         return outputs
