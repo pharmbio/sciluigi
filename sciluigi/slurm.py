@@ -28,6 +28,10 @@ class SlurmInfo():
     threads = None
 
     def __init__(self, runmode, project, partition, cores, time, jobname, threads):
+        '''
+        Init a SlurmInfo object, from string data.
+        Time is on format: [[[d-]HH:]MM:]SS
+        '''
         self.runmode = runmode
         self.project = project
         self.partition = partition
@@ -35,6 +39,19 @@ class SlurmInfo():
         self.time = time
         self.jobname = jobname
         self.threads = threads
+
+    def __str__(self):
+        '''
+        Return a readable string representation of the info stored
+        '''
+        strrepr = '(time: {t}, partition: {pt}, cores: {c}, threads: {thr}, jobname: {j}, project: {pr})'.format(
+                t = self.time,
+                pt = self.partition,
+                c = self.cores,
+                thr = self.threads,
+                j = self.jobname,
+                pr = self.project)
+        return strrepr
 
     def get_argstr_hpc(self):
         '''
