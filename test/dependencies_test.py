@@ -51,7 +51,7 @@ class TestMultiInOutWorkflow(unittest.TestCase):
             an_id='c')
         tin = wf.new_task('tout', MultiInTask)
 
-        tin.in_multi = [touta.out_multi, toutb.out_multi, toutc.out_multi]
+        tin.in_multi = [touta.out_multi, {'a': toutb.out_multi, 'b': toutc.out_multi()}]
 
         # Assert outputs returns luigi targets, or list of luigi targets
         outs = touta.output()
