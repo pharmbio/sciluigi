@@ -34,3 +34,5 @@ from sciluigi.task import WorkflowTask
 from sciluigi import util
 from sciluigi.util import timestamp
 from sciluigi.util import timepath
+from sciluigi.util import recordfile_to_dict
+from sciluigi.util import dict_to_recordfile
