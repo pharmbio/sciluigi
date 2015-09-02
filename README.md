@@ -66,6 +66,31 @@ class MyWorkflow(sl.WorkflowTask):
 
 That's it! And again, see the "usage" section just below for a more detailed description of getting to this!
 
+## Prerequisites
+
+- Python 2.7 - 2.x (No Python 3.x support)
+- Luigi 1.3.x
+
+## Install
+
+1. Install luigi, preferrably through PyPI:
+    ```bash
+    pip install luigi
+    ```
+2. Clone the sciluigi library
+    ```bash
+    cd <your-code-directory>
+    git clone https://github.com/samuell/sciluigi.git
+    git checkout tags/v0.9 # Check out the 0.9 version
+    ```
+3. Now you can use the library by just importing it in your python script, like so:
+    ```python
+    import sciluigi
+    ```
+    Note that you can aliase it to a shorter name, for brevity, and to save keystrokes:
+    ```python
+    import sciluigi as sl
+    ```
 
 ## Usage
 
