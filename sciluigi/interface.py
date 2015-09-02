@@ -45,7 +45,6 @@ def setup_logging():
 setup_logging()
 
 def run(*args, **kwargs):
-    log = logging.getLogger('sciluigi-interface')
     luigi.run(*args, **kwargs)
 
 def run_local(*args, **kwargs):
