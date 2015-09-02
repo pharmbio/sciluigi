@@ -134,7 +134,11 @@ class WorkflowTask(sciluigi.audit.AuditTrailHelpers, luigi.Task):
             log.info('SciLuigi: %s Workflow Started' % clsname)
             log.info('-'*80)
             self._hasloggedstart = True
-        return self.workflow()
+        workflow_output = self.workflow()
+        if workflow_output is None:
+            clsname = self.__class__.__name__
+            raise Exception('Nothing returned from workflow() method in the %s Workflow task. Forgot to add a return statement at the end?' % clsname)
+        return workflow_output
 
     def output(self):
         return {'log': luigi.LocalTarget(self.get_wflogpath()),
