@@ -21,8 +21,10 @@ class AuditTrailHelpers():
 
     def _add_auditinfo(self, instance_name, infotype, infoval):
         dirpath = self.workflow_task.get_auditdirpath()
-        if not os.path.exists(dirpath):
-            os.makedirs(dirpath)
+        if not os.path.isdir(dirpath):
+            time.sleep(random.random())
+            if not os.path.isdir(dirpath):
+                os.makedirs(dirpath)
 
         auditfile = os.path.join(dirpath, instance_name)
         if not os.path.exists(auditfile):
