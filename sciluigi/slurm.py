@@ -5,6 +5,7 @@ import re
 import time
 import sciluigi.parameter
 import sciluigi.task
+import subprocess as sub
 
 # ================================================================================
 
@@ -101,21 +102,23 @@ class SlurmHelpers():
         '''
         Execute either locally or via SLURM, depending on config
         '''
-        command_str = ' '.join(command)
+        if isinstance(command, list):
+            command = ' '.join(command)
+
         if self.slurminfo.runmode == RUNMODE_LOCAL:
-            log.info('Executing command in local mode: %s' % command_str)
+            log.info('Executing command in local mode: %s' % command)
             self.ex_local(command) # Defined in task.py
         elif self.slurminfo.runmode == RUNMODE_HPC:
-            log.info('Executing command in HPC mode: %s' % command_str)
+            log.info('Executing command in HPC mode: %s' % command)
             self.ex_hpc(command)
         elif self.slurminfo.runmode == RUNMODE_MPI:
-            log.info('Executing command in MPI mode: %s' % command_str)
+            log.info('Executing command in MPI mode: %s' % command)
             self.ex_mpi(command)
 
 
     def ex_hpc(self, command):
         if isinstance(command, list):
-            command = ' '.join(command)
+            command = sub.list2cmdline(command)
 
         fullcommand = 'salloc %s %s' % (self.slurminfo.get_argstr_hpc(), command)
         (retcode, stdout, stderr) = self.ex_local(fullcommand)
@@ -126,7 +129,7 @@ class SlurmHelpers():
 
     def ex_mpi(self, command):
         if isinstance(command, list):
-            command = ' '.join(command)
+            command = sub.list2cmdline(command)
 
         fullcommand = 'salloc %s %s' % (self.slurminfo.get_argstr_mpi(), command)
         (retcode, stdout, stderr) = self.ex_local(fullcommand)
