@@ -107,8 +107,7 @@ class DoWebRequest(sl.Task):
     def run(self):
         resp = requests.get('http://bils.se')
         if resp.status_code != 200:
-            raise Exception('Web request failed!')
-            sys.exit()
+            log.error('Web request failed!')
         else:
             with self.out_doneflag().open('w') as flagfile:
                 flagfile.write('Web Request Task Done!')
