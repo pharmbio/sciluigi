@@ -24,8 +24,8 @@ class NGITestWF(sl.WorkflowTask):
     def workflow(self):
         # Rsync a folder
         rsync = sl.new_task('rsync', RSyncAFolder, self,
-                src_dir_path = 'data',
-                dest_dir_path = 'data_rsynced_copy')
+                src_dir_path = 'data/afolder',
+                dest_dir_path = 'data/afolder_rsynced')
 
         # Run a program that takes 10 minutes (seconds)
         run10min = sl.new_task('run10min', Run10MinuteSleep, self)

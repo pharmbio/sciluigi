@@ -11,7 +11,7 @@ class T1(sl.Task):
     # I/O
 
     def out_data1(self):
-        return sl.TargetInfo(self, self.text + '.txt') # TODO: Of course make the target spec into an object with "get target" method!
+        return sl.TargetInfo(self, 'data/' + self.text + '.txt') # TODO: Of course make the target spec into an object with "get target" method!
 
     # Implementation
 
