@@ -1,3 +1,10 @@
+'''
+Scientific Luigi (SciLuigi for short) is a light-weight wrapper library around
+Spotify's Luigi workflow system that aims to make writing scientific workflows
+(consisting of numerous interdependent commandline applications) more fluent,
+flexible and modular.
+'''
+
 from sciluigi import audit
 from sciluigi.audit import AuditTrailHelpers
 
