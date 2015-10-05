@@ -90,21 +90,14 @@ Prerequisites
 Install
 -------
 
-1. Install luigi, preferrably through PyPI:
+1. Install SciLuigi, including its dependencies (luigi etc), through
+   PyPI:
 
    .. code:: bash
 
-       pip install luigi
+       pip install sciluigi
 
-2. Clone the sciluigi library
-
-   .. code:: bash
-
-       cd <your-code-directory>
-       git clone https://github.com/samuell/sciluigi.git
-       git checkout tags/v0.9 # Check out the 0.9 version
-
-3. Now you can use the library by just importing it in your python
+2. Now you can use the library by just importing it in your python
    script, like so:
 
    .. code:: python
