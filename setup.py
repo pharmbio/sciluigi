@@ -42,7 +42,6 @@ setup(
         'Programming Language :: Python',
         'Programming Language :: Python :: 2 :: Only',
         'Programming Language :: Python :: 2.7',
-        'Programming Language :: Python :: 2.8',
         'Topic :: Scientific/Engineering',
         'Topic :: Scientific/Engineering :: Bio-Informatics',
         'Topic :: Scientific/Engineering :: Chemistry',
