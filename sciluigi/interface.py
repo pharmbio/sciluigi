@@ -1,20 +1,27 @@
+'''
+This module contains mappings of methods that are part of the sciluigi API
+'''
+
 import luigi
 import logging
 import sciluigi.util
 
-logfmt_stream   = '%(asctime)s | %(levelname)8s | %(message)s'
-logfmt_luigi    = '%(asctime)s %(levelname)8s    LUIGI %(message)s'
-logfmt_sciluigi = '%(asctime)s %(levelname)8s SCILUIGI %(message)s'
-datefmt = '%Y-%m-%d %H:%M:%S'
+LOGFMT_STREAM = '%(asctime)s | %(levelname)8s | %(message)s'
+LOGFMT_LUIGI = '%(asctime)s %(levelname)8s    LUIGI %(message)s'
+LOGFMT_SCILUIGI = '%(asctime)s %(levelname)8s SCILUIGI %(message)s'
+DATEFMT = '%Y-%m-%d %H:%M:%S'
 
 def setup_logging():
+    '''
+    Set up SciLuigi specific logging
+    '''
     sciluigi.util.ensuredir('log')
     log_path = 'log/sciluigi_run_%s_detailed.log' % sciluigi.util.timepath()
 
     # Formatter
-    stream_formatter = logging.Formatter(logfmt_stream, datefmt)
-    luigi_log_formatter = logging.Formatter(logfmt_luigi, datefmt)
-    sciluigi_log_formatter = logging.Formatter(logfmt_sciluigi, datefmt)
+    stream_formatter = logging.Formatter(LOGFMT_STREAM, DATEFMT)
+    luigi_log_formatter = logging.Formatter(LOGFMT_LUIGI, DATEFMT)
+    sciluigi_log_formatter = logging.Formatter(LOGFMT_SCILUIGI, DATEFMT)
 
     # Stream handler (for STDERR)
     stream_handler = logging.StreamHandler()
@@ -45,7 +52,13 @@ def setup_logging():
 setup_logging()
 
 def run(*args, **kwargs):
+    '''
+    Forwarding luigi's run method
+    '''
     luigi.run(*args, **kwargs)
 
 def run_local(*args, **kwargs):
+    '''
+    Forwarding luigi's run method, with local scheduler
+    '''
     run(local_scheduler=True, *args, **kwargs)

@@ -15,10 +15,10 @@ from sciluigi.dependencies import DependencyHelpers
 from sciluigi import interface
 from sciluigi.interface import run
 from sciluigi.interface import run_local
-from sciluigi.interface import logfmt_stream
-from sciluigi.interface import logfmt_luigi
-from sciluigi.interface import logfmt_sciluigi
-from sciluigi.interface import datefmt
+from sciluigi.interface import LOGFMT_STREAM
+from sciluigi.interface import LOGFMT_LUIGI
+from sciluigi.interface import LOGFMT_SCILUIGI
+from sciluigi.interface import DATEFMT
 
 from sciluigi import parameter
 from sciluigi.parameter import Parameter

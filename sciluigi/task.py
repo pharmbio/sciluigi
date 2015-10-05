@@ -123,7 +123,7 @@ class WorkflowTask(sciluigi.audit.AuditTrailHelpers, luigi.Task):
 
     def requires(self):
         if not self._hasaddedhandler:
-            wflog_formatter = logging.Formatter(sciluigi.interface.logfmt_stream, sciluigi.interface.datefmt)
+            wflog_formatter = logging.Formatter(sciluigi.interface.LOGFMT_STREAM, sciluigi.interface.DATEFMT)
             wflog_file_handler = logging.FileHandler(self.output()['log'].path)
             wflog_file_handler.setLevel(logging.INFO)
             wflog_file_handler.setFormatter(wflog_formatter)
