@@ -38,7 +38,7 @@ class AToT(sl.Task):
     # ------------------------------------------------
 
     def run(self):
-        cmd ='cat ' + self.in_data().path + ' | sed "s/A/T/g" > ' + self.out_replatot().path
+        cmd = 'cat ' + self.in_data().path + ' | sed "s/A/T/g" > ' + self.out_replatot().path
         log.info("COMMAND TO EXECUTE: " + cmd)
         call(cmd, shell=True)
 

@@ -1,7 +1,6 @@
 import logging
 import luigi
 import sciluigi as sl
-import time
 from example3_components import T1, Merge
 
 # ========================================================================
@@ -30,10 +29,10 @@ class TestWF(sl.WorkflowTask):
 
         for name, instance in locals().iteritems():
             if issubclass(type(instance), sl.Task):
-                log.info('{n}, task id: {taskid}\n{n}, hash: {h}'.format(
-                        n = name,
-                        taskid = instance.task_id,
-                        h = instance.__hash__()))
+                log.info('{n}, task id: {taskid}\n{n}, hash: {h}',
+                        n=name,
+                        taskid=instance.task_id,
+                        h=instance.__hash__())
 
         return locals()[self.task]
 

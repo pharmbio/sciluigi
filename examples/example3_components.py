@@ -11,7 +11,7 @@ class T1(sl.Task):
     # I/O
 
     def out_data1(self):
-        return sl.TargetInfo(self, 'data/' + self.text + '.txt') # TODO: Of course make the target spec into an object with "get target" method!
+        return sl.TargetInfo(self, 'data/' + self.text + '.txt')
 
     # Implementation
 
@@ -29,7 +29,7 @@ class Merge(sl.Task):
     in_data1 = None
     in_data2 = None
 
-    def out_merged(self): 
+    def out_merged(self):
         return sl.TargetInfo(self, self.in_data1().path + '.merged.txt')
 
     # Implementation

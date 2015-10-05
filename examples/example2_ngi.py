@@ -3,8 +3,6 @@ import luigi
 import sciluigi as sl
 import math
 from subprocess import call
-import subprocess as sub
-import sys
 import requests
 import time
 
@@ -24,8 +22,8 @@ class NGITestWF(sl.WorkflowTask):
     def workflow(self):
         # Rsync a folder
         rsync = sl.new_task('rsync', RSyncAFolder, self,
-                src_dir_path = 'data/afolder',
-                dest_dir_path = 'data/afolder_rsynced')
+                            src_dir_path='data/afolder',
+                            dest_dir_path='data/afolder_rsynced')
 
         # Run a program that takes 10 minutes (seconds)
         run10min = sl.new_task('run10min', Run10MinuteSleep, self)
@@ -37,7 +35,7 @@ class NGITestWF(sl.WorkflowTask):
 
         # Split a file
         rawdata = sl.new_task('rawdata', ExistingData, self,
-                file_name='acgt.txt')
+                              file_name='acgt.txt')
 
         split = sl.new_task('run10min', SplitAFile, self)
         split.in_data = rawdata.out_acgt
@@ -74,9 +72,9 @@ class RSyncAFolder(sl.Task):
     # Impl
     def run(self):
         call('rsync -a {src}/ {dest}/'.format(
-            src = self.src_dir_path,
-            dest = self.dest_dir_path),
-        shell=True)
+                 src=self.src_dir_path,
+                 dest=self.dest_dir_path),
+             shell=True)
 
 # Run a program that takes 10 minutes (seconds now, for a try) to run
 class Run10MinuteSleep(sl.Task):
@@ -136,8 +134,8 @@ class SplitAFile(sl.Task):
 
     # Impl
     def run(self):
-        cmd = 'wc -l {f}'.format(f=self.in_data().path )
-        status, wc_output, stderr = self.ex(cmd)
+        cmd = 'wc -l {f}'.format(f=self.in_data().path)
+        _, wc_output, _ = self.ex(cmd)
 
         lines_cnt = int(wc_output.split(' ')[0])
         head_cnt = int(math.ceil(lines_cnt / 2))
