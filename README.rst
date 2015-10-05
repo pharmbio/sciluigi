@@ -1,7 +1,6 @@
 .. figure:: http://i.imgur.com/2aMT04J.png
    :alt: SciLuigi Logo
 
-   SciLuigi Logo
 **Note: this library is still work in progress, but it has already been
 put into production and has been executing real-world workloads
 successfully, and no serious flaws are known. Early-adopters are much
