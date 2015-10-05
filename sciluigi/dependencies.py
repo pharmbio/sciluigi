@@ -1,12 +1,9 @@
+'''
+This module contains functionality for dependency resolution for constructing
+the dependency graph of workflows.
+'''
+
 import luigi
-import time
-import random
-import string
-
-# ==============================================================================
-
-class TargetInfoParameter(luigi.Parameter):
-    pass
 
 # ==============================================================================
 
@@ -25,11 +22,14 @@ class TargetInfo(object):
         self.target = luigi.LocalTarget(path)
 
     def open(self, *args, **kwargs):
+        '''
+        Forward open method, from luigi's target class
+        '''
         return self.target.open(*args, **kwargs)
 
 # ==============================================================================
 
-class DependencyHelpers():
+class DependencyHelpers(object):
     '''
     Mixin implementing methods for supporting dynamic, and target-based
     workflow definition, as opposed to the task-based one in vanilla luigi.
@@ -40,6 +40,9 @@ class DependencyHelpers():
     # --------------------------------------------------------
 
     def requires(self):
+        '''
+        Implement luigi API method by returning upstream tasks
+        '''
         return self._upstream_tasks()
 
     def _upstream_tasks(self):
@@ -81,13 +84,16 @@ class DependencyHelpers():
 
     def output(self):
         '''
-        Extract output targets from the TargetInfo objects
-        or functions returning those (or lists of both the earlier)
-        for use in luigi's output() method.
+        Implement luigi API method
         '''
         return self._output_targets()
 
     def _output_targets(self):
+        '''
+        Extract output targets from the TargetInfo objects
+        or functions returning those (or lists of both the earlier)
+        for use in luigi's output() method.
+        '''
         output_targets = []
         for attrname in dir(self):
             attrval = getattr(self, attrname)
