@@ -101,10 +101,10 @@ class SlurmInfoParameter(sciluigi.parameter.Parameter):
     A specialized luigi parameter, taking SlurmInfo objects.
     '''
     def parse(self, x):
-        if x is SlurmInfo or x is None:
+        if isinstance(x, SlurmInfo):
             return x
         else:
-            raise Exception('Parameter is not SlurmInfoParameter: %s' % x)
+            raise Exception('Parameter is not instance of SlurmInfo: %s' % x)
 
 # ================================================================================
 
