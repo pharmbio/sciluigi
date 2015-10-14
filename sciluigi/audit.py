@@ -7,6 +7,7 @@ import luigi
 import os
 import random
 import time
+from luigi.six import iteritems
 
 # ==============================================================================
 
@@ -73,6 +74,6 @@ class AuditTrailHelpers(object):
                 proctime=task_exectime_sec)
             log.info(msg)
             self.add_auditinfo('task_exectime_sec', '%.3f' % task_exectime_sec)
-            for paramname, paramval in self.param_kwargs.iteritems():
+            for paramname, paramval in iteritems(self.param_kwargs):
                 if paramname not in ['workflow_task']:
                     self.add_auditinfo(paramname, paramval)

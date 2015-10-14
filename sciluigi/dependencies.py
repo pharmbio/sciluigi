@@ -4,6 +4,7 @@ the dependency graph of workflows.
 '''
 
 import luigi
+from luigi.six import iteritems
 
 # ==============================================================================
 
@@ -52,7 +53,7 @@ class DependencyHelpers(object):
         for use in luigi's requires() method.
         '''
         upstream_tasks = []
-        for attrname, attrval in self.__dict__.iteritems():
+        for attrname, attrval in iteritems(self.__dict__):
             if 'in_' == attrname[0:3]:
                 upstream_tasks = self._parse_inputitem(attrval, upstream_tasks)
 
@@ -72,7 +73,7 @@ class DependencyHelpers(object):
             for valitem in val:
                 tasks = self._parse_inputitem(valitem, tasks)
         elif isinstance(val, dict):
-            for _, valitem in val.iteritems():
+            for _, valitem in iteritems(val):
                 tasks = self._parse_inputitem(valitem, tasks)
         else:
             raise Exception('Input item is neither callable, TargetInfo, nor list: %s' % val)
@@ -116,7 +117,7 @@ class DependencyHelpers(object):
             for valitem in val:
                 targets = self._parse_outputitem(valitem, targets)
         elif isinstance(val, dict):
-            for _, valitem in val.iteritems():
+            for _, valitem in iteritems(val):
                 targets = self._parse_outputitem(valitem, targets)
         else:
             raise Exception('Input item is neither callable, TargetInfo, nor list: %s' % val)
