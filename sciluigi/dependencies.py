@@ -30,6 +30,14 @@ class TargetInfo(object):
 
 # ==============================================================================
 
+class S3TargetInfo(TargetInfo):
+    def __init__(self, task, path, format=None, client=None):
+        self.task = task
+        self.path = path
+        self.target = luigi.s3.S3Target(path, format=format, client=client)
+
+# ==============================================================================
+
 class DependencyHelpers(object):
     '''
     Mixin implementing methods for supporting dynamic, and target-based
