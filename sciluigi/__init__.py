@@ -35,7 +35,7 @@ from sciluigi import task
 from sciluigi.task import new_task
 from sciluigi.task import Task
 from sciluigi.task import ExternalTask
-from sciluigi.task import WorkflowTask
+from sciluigi.workflow import WorkflowTask
 
 from sciluigi import util
 from sciluigi.util import timestamp
