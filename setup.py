@@ -18,7 +18,7 @@ with open('README.rst') as fobj:
 
 setup(
     name='sciluigi',
-    version='0.9.2b3',
+    version='0.9.3b4',
     description='Helper library for writing dynamic, flexible workflows in luigi',
     long_description=long_description,
     author='Samuel Lampa',
