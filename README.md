@@ -163,7 +163,7 @@ class MyFooReplacer(sciluigi.Task):
         return TargetInfo(self, self.in_foo().path + '.bar.txt')
     def run(self):
         with self.in_foo().open() as in_f:
-            with self.out_replaced('w') as out_f:
+            with self.out_replaced().open('w') as out_f:
                 # Here we see that we use the parameter self.replacement:
                 out_f.write(in_f.read().replace('foo', self.replacement))
 ```
