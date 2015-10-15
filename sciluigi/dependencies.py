@@ -4,6 +4,7 @@ the dependency graph of workflows.
 '''
 
 import luigi
+from luigi.s3 import S3Target
 from luigi.six import iteritems
 
 # ==============================================================================
@@ -34,7 +35,7 @@ class S3TargetInfo(TargetInfo):
     def __init__(self, task, path, format=None, client=None):
         self.task = task
         self.path = path
-        self.target = luigi.s3.S3Target(path, format=format, client=client)
+        self.target = S3Target(path, format=format, client=client)
 
 # ==============================================================================
 
