@@ -12,16 +12,13 @@ modular.
 
 Luigi is a great, flexible, and very fun-to-use library. It has turned out though,
 that its default way of defining dependencies by hard coding them in each task's
-requires() function is not optimal for some type of workflows common in scientific
+requires() function is not optimal for some type of workflows common e.g. in scientific
 fields such as bioinformatics, where multiple inputs and outputs, complex dependencies,
 and the need to quickly try different workflow connectivity (e.g. plugging in extra
 filtering steps) in an explorative fashion is central to the way of working.
 
-SciLuigi was designed to solve some these problem we were facing when trying
-to use luigi for defining complex workflows for data preprocessing,
-machine-learning and cross-validation.
-
-To achieve that, SciLuigi provides the following "features" over vanilla Luigi:
+SciLuigi was designed to solve some of these problems, by providing the following
+"features" over vanilla Luigi:
 
 - Separation of dependency definitions from the tasks themselves,
   for improved modularity and composability.
@@ -30,9 +27,9 @@ To achieve that, SciLuigi provides the following "features" over vanilla Luigi:
   and output-targets rather than just between tasks. This is again to let such
   details of the network definition reside outside the tasks.
 - The fact that inputs and outputs are object fields, also allows auto-completion
-  support to ease the network connection work (Works great e.g. with [jedi-vim](https://github.com/davidhalter/jedi-vim).
+  support to ease the network connection work (Works great e.g. with [jedi-vim](https://github.com/davidhalter/jedi-vim)).
 - Inputs and outputs are connected with an intuitive "single-assignment syntax".
-- Good default high-level logging of workflow tasks and execution times.
+- "Good default" high-level logging of workflow tasks and execution times.
 - Produces an easy to read audit-report with high level information per task.
 - Integration with some HPC workload managers.
   (So far only [SLURM](http://slurm.schedmd.com/) though).
@@ -68,7 +65,7 @@ That's it! And again, see the "usage" section just below for a more detailed des
 
 ## Prerequisites
 
-- Python 2.7 - 2.x (No Python 3.x support)
+- Python 2.7 - 3.4
 - Luigi 1.3.x
 
 ## Install
@@ -248,6 +245,17 @@ presented in workshop (e-Infra MPS 2015) talk:
 
 See also [this collection of links](http://bionics.it/posts/our-experiences-using-spotifys-luigi-for-bioinformatics-workflows), to more of our reported experiences
 using Luigi, which lead up to the creation of SciLuigi.
+
+Changelog
+---------
+- 0.9.3b4
+  - Support for Python 3 (Thanks to @jeffcjohnson for contributing this!).
+  - Bug fixes.
+
+Contributors
+----------------
+- [Samuel Lampa](https://github.com/samuell)
+- [Jeff C Johnson](https://github.com/jeffcjohnson)
 
 Acknowledgements
 ----------------
