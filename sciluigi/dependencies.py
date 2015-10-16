@@ -18,10 +18,10 @@ class TargetInfo(object):
     path = None
     target = None
 
-    def __init__(self, task, path):
+    def __init__(self, task, path, format=None, is_tmp=False):
         self.task = task
         self.path = path
-        self.target = luigi.LocalTarget(path)
+        self.target = luigi.LocalTarget(path, format, is_tmp)
 
     def open(self, *args, **kwargs):
         '''
