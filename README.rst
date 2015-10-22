@@ -1,12 +1,6 @@
 .. figure:: http://i.imgur.com/2aMT04J.png
    :alt: SciLuigi Logo
 
-**Note: this library is still work in progress, but it has already been
-put into production and has been executing real-world workloads
-successfully, and no serious flaws are known. Early-adopters are much
-welcome to test it out and file issues for anything not working
-properly, features missing, or suggestions for improvements!**
-
 Scientific Luigi (SciLuigi for short) is a light-weight wrapper library
 around `Spotify <http://spotify.com>`__'s
 `Luigi <http://github.com/spotify/luigi>`__ workflow system that aims to
@@ -16,18 +10,14 @@ commandline applications) more fluent, flexible and modular.
 Luigi is a great, flexible, and very fun-to-use library. It has turned
 out though, that its default way of defining dependencies by hard coding
 them in each task's requires() function is not optimal for some type of
-workflows common in scientific fields such as bioinformatics, where
+workflows common e.g. in scientific fields such as bioinformatics, where
 multiple inputs and outputs, complex dependencies, and the need to
 quickly try different workflow connectivity (e.g. plugging in extra
 filtering steps) in an explorative fashion is central to the way of
 working.
 
-SciLuigi was designed to solve some these problem we were facing when
-trying to use luigi for defining complex workflows for data
-preprocessing, machine-learning and cross-validation.
-
-To achieve that, SciLuigi provides the following "features" over vanilla
-Luigi:
+SciLuigi was designed to solve some of these problems, by providing the
+following "features" over vanilla Luigi:
 
 -  Separation of dependency definitions from the tasks themselves, for
    improved modularity and composability.
@@ -38,10 +28,10 @@ Luigi:
 -  The fact that inputs and outputs are object fields, also allows
    auto-completion support to ease the network connection work (Works
    great e.g. with
-   `jedi-vim <https://github.com/davidhalter/jedi-vim>`__.
+   `jedi-vim <https://github.com/davidhalter/jedi-vim>`__).
 -  Inputs and outputs are connected with an intuitive "single-assignment
    syntax".
--  Good default high-level logging of workflow tasks and execution
+-  "Good default" high-level logging of workflow tasks and execution
    times.
 -  Produces an easy to read audit-report with high level information per
    task.
@@ -84,7 +74,7 @@ detailed description of getting to this!
 Prerequisites
 -------------
 
--  Python 2.7 - 2.x (No Python 3.x support)
+-  Python 2.7 - 3.4
 -  Luigi 1.3.x
 
 Install
@@ -197,7 +187,7 @@ Then, let's create a task taht replaces "foo" with "bar":
             return TargetInfo(self, self.in_foo().path + '.bar.txt')
         def run(self):
             with self.in_foo().open() as in_f:
-                with self.out_replaced('w') as out_f:
+                with self.out_replaced().open('w') as out_f:
                     # Here we see that we use the parameter self.replacement:
                     out_f.write(in_f.read().replace('foo', self.replacement))
 
@@ -301,6 +291,20 @@ See also `this collection of
 links <http://bionics.it/posts/our-experiences-using-spotifys-luigi-for-bioinformatics-workflows>`__,
 to more of our reported experiences using Luigi, which lead up to the
 creation of SciLuigi.
+
+Changelog
+---------
+
+-  0.9.3b4
+-  Support for Python 3 (Thanks to @jeffcjohnson for contributing
+   this!).
+-  Bug fixes.
+
+Contributors
+------------
+
+-  `Samuel Lampa <https://github.com/samuell>`__
+-  `Jeff C Johnson <https://github.com/jeffcjohnson>`__
 
 Acknowledgements
 ----------------
