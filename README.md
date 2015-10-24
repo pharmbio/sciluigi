@@ -36,6 +36,8 @@ put into maintaining and further developing luigi, by the team at Spotify and ot
 
 ## Workflow code quick demo
 
+***For a brief 10 minute screencast going through the basics below, see [this link](https://www.youtube.com/watch?v=gkKUWskRbjw)***
+
 Just to give a quick feel for how a workflow definition might look like in SciLuigi, check this code example
 (implementation of tasks hidden here for brevity. See Usage section further below for more details):
 
