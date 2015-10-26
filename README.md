@@ -1,5 +1,7 @@
 ![SciLuigi Logo](http://i.imgur.com/2aMT04J.png)
 
+***Update Oct 26 2016: See a brief 10 minute screencast going through the basics [here](https://www.youtube.com/watch?v=gkKUWskRbjw)***
+
 Scientific Luigi (SciLuigi for short) is a light-weight wrapper library around [Spotify](http://spotify.com)'s [Luigi](http://github.com/spotify/luigi)
 workflow system that aims to make writing scientific workflows (consisting of
 numerous interdependent commandline applications) more fluent, flexible and
