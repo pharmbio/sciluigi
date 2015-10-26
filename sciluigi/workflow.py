@@ -2,10 +2,10 @@
 This module contains sciluigi's subclasses of luigi's Task class.
 '''
 
+import datetime
 import luigi
 import logging
 import os
-import time
 import sciluigi
 import sciluigi.audit
 import sciluigi.interface
@@ -36,7 +36,7 @@ class WorkflowTask(sciluigi.audit.AuditTrailHelpers, luigi.Task):
         Make sure that there is a time stamp for when the workflow started.
         '''
         if self._wfstart == '':
-            self._wfstart = time.strftime('%Y%m%d_%H%M%S', time.localtime())
+            self._wfstart = datetime.datetime.utcnow().strftime('%Y%m%d_%H%M%S_%f')
 
     def get_wflogpath(self):
         '''
