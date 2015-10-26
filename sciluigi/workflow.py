@@ -46,7 +46,6 @@ class WorkflowTask(sciluigi.audit.AuditTrailHelpers, luigi.Task):
             self._ensure_timestamp()
             clsname = self.__class__.__name__.lower()
             logpath = 'log/workflow_' + clsname + '_started_{t}.log'.format(t=self._wfstart)
-            log.info('Logging to %s', logpath)
             self._wflogpath = logpath
         return self._wflogpath
 
@@ -100,7 +99,7 @@ class WorkflowTask(sciluigi.audit.AuditTrailHelpers, luigi.Task):
         clsname = self.__class__.__name__
         if not self._hasloggedstart:
             log.info('-'*80)
-            log.info('SciLuigi: %s Workflow Started', clsname)
+            log.info('SciLuigi: %s Workflow Started (logging to %s)', clsname, self.get_wflogpath())
             log.info('-'*80)
             self._hasloggedstart = True
         workflow_output = self.workflow()
@@ -135,7 +134,7 @@ class WorkflowTask(sciluigi.audit.AuditTrailHelpers, luigi.Task):
         clsname = self.__class__.__name__
         if not self._hasloggedfinish:
             log.info('-'*80)
-            log.info('SciLuigi: %s Workflow Finished', clsname)
+            log.info('SciLuigi: %s Workflow Finished (workflow log at %s)', clsname, self.get_wflogpath())
             log.info('-'*80)
             self._hasloggedfinish = True
 
