@@ -1,7 +1,7 @@
 ![SciLuigi Logo](http://i.imgur.com/2aMT04J.png)
 
 * ***Watch a 10 minute screencast going through the basics of using SciLuigi [here](https://www.youtube.com/watch?v=gkKUWskRbjw)***
-* ***See a poster describing the motivations behind SciLuigi [here](https://www.researchgate.net/publication/282870339_Poster_Using_workflow_tools_to_streamline_bioinformatics_computing_on_high-performance_e-infrastructures)***
+* ***See a poster describing the motivations behind SciLuigi [here](http://dx.doi.org/10.13140/RG.2.1.1143.6246)***
 
 Scientific Luigi (SciLuigi for short) is a light-weight wrapper library around [Spotify](http://spotify.com)'s [Luigi](http://github.com/spotify/luigi)
 workflow system that aims to make writing scientific workflows (consisting of
