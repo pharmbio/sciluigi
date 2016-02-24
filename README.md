@@ -157,7 +157,7 @@ class MyFooReplacer(sciluigi.Task):
     def out_replaced(self):
         # As the path to the returned target(info), we
         # use the path of the foo file:
-        return TargetInfo(self, self.in_foo().path + '.bar.txt')
+        return sciluigi.TargetInfo(self, self.in_foo().path + '.bar.txt')
     def run(self):
         with self.in_foo().open() as in_f:
             with self.out_replaced().open('w') as out_f:
