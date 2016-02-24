@@ -4,16 +4,13 @@
 * ***See a poster describing the motivations behind SciLuigi [here](http://dx.doi.org/10.13140/RG.2.1.1143.6246)***
 
 Scientific Luigi (SciLuigi for short) is a light-weight wrapper library around [Spotify](http://spotify.com)'s [Luigi](http://github.com/spotify/luigi)
-workflow system that aims to make writing scientific workflows (consisting of
-numerous interdependent commandline applications) more fluent, flexible and
+workflow system that aims to make writing scientific workflows more fluent, flexible and
 modular.
 
-Luigi is a great, flexible, and very fun-to-use library. It has turned out though,
+Luigi is a flexile and fun-to-use library. It has turned out though
 that its default way of defining dependencies by hard coding them in each task's
-requires() function is not optimal for some type of workflows common e.g. in scientific
-fields such as bioinformatics, where multiple inputs and outputs, complex dependencies,
-and the need to quickly try different workflow connectivity (e.g. plugging in extra
-filtering steps) in an explorative fashion is central to the way of working.
+requires() function is not optimal for some type of workflows common e.g. in bioinformatics where multiple inputs and outputs, complex dependencies,
+and the need to quickly try different workflow connectivity in an explorative fashion is central to the way of working.
 
 SciLuigi was designed to solve some of these problems, by providing the following
 "features" over vanilla Luigi:
@@ -32,10 +29,10 @@ SciLuigi was designed to solve some of these problems, by providing the followin
 - Integration with some HPC workload managers.
   (So far only [SLURM](http://slurm.schedmd.com/) though).
 
-Because of Luigi's great easy-to-use API, these changes have been implemented
-as a very thin layer on top of luigi's own API, and no changes to the luigi
-core is needed at all, so you can continue leveraging the work already being
-put into maintaining and further developing luigi, by the team at Spotify and others.
+Because of Luigi's easy-to-use API these changes have been implemented
+as a very thin layer on top of luigi's own API with no changes at all to the luigi
+core, which means that you can continue leveraging the work already being
+put into maintaining and further developing luigi by the team at Spotify and others.
 
 ## Workflow code quick demo
 
