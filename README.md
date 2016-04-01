@@ -146,7 +146,7 @@ Then, let's create a task taht replaces "foo" with "bar":
 
 ```python
 class MyFooReplacer(sciluigi.Task):
-    replacement = luigi.Parameter() # Here, we take as a parameter
+    replacement = sciluigi.Parameter() # Here, we take as a parameter
                                   # what to replace foo with.
     # Here we have one input, a "foo file":
     in_foo = None
