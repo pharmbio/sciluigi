@@ -49,7 +49,7 @@ class PostgresTargetInfo(TargetInfo):
         self.update_id = update_id
         self.table = table
         self.port = port
-        self.target = PostgresTarget(host=host, database=database, user=user, password=password, table=table, port=port, update_id=update_id)
+        self.target = PostgresTarget(host=host, database=database, user=user, password=password, table=table, update_id=update_id, port=port)
 
 # ==============================================================================
 
