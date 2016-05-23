@@ -4,6 +4,7 @@ the dependency graph of workflows.
 '''
 
 import luigi
+from luigi.postgres import PostgresTarget
 from luigi.s3 import S3Target
 from luigi.six import iteritems
 
@@ -36,6 +37,19 @@ class S3TargetInfo(TargetInfo):
         self.task = task
         self.path = path
         self.target = S3Target(path, format=format, client=client)
+
+# ==============================================================================
+
+class PostgresTargetInfo(TargetInfo):
+    def __init__(self, host, database, user, password, update_id, table=None, port=None):
+        self.host = host
+        self.database = database
+        self.user = user
+        self.password = password
+        self.update_id = update_id
+        self.table = table
+        self.port = port
+        self.target = PostgresTarget(host=host, database=database, user=user, password=password, table=table, update_id=update_id, port=port)
 
 # ==============================================================================
 
