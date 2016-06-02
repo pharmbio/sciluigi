@@ -41,7 +41,8 @@ class S3TargetInfo(TargetInfo):
 # ==============================================================================
 
 class PostgresTargetInfo(TargetInfo):
-    def __init__(self, host, database, user, password, update_id, table=None, port=None):
+    def __init__(self, task, host, database, user, password, update_id, table=None, port=None):
+        self.task = task
         self.host = host
         self.database = database
         self.user = user
