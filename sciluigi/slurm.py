@@ -196,7 +196,7 @@ class SlurmHelpers():
             jobid = matches.group(0)
 
             # Write slurm execution time to audit log
-            cmd = '/usr/bin/sacct -j {jobid} --noheader --format=elapsed'.format(jobid=jobid)
+            cmd = 'sacct -j {jobid} --noheader --format=elapsed'.format(jobid=jobid)
             (_, jobinfo_stdout, _) = self.ex_local(cmd)
             sacct_matches = re.findall('([0-9\:\-]+)', jobinfo_stdout)
 
