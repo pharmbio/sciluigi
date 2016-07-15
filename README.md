@@ -251,8 +251,7 @@ Changelog
 
 Contributors
 ----------------
-- [Samuel Lampa](https://github.com/samuell)
-- [Jeff C Johnson](https://github.com/jeffcjohnson)
+- [See here](https://github.com/pharmbio/sciluigi/graphs/contributors)
 
 Acknowledgements
 ----------------
