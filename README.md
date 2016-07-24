@@ -90,9 +90,9 @@ That's it! And again, see the "usage" section just below for a more detailed des
 Creating workflows in SciLuigi differs slightly from how it is done in vanilla Luigi.
 Very briefly, it is done in these main steps:
 
-1. Create a workflow tasks clas
+1. Create a workflow tasks class
 2. Create task classes
-3. Add the workflow definition in the workflow class's `worklfow()` method.
+3. Add the workflow definition in the workflow class's `workflow()` method.
 4. Add a run method at the end of the script
 5. Run the script
 
