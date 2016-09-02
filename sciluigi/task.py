@@ -1,7 +1,7 @@
 '''
 This module contains sciluigi's subclasses of luigi's Task class.
 '''
-
+import json
 import luigi
 from luigi.six import iteritems, string_types
 import logging
@@ -30,7 +30,10 @@ def new_task(name, cls, workflow_task, **kwargs):
             slurminfo = val
             kwargs[key] = val
         elif not isinstance(val, string_types):
-            kwargs[key] = str(val) # Force conversion into string
+            try:
+                kwargs[key] = json.dumps(val) # Force conversion into string
+            except TypeError:
+                kwargs[key] = str(val)
     kwargs['instance_name'] = name
     kwargs['workflow_task'] = workflow_task
     kwargs['slurminfo'] = slurminfo
