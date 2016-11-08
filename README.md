@@ -243,6 +243,23 @@ presented in workshop (e-Infra MPS 2015) talk:
 See also [this collection of links](http://bionics.it/posts/our-experiences-using-spotifys-luigi-for-bioinformatics-workflows), to more of our reported experiences
 using Luigi, which lead up to the creation of SciLuigi.
 
+Known Limitations
+-----------------
+
+- Changing the workflow scheduling based on data sent as parameters, is not
+  possible.
+- If you have an unknown number of outputs from a task, for which you want to
+  start a full branch of the workflow, this is not possible either.
+
+Both of the limitations are due to the fact that Luigi does scheduling and
+execution separately (with the exception of Luigi's [dynamic dependencies](http://luigi.readthedocs.io/en/stable/tasks.html#dynamic-dependencies),
+but they work only for upstream tasks, not downstream tasks, which we would
+need).
+
+If you run into any of these problems, you might be interested in an
+experimental workflow engine we develop to overcome these limitations:
+[SciPipe](http://scipipe.org/).
+
 Changelog
 ---------
 - 0.9.3b4
