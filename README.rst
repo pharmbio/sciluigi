@@ -82,7 +82,7 @@ Prerequisites
 -------------
 
 -  Python 2.7 - 3.4
--  Luigi 1.3.x
+-  Luigi 1.3.x - 2.0.1
 
 Install
 -------
