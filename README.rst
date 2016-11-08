@@ -1,20 +1,24 @@
 .. figure:: http://i.imgur.com/2aMT04J.png
    :alt: SciLuigi Logo
 
+   SciLuigi Logo
+
+-  ***Watch a 10 minute screencast going through the basics of using
+   SciLuigi `here <https://www.youtube.com/watch?v=gkKUWskRbjw>`__***
+-  ***See a poster describing the motivations behind SciLuigi
+   `here <http://dx.doi.org/10.13140/RG.2.1.1143.6246>`__***
+
 Scientific Luigi (SciLuigi for short) is a light-weight wrapper library
 around `Spotify <http://spotify.com>`__'s
 `Luigi <http://github.com/spotify/luigi>`__ workflow system that aims to
-make writing scientific workflows (consisting of numerous interdependent
-commandline applications) more fluent, flexible and modular.
+make writing scientific workflows more fluent, flexible and modular.
 
-Luigi is a great, flexible, and very fun-to-use library. It has turned
-out though, that its default way of defining dependencies by hard coding
-them in each task's requires() function is not optimal for some type of
-workflows common e.g. in scientific fields such as bioinformatics, where
-multiple inputs and outputs, complex dependencies, and the need to
-quickly try different workflow connectivity (e.g. plugging in extra
-filtering steps) in an explorative fashion is central to the way of
-working.
+Luigi is a flexile and fun-to-use library. It has turned out though that
+its default way of defining dependencies by hard coding them in each
+task's requires() function is not optimal for some type of workflows
+common e.g. in bioinformatics where multiple inputs and outputs, complex
+dependencies, and the need to quickly try different workflow
+connectivity in an explorative fashion is central to the way of working.
 
 SciLuigi was designed to solve some of these problems, by providing the
 following "features" over vanilla Luigi:
@@ -38,14 +42,17 @@ following "features" over vanilla Luigi:
 -  Integration with some HPC workload managers. (So far only
    `SLURM <http://slurm.schedmd.com/>`__ though).
 
-Because of Luigi's great easy-to-use API, these changes have been
-implemented as a very thin layer on top of luigi's own API, and no
-changes to the luigi core is needed at all, so you can continue
-leveraging the work already being put into maintaining and further
-developing luigi, by the team at Spotify and others.
+Because of Luigi's easy-to-use API these changes have been implemented
+as a very thin layer on top of luigi's own API with no changes at all to
+the luigi core, which means that you can continue leveraging the work
+already being put into maintaining and further developing luigi by the
+team at Spotify and others.
 
 Workflow code quick demo
 ------------------------
+
+***For a brief 10 minute screencast going through the basics below, see
+`this link <https://www.youtube.com/watch?v=gkKUWskRbjw>`__***
 
 Just to give a quick feel for how a workflow definition might look like
 in SciLuigi, check this code example (implementation of tasks hidden
@@ -107,9 +114,9 @@ Usage
 Creating workflows in SciLuigi differs slightly from how it is done in
 vanilla Luigi. Very briefly, it is done in these main steps:
 
-1. Create a workflow tasks clas
+1. Create a workflow tasks class
 2. Create task classes
-3. Add the workflow definition in the workflow class's ``worklfow()``
+3. Add the workflow definition in the workflow class's ``workflow()``
    method.
 4. Add a run method at the end of the script
 5. Run the script
@@ -176,7 +183,7 @@ Then, let's create a task taht replaces "foo" with "bar":
 .. code:: python
 
     class MyFooReplacer(sciluigi.Task):
-        replacement = luigi.Parameter() # Here, we take as a parameter
+        replacement = sciluigi.Parameter() # Here, we take as a parameter
                                       # what to replace foo with.
         # Here we have one input, a "foo file":
         in_foo = None
@@ -184,7 +191,7 @@ Then, let's create a task taht replaces "foo" with "bar":
         def out_replaced(self):
             # As the path to the returned target(info), we
             # use the path of the foo file:
-            return TargetInfo(self, self.in_foo().path + '.bar.txt')
+            return sciluigi.TargetInfo(self, self.in_foo().path + '.bar.txt')
         def run(self):
             with self.in_foo().open() as in_f:
                 with self.out_replaced().open('w') as out_f:
@@ -292,6 +299,25 @@ links <http://bionics.it/posts/our-experiences-using-spotifys-luigi-for-bioinfor
 to more of our reported experiences using Luigi, which lead up to the
 creation of SciLuigi.
 
+Known Limitations
+-----------------
+
+-  Changing the workflow scheduling based on data sent as parameters, is
+   not possible.
+-  If you have an unknown number of outputs from a task, for which you
+   want to start a full branch of the workflow, this is not possible
+   either.
+
+Both of the limitations are due to the fact that Luigi does scheduling
+and execution separately (with the exception of Luigi's `dynamic
+dependencies <http://luigi.readthedocs.io/en/stable/tasks.html#dynamic-dependencies>`__,
+but they work only for upstream tasks, not downstream tasks, which we
+would need).
+
+If you run into any of these problems, you might be interested in an
+experimental workflow engine we develop to overcome these limitations:
+`SciPipe <http://scipipe.org/>`__.
+
 Changelog
 ---------
 
@@ -303,8 +329,8 @@ Changelog
 Contributors
 ------------
 
--  `Samuel Lampa <https://github.com/samuell>`__
--  `Jeff C Johnson <https://github.com/jeffcjohnson>`__
+-  `See
+   here <https://github.com/pharmbio/sciluigi/graphs/contributors>`__
 
 Acknowledgements
 ----------------
