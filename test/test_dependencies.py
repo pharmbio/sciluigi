@@ -82,7 +82,4 @@ class TestMultiInOutWorkflow(unittest.TestCase):
             os.remove(p)
 
     def tearDown(self):
-        self.w.stop()
-
-if __name__ == '__main__':
-    unittest.main()
+        pass
