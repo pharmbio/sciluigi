@@ -1,5 +1,6 @@
 ![SciLuigi Logo](http://i.imgur.com/2aMT04J.png)
 
+* ***UPDATE, Nov 24, 2016: A paper, detailing the motivation and design decisions behind SciLuigi is now available [here](http://dx.doi.org/10.1186/s13321-016-0179-6)***
 * ***A Virtual Machine with a realistic, runnable, example workflow in a Jupyter Notebook, is available [here](https://github.com/pharmbio/bioimg-sciluigi-casestudy)***
 * ***Watch a 10 minute screencast going through the basics of using SciLuigi [here](https://www.youtube.com/watch?v=gkKUWskRbjw)***
 * ***See a poster describing the motivations behind SciLuigi [here](http://dx.doi.org/10.13140/RG.2.1.1143.6246)***
