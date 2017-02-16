@@ -62,6 +62,10 @@ class MyWorkflow(sl.WorkflowTask):
 
 That's it! And again, see the "usage" section just below for a more detailed description of getting to this!
 
+## Support: Getting help
+
+Please use the [issue queue](https://github.com/pharmbio/sciluigi/issues) for any support questions, rather than mailing the author(s) directly, as the solutions can then help others who face similar issues (we are a very small team with very limited time, so this is important).
+
 ## Prerequisites
 
 - Python 2.7 - 3.4
