@@ -173,10 +173,10 @@ The last lines, we could have instead written using the command-line `sed` utili
 ```python
     def run(self):
         # Here, we use the in-built self.ex() method, to execute commands:
-        self.ex("sed 's/foo/{repl}' {in} > {out}".format(
+        self.ex("sed 's/foo/{repl}/g' {inpath} > {outpath}".format(
             repl=self.replacement,
-            in=self.in_foo().path,
-            out=self.out_bar().path))
+            inpath=self.in_foo().path,
+            outpath=self.out_replaced().path))
 ```
 
 ### Write the workflow definition
