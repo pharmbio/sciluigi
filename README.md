@@ -148,7 +148,7 @@ class MyFooWriter(sciluigi.Task):
             foofile.write('foo\n')
 ```
 
-Then, let's create a task taht replaces "foo" with "bar":
+Then, let's create a task that replaces "foo" with "bar":
 
 ```python
 class MyFooReplacer(sciluigi.Task):
