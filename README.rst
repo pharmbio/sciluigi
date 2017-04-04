@@ -3,6 +3,17 @@
 
    SciLuigi Logo
 
+-  ***UPDATE, Nov, 2016: A paper with the motivation and design
+   decisions behind SciLuigi `now
+   available <http://dx.doi.org/10.1186/s13321-016-0179-6>`__***
+-  If you use SciLuigi in your research, please cite it like this: Lampa
+   S, Alvarsson J, Spjuth O. Towards agile large-scale predictive
+   modelling in drug discovery with flow-based programming design
+   principles. *J Cheminform*. 2016.
+   doi:\ `10.1186/s13321-016-0179-6 <http://dx.doi.org/10.1186/s13321-016-0179-6>`__.
+-  ***A Virtual Machine with a realistic, runnable, example workflow in
+   a Jupyter Notebook, is available
+   `here <https://github.com/pharmbio/bioimg-sciluigi-casestudy>`__***
 -  ***Watch a 10 minute screencast going through the basics of using
    SciLuigi `here <https://www.youtube.com/watch?v=gkKUWskRbjw>`__***
 -  ***See a poster describing the motivations behind SciLuigi
@@ -77,6 +88,15 @@ here for brevity. See Usage section further below for more details):
 
 That's it! And again, see the "usage" section just below for a more
 detailed description of getting to this!
+
+Support: Getting help
+---------------------
+
+Please use the `issue
+queue <https://github.com/pharmbio/sciluigi/issues>`__ for any support
+questions, rather than mailing the author(s) directly, as the solutions
+can then help others who face similar issues (we are a very small team
+with very limited time, so this is important).
 
 Prerequisites
 -------------
@@ -178,7 +198,7 @@ Let's define a simple task that just writes "foo" to a file named
             with self.out_foo().open('w') as foofile:
                 foofile.write('foo\n')
 
-Then, let's create a task taht replaces "foo" with "bar":
+Then, let's create a task that replaces "foo" with "bar":
 
 .. code:: python
 
