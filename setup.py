@@ -23,7 +23,7 @@ setup(
     long_description=long_description,
     author='Samuel Lampa',
     author_email='samuel.lampa@farmbio.uu.se',
-    url='https://github.com/samuell/sciluigi',
+    url='https://github.com/pharmbio/sciluigi',
     license='MIT',
     keywords='workflows workflow pipeline luigi',
     packages=[
