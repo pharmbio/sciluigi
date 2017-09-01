@@ -4,8 +4,8 @@ the dependency graph of workflows.
 '''
 
 import luigi
-from luigi.postgres import PostgresTarget
-from luigi.s3 import S3Target
+from luigi.contrib.postgres import PostgresTarget
+from luigi.contrib.s3 import S3Target
 from luigi.six import iteritems
 
 # ==============================================================================
