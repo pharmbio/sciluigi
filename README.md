@@ -286,8 +286,8 @@ This work is funded by:
 Many ideas and inspiration for the API is taken from:
 - [John Paul Morrison's invention and works on Flow-Based Programming](http://jpaulmorrison.com/fbp)
 
-See also
---------
+See also: [SciPipe](https://scipipe.org)
+----------------------------------------
 
 If you find yourself needing some more advanced scheduling features like dynamic scheduling, or run into performance problems with Python/Luigi/SciLuigi, you might be interested to check out a new workflow engine we develop, in the Go programming language, to cope with some of the limitations we have still faced with Python/Luigi/SciLuigi:
 [SciPipe](http://scipipe.org). 
