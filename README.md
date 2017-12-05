@@ -285,4 +285,4 @@ This work is funded by:
 - [Bioinformatics Infrastructure for Life Sciences, BILS](https://bils.se)
 
 Many ideas and inspiration for the API is taken from:
-- [John Paul Morrison's invention and works on Flow-Based Programming](jpaulmorrison.com/fbp)
+- [John Paul Morrison's invention and works on Flow-Based Programming](http://jpaulmorrison.com/fbp)
