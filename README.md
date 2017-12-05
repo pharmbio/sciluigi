@@ -264,9 +264,8 @@ execution separately (with the exception of Luigi's [dynamic dependencies](http:
 but they work only for upstream tasks, not downstream tasks, which we would
 need).
 
-If you run into any of these problems, you might be interested in an
-experimental workflow engine we develop to overcome these limitations:
-[SciPipe](http://scipipe.org/).
+If you run into any of these problems, you might be interested in a new workflow engine we develop to overcome these limitations:
+[SciPipe](http://scipipe.org).
 
 Changelog
 ---------
@@ -286,3 +285,11 @@ This work is funded by:
 
 Many ideas and inspiration for the API is taken from:
 - [John Paul Morrison's invention and works on Flow-Based Programming](http://jpaulmorrison.com/fbp)
+
+See also
+--------
+
+If you find yourself needing some more advanced scheduling features like dynamic scheduling, or run into performance problems with Python/Luigi/SciLuigi, you might be interested to check out a new workflow engine we develop, in the Go programming language, to cope with some of the limitations we have still faced with Python/Luigi/SciLuigi:
+[SciPipe](http://scipipe.org). 
+
+[SciPipe](http://scipipe.org) leverages some of the successful parts of Luigi's API, such as the flexible file name formatting, but replaces the Luigi scheduler with a custom, novel and very light-weight implicit dataflow scheduler written in Go. We find that it makes life much easier for complex workflow constructs as those involving cross validation, and/or nested parameter sweeps.
