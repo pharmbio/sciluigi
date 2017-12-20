@@ -40,31 +40,31 @@ class WorkflowTask(sciluigi.audit.AuditTrailHelpers, luigi.Task):
 
     def get_wflogpath(self):
         '''
-        Get the path to the workflow-speicfic log file.
+        Get the path to the workflow-specific log file.
         '''
         if self._wflogpath == '':
             self._ensure_timestamp()
             clsname = self.__class__.__name__.lower()
             logpath = 'log/workflow_' + clsname + '_started_{t}.log'.format(t=self._wfstart)
-            self._wflogpath = logpath
+            self._wflogpath = os.path.abspath(logpath)
         return self._wflogpath
 
     def get_auditdirpath(self):
         '''
-        Get the path to the workflow-speicfic audit trail directory.
+        Get the path to the workflow-specific audit trail directory.
         '''
         self._ensure_timestamp()
         clsname = self.__class__.__name__.lower()
-        audit_dirpath = 'audit/.audit_%s_%s' % (clsname, self._wfstart)
+        audit_dirpath = os.path.abspath('audit/.audit_%s_%s' % (clsname, self._wfstart))
         return audit_dirpath
 
     def get_auditlogpath(self):
         '''
-        Get the path to the workflow-speicfic audit trail file.
+        Get the path to the workflow-specific audit trail file.
         '''
         self._ensure_timestamp()
         clsname = self.__class__.__name__.lower()
-        audit_dirpath = 'audit/workflow_%s_started_%s.audit' % (clsname, self._wfstart)
+        audit_dirpath = os.path.abspath('audit/workflow_%s_started_%s.audit' % (clsname, self._wfstart))
         return audit_dirpath
 
     def add_auditinfo(self, infotype, infolog):
