@@ -191,14 +191,14 @@ class SlurmHelpers():
         salloc: Job allocation 5836263 has been revoked.
         '''
 
-        matches = re.search('[0-9]+', slurm_stderr)
+        matches = re.search('[0-9]+', str(slurm_stderr))
         if matches:
             jobid = matches.group(0)
 
             # Write slurm execution time to audit log
             cmd = 'sacct -j {jobid} --noheader --format=elapsed'.format(jobid=jobid)
             (_, jobinfo_stdout, _) = self.ex_local(cmd)
-            sacct_matches = re.findall('([0-9\:\-]+)', jobinfo_stdout)
+            sacct_matches = re.findall('([0-9\:\-]+)', str(jobinfo_stdout))
 
             if len(sacct_matches) < 2:
                 log.warn('Not enough matches from sacct for task %s: %s',
