@@ -76,12 +76,12 @@ class DependencyHelpers(object):
         or functions returning those (or lists of both the earlier)
         for use in luigi's requires() method.
         '''
-        upstream_tasks = []
+        upstream_tasks = set()
         for attrname, attrval in iteritems(self.__dict__):
             if 'in_' == attrname[0:3]:
                 upstream_tasks = self._parse_inputitem(attrval, upstream_tasks)
 
-        return upstream_tasks
+        return list(upstream_tasks)
 
     def _parse_inputitem(self, val, tasks):
         '''
@@ -92,7 +92,7 @@ class DependencyHelpers(object):
         if callable(val):
             val = val()
         if isinstance(val, TargetInfo):
-            tasks.append(val.task)
+            tasks.add(val.task)
         elif isinstance(val, list):
             for valitem in val:
                 tasks = self._parse_inputitem(valitem, tasks)
