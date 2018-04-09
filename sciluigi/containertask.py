@@ -17,7 +17,9 @@ class ContainerInfo():
     A data object to store parameters related to running a specific
     tasks in a container (docker / batch / etc). Mostly around resources.
     """
-
+    # Which container system to use
+    # Docker by default. Extensible in the future for batch, slurm-singularity, etc
+    engine = None
     # num vcpu required
     vcpu = None
     # max memory (mb)
@@ -30,14 +32,13 @@ class ContainerInfo():
     # And create a local container
     container_cache = None
 
-    # engine
-    #   Docker by default. Extensible in the future for batch, slurm-singularity, etc
-
     def __init__(self,
+                 engine='docker',
                  vcpu=1,
                  mem=4096,
                  timeout=604800,  # Seven days of seconds
                  container_cache='.'):
+        self.engine = engine
         self.vcpu = vcpu
         self.mem = mem
         self.timeout = timeout
@@ -48,7 +49,8 @@ class ContainerInfo():
         Return string of this information
         """
         return(
-            "Cpu {}, Mem {} MB, timeout {} secs, and container cache {}".format(
+            "{} with Cpu {}, Mem {} MB, timeout {} secs, and container cache {}".format(
+                self.engine,
                 self.vcpu,
                 self.mem,
                 self.timeout,
@@ -81,18 +83,16 @@ class ContainerHelpers():
 
     # The ID of the container (docker registry style).
     container = None
-    # Choices include docker right now. Eventually we can add batch, slurm-singularity, etc
-    engine = 'docker'
 
     def map_paths_to_container(self, paths, container_base_path='/mnt'):
         """
         Accepts a dictionary where the keys are identifiers for various targets
         and the value is the HOST path for that target
 
-        What this does is find a common HOST prefix 
+        What this does is find a common HOST prefix
         and remaps to the CONTAINER BASE PATH
 
-        Returns a dict of the paths for the targets as they would be seen 
+        Returns a dict of the paths for the targets as they would be seen
         if the common prefix is mounted within the container at the container_base_path
         """
         common_prefix = os.path.commonprefix(
@@ -114,10 +114,10 @@ class ContainerHelpers():
             mounts={},
             inputs_mode='ro',
             outputs_mode='rw'):
-        if self.engine == 'docker':
+        if self.containerinfo.engine == 'docker':
             return self.ex_docker(command, input_paths, output_paths, mounts, inputs_mode, outputs_mode)
         else:
-            raise Exception("Container engine {} is invalid".format(self.engine))
+            raise Exception("Container engine {} is invalid".format(self.containerinfo.engine))
 
     def ex_docker(
             self,

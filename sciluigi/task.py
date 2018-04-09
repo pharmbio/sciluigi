@@ -46,6 +46,8 @@ def new_task(name, cls, workflow_task, **kwargs):
     newtask = cls.from_str_params(kwargs)
     if slurminfo is not None:
         newtask.slurminfo = slurminfo
+    if containerinfo is not None:
+        newtask.containerinfo = containerinfo
     return newtask
 
 
