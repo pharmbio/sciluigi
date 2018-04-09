@@ -43,3 +43,8 @@ from sciluigi.util import timestamp
 from sciluigi.util import timepath
 from sciluigi.util import recordfile_to_dict
 from sciluigi.util import dict_to_recordfile
+
+from sciluigi import containertask
+from sciluigi.containertask import ContainerInfo
+from sciluigi.containertask import ContainerTask
+from sciluigi.containertask import ContainerHelpers
