@@ -115,9 +115,97 @@ class ContainerHelpers():
             inputs_mode='ro',
             outputs_mode='rw'):
         if self.containerinfo.engine == 'docker':
-            return self.ex_docker(command, input_paths, output_paths, mounts, inputs_mode, outputs_mode)
+            return self.ex_docker(
+                command,
+                input_paths,
+                output_paths,
+                mounts,
+                inputs_mode,
+                outputs_mode
+            )
+        elif self.containerinfo.engine == 'singularity_slurm':
+            return self.ex_singularity_slurm(
+                command,
+                input_paths,
+                output_paths,
+                mounts,
+                inputs_mode,
+                outputs_mode
+            )
         else:
             raise Exception("Container engine {} is invalid".format(self.containerinfo.engine))
+
+    def ex_singularity_slurm(
+            self,
+            command,
+            input_paths={},
+            output_paths={},
+            mounts={},
+            inputs_mode='ro',
+            outputs_mode='rw'):
+        """
+        Run command in the container using docker, with mountpoints
+        command is assumed to be in python template substitution format
+        """
+        client = docker.from_env()
+        container_paths = {}
+
+        if len(output_paths) > 0:
+            output_host_path_ca, output_container_paths = self.map_paths_to_container(
+                output_paths,
+                container_base_path='/mnt/outputs'
+            )
+            container_paths.update(output_container_paths)
+            mounts[output_host_path_ca] = {'bind': '/mnt/outputs', 'mode': outputs_mode}
+
+        if len(input_paths) > 0:
+            input_host_path_ca, input_container_paths = self.map_paths_to_container(
+                input_paths,
+                container_base_path='/mnt/inputs'
+            )
+            # Handle the edge case where the common directory for inputs is equal to the outputs
+            if len(output_paths) > 0 and (output_host_path_ca == input_host_path_ca):
+                log.warn("Input and Output host paths the same {}".format(output_host_path_ca))
+                # Repeat our mapping, now using the outputs path for both
+                input_host_path_ca, input_container_paths = self.map_paths_to_container(
+                    input_paths,
+                    container_base_path='/mnt/outputs'
+                )
+            else:  # output and input paths different OR there are only input paths
+                mounts[input_host_path_ca] = {'bind': '/mnt/inputs', 'mode': inputs_mode}
+
+            # No matter what, add our mappings
+            container_paths.update(input_container_paths)
+
+        command = Template(command).substitute(container_paths)
+
+        try:
+            log.info("Attempting to run {} in {}".format(
+                command,
+                self.container
+            ))
+            stdout = client.containers.run(
+                image=self.container,
+                command=command,
+                volumes=mounts,
+                mem_limit="{}m".format(self.containerinfo.mem),
+            )
+            log.info(stdout)
+            return (0, stdout, "")
+        except docker.errors.ContainerError as e:
+            log.error("Non-zero return code from the container: {}".format(e))
+            return (-1, "", "")
+        except docker.errors.ImageNotFound:
+            log.error("Could not find container {}".format(
+                self.container)
+                )
+            return (-1, "", "")
+        except docker.errors.APIError as e:
+            log.error("Docker Server failed {}".format(e))
+            return (-1, "", "")
+        except Exception as e:
+            log.error("Unknown error occurred: {}".format(e))
+            return (-1, "", "")
 
     def ex_docker(
             self,
