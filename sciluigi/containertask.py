@@ -6,7 +6,7 @@ import subprocess
 import docker
 import os
 from string import Template
-
+import shlex
 
 # Setup logging
 log = logging.getLogger('sciluigi-interface')
@@ -106,6 +106,15 @@ class ContainerHelpers():
         }
         return os.path.abspath(common_prefix), container_paths
 
+    def make_fs_name(self, uri):
+        uri_list = uri.split('://')
+        if len(uri_list) == 1:
+            name = uri_list[0]
+        else:
+            name = uri_list[1]
+        keepcharacters = ('.', '_')
+        return "".join(c if (c.isalnum() or c in keepcharacters) else '_' for c in name).rstrip()
+
     def ex(
             self,
             command,
@@ -144,10 +153,9 @@ class ContainerHelpers():
             inputs_mode='ro',
             outputs_mode='rw'):
         """
-        Run command in the container using docker, with mountpoints
+        Run command in the container using singularity, with mountpoints
         command is assumed to be in python template substitution format
         """
-        client = docker.from_env()
         container_paths = {}
 
         if len(output_paths) > 0:
@@ -177,35 +185,60 @@ class ContainerHelpers():
             # No matter what, add our mappings
             container_paths.update(input_container_paths)
 
-        command = Template(command).substitute(container_paths)
+        img_location = os.path.join(
+            self.containerinfo.container_cache,
+            "{}.singularity.img".format(self.make_fs_name(self.container))
+            )
+        log.info("Looking for singularity image {}".format(img_location))
+        if not os.path.exists(img_location):
+            log.info("No image at {} Creating....".format(img_location))
+            try:
+                os.makedirs(os.path.dirname(img_location))
+            except FileExistsError:
+                # No big deal
+                pass
+            # Singularity is dumb and can only pull images to the working dir
+            # So, get our current working dir. 
+            cwd = os.getcwd()
+            # Move to our target dir
+            os.chdir(os.path.dirname(img_location))
+            # Attempt to pull our image
+            pull_proc = subprocess.run(
+                [
+                    'singularity',
+                    'pull',
+                    '--name',
+                    os.path.basename(img_location),
+                    self.container
+                ],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE
+            )
+            print(pull_proc)
+            # Move back
+            os.chdir(cwd)
 
-        try:
-            log.info("Attempting to run {} in {}".format(
+        command = Template(command).substitute(container_paths)
+        log.info("Attempting to run {} in {}".format(
                 command,
                 self.container
             ))
-            stdout = client.containers.run(
-                image=self.container,
-                command=command,
-                volumes=mounts,
-                mem_limit="{}m".format(self.containerinfo.mem),
-            )
-            log.info(stdout)
-            return (0, stdout, "")
-        except docker.errors.ContainerError as e:
-            log.error("Non-zero return code from the container: {}".format(e))
-            return (-1, "", "")
-        except docker.errors.ImageNotFound:
-            log.error("Could not find container {}".format(
-                self.container)
-                )
-            return (-1, "", "")
-        except docker.errors.APIError as e:
-            log.error("Docker Server failed {}".format(e))
-            return (-1, "", "")
-        except Exception as e:
-            log.error("Unknown error occurred: {}".format(e))
-            return (-1, "", "")
+
+        command_list = [
+            'singularity', 'exec'
+        ]
+        for mp in mounts:
+            command_list += ['-B', "{}:{}:{}".format(mp, mounts[mp]['bind'], mounts[mp]['mode'])]
+        command_list.append(img_location)
+        command_list += shlex.split(command)
+        command_proc = subprocess.run(
+            command_list,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
+        log.info(command_proc.stdout)
+        if command_proc.stderr:
+            log.warn(command_proc.stderr)
 
     def ex_docker(
             self,
