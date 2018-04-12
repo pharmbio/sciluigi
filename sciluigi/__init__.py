@@ -9,6 +9,7 @@ from sciluigi import audit
 from sciluigi.audit import AuditTrailHelpers
 
 from sciluigi import dependencies
+from sciluigi.dependencies import ContainerTargetInfo
 from sciluigi.dependencies import TargetInfo
 from sciluigi.dependencies import S3TargetInfo
 from sciluigi.dependencies import DependencyHelpers
