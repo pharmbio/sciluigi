@@ -39,6 +39,7 @@ class ContainerTargetInfo(object):
         elif sr.scheme == 'file' or sr.scheme == '':
             self.target = luigi.LocalTarget(path, format, is_tmp)
             self.scheme = 'file'
+            self.path = sr.path
         else:
             raise ValueError("URL scheme {} is not supported".format(sr.scheme))
 
