@@ -16,40 +16,6 @@ except ImportError:
 # ==============================================================================
 
 
-class ContainerTargetInfo(object):
-    '''
-    Class to be used for sending specification of which target, from which
-    task, to use, when stitching workflow tasks' outputs and inputs together.
-    Accepts a url as a path, and then can properly create the proper target type
-    for a given scheme (e.g. s3, file, etc)
-    '''
-    task = None
-    path = None
-    target = None
-    scheme = None
-
-    def __init__(self, task, path, format=None, is_tmp=False, client=None):
-        self.task = task
-        self.path = path
-        sr = urlsplit(path)
-        self.scheme = sr.scheme
-
-        if sr.scheme == 's3':
-            self.target = S3Target(path, format=format, client=client)
-        elif sr.scheme == 'file' or sr.scheme == '':
-            self.target = luigi.LocalTarget(path, format, is_tmp)
-            self.scheme = 'file'
-            self.path = sr.path
-        else:
-            raise ValueError("URL scheme {} is not supported".format(sr.scheme))
-
-    def open(self, *args, **kwargs):
-        '''
-        Forward open method, from target class
-        '''
-        return self.target.open(*args, **kwargs)
-
-
 class TargetInfo(object):
     '''
     Class to be used for sending specification of which target, from which
@@ -69,6 +35,34 @@ class TargetInfo(object):
         Forward open method, from luigi's target class
         '''
         return self.target.open(*args, **kwargs)
+
+# ==============================================================================
+
+
+class ContainerTargetInfo(TargetInfo):
+    '''
+    Class to be used for sending specification of which target, from which
+    task, to use, when stitching workflow tasks' outputs and inputs together.
+    Accepts a url as a path, and then can properly create the proper target type
+    for a given scheme (e.g. s3, file, etc)
+    '''
+    scheme = None
+
+    def __init__(self, task, path, format=None, is_tmp=False, client=None):
+        self.task = task
+        self.path = path
+        sr = urlsplit(path)
+        self.scheme = sr.scheme
+
+        if sr.scheme == 's3':
+            self.target = S3Target(path, format=format, client=client)
+        elif sr.scheme == 'file' or sr.scheme == '':
+            self.target = luigi.LocalTarget(path, format, is_tmp)
+            self.scheme = 'file'
+            self.path = sr.path
+        else:
+            raise ValueError("URL scheme {} is not supported".format(sr.scheme))
+
 
 # ==============================================================================
 
