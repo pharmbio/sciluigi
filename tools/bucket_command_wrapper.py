@@ -28,17 +28,35 @@ class BCW():
         parser = self.build_parser()
         args = parser.parse_args()
 
-        self.command = args.command
+        if args.command:
+            self.command = args.command
+        elif os.environ.get('bcw_command'):
+            self.command = os.environ.get('bcw_command').strip()
+        else:
+            raise Exception("""
+            No command provided on command line or as an environmental variable (bcw_command)
+            """)
+
+        print(type(args.download_files))
+        print(args.download_files)
 
         if not args.download_files:
             self.download_files = []
         else:
-            self.download_files = self.parse_download_files(args.download_files)
+            raw_download_files = [f.strip() for f in args.download_files if f.strip() != ""]
+            if len(raw_download_files) > 0:
+                self.download_files = self.parse_download_files(raw_download_files)
+            else:
+                self.download_files = []
 
         if not args.upload_files:
             self.upload_files = []
         else:
-            self.upload_files = self.parse_upload_files(args.upload_files)
+            raw_upload_files = [f.strip() for f in args.upload_files if f.strip() != ""]
+            if len(raw_upload_files) > 0:
+                self.upload_files = self.parse_upload_files(raw_upload_files)
+            else:
+                self.upload_files = []
 
         # Download from the bucket
         self.download_files_from_bucket()
@@ -70,16 +88,16 @@ class BCW():
             '--command',
             '-c',
             type=str,
-            required=True,
             help="""
             Command to be run AFTER downloads BEFORE uploads.
             Please enclose in quotes.
-            Will be passed unaltered as a shell command."""
+            Will be passed unaltered as a shell command.
+            Can also be provided as an environmental variable bcw_command"""
         )
         parser.add_argument(
             '--download-files',
             '-DF',
-            nargs='+',
+            action='append',
             help="""Format is
             bucket_file_uri::container_path::mode
             Where mode can be 'ro' or 'rw'.
@@ -90,7 +108,7 @@ class BCW():
         parser.add_argument(
             '--upload-files',
             '-UF',
-            nargs='+',
+            action='append',
             help="""Format is
             container_path::bucket_file_uri
             Mode is presumed to be w. (If you want rw / a / use input in mode 'rw')
