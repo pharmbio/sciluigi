@@ -35,6 +35,7 @@ class ContainerInfo():
 
     # AWS specific stuff
     aws_jobRoleArn = None
+    aws_s3_scratch_loc = None
 
     def __init__(self,
                  engine='docker',
@@ -43,6 +44,7 @@ class ContainerInfo():
                  timeout=604800,  # Seven days of seconds
                  container_cache='.',
                  aws_jobRoleArn='',
+                 aws_s3_scratch_loc='',
                  ):
         self.engine = engine
         self.vcpu = vcpu
@@ -50,6 +52,7 @@ class ContainerInfo():
         self.timeout = timeout
         self.container_cache = container_cache
         self.aws_jobRoleArn = aws_jobRoleArn
+        self.aws_s3_scratch_loc = aws_s3_scratch_loc
 
     def __str__(self):
         """
@@ -281,6 +284,11 @@ class ContainerHelpers():
         import boto3
         batch_client = boto3.client('batch')
         s3_client = boto3.client('s3')
+
+        # First a bit of file mapping / uploading of input items
+        for (key, path) in input_paths.items():
+
+            print(key, "::", path)
 
         # 1) Register / retrieve job definition
 
