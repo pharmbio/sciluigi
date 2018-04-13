@@ -7,6 +7,7 @@ import docker
 import os
 from string import Template
 import shlex
+import uuid
 
 # Setup logging
 log = logging.getLogger('sciluigi-interface')
@@ -26,23 +27,29 @@ class ContainerInfo():
     mem = None
     # Env
     env = None
-    # Timeout in seconds
+    # Timeout in minutes
     timeout = None
     # Local Container cache location. For things like singularity that need to pull
     # And create a local container
     container_cache = None
+
+    # AWS specific stuff
+    aws_jobRoleArn = None
 
     def __init__(self,
                  engine='docker',
                  vcpu=1,
                  mem=4096,
                  timeout=604800,  # Seven days of seconds
-                 container_cache='.'):
+                 container_cache='.',
+                 aws_jobRoleArn='',
+                 ):
         self.engine = engine
         self.vcpu = vcpu
         self.mem = mem
         self.timeout = timeout
         self.container_cache = container_cache
+        self.aws_jobRoleArn = aws_jobRoleArn
 
     def __str__(self):
         """
@@ -125,6 +132,15 @@ class ContainerHelpers():
             outputs_mode='rw'):
         if self.containerinfo.engine == 'docker':
             return self.ex_docker(
+                command,
+                input_paths,
+                output_paths,
+                mounts,
+                inputs_mode,
+                outputs_mode
+            )
+        elif self.containerinfo.engine == 'aws_batch':
+            return self.ex_aws_batch(
                 command,
                 input_paths,
                 output_paths,
@@ -239,6 +255,76 @@ class ContainerHelpers():
         log.info(command_proc.stdout)
         if command_proc.stderr:
             log.warn(command_proc.stderr)
+
+    def ex_aws_batch(
+            self,
+            command,
+            input_paths={},
+            output_paths={},
+            mounts={},
+            inputs_mode='ro',
+            outputs_mode='rw'):
+        """
+        Run a command in a container using AWS batch.
+        Handles uploading of files to / from s3 and then into the container. 
+        Assumes the container has batch_command_wrapper.py
+        """
+        #
+        # The steps:
+        #   1) Register / retrieve the job definition
+        #   2) Upload local input files to S3 scratch bucket/key
+        #   3) submit the job definition with parameters filled with this specific command
+        #   4) Retrieve the output paths from the s3 scratch bucket / key
+        #
+
+        # Only import AWS libs as needed
+        import boto3
+        batch_client = boto3.client('batch')
+        s3_client = boto3.client('s3')
+
+        # 1) Register / retrieve job definition
+
+        # Make a UUID based on the container / command
+        job_def_name = "sl_containertask__{}".format(
+                uuid.uuid5(uuid.NAMESPACE_URL, self.container+command)
+            )
+
+        # Search to see if this job is ALREADY defined.
+        job_def_search = batch_client.describe_job_definitions(
+            maxResults=1,
+            jobDefinitionName=job_def_name,
+        )
+        if len(job_def_search['jobDefinitions']) == 0:
+            # Not registered yet. Register it now
+            log.info('Registering job definition for {} in {} under name {}'.format(
+                command,
+                self.container,
+                job_def_name,
+            ))
+            batch_client.register_job_definition(
+                jobDefinitionName=job_def_name,
+                type='container',
+                containerProperties={
+                    'image': self.container,
+                    'vcpus': 123,
+                    'memory': 123,
+                    'command': shlex.split(command),
+                    'jobRoleArn': self.containerinfo.aws_jobRoleArn,
+                },
+                timeout={
+                    'attemptDurationSeconds': self.containerinfo.timeout * 60 
+                }
+            )
+        else:  # Already registered
+            aws_job_def = job_def_search['jobDefinitions'][0]
+            log.info('Found job definition for {} in {} under name {}'.format(
+                aws_job_def['containerProperties']['command'],
+                aws_job_def['containerProperties']['image'],
+                job_def_name,
+            ))
+
+
+
 
     def ex_docker(
             self,
