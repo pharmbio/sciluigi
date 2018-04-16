@@ -8,6 +8,10 @@ import os
 from string import Template
 import shlex
 import uuid
+try:
+    from urlparse import urlsplit, urljoin
+except ImportError:
+    from urllib.parse import urlsplit, urljoin
 
 # Setup logging
 log = logging.getLogger('sciluigi-interface')
@@ -274,8 +278,8 @@ class ContainerHelpers():
         """
         #
         # The steps:
-        #   1) Register / retrieve the job definition
-        #   2) Upload local input files to S3 scratch bucket/key
+        #   1) Upload local input files to S3 scratch bucket/key
+        #   2) Register / retrieve the job definition
         #   3) submit the job definition with parameters filled with this specific command
         #   4) Retrieve the output paths from the s3 scratch bucket / key
         #
@@ -285,12 +289,73 @@ class ContainerHelpers():
         batch_client = boto3.client('batch')
         s3_client = boto3.client('s3')
 
-        # First a bit of file mapping / uploading of input items
+        run_uuid = uuid.uuid4()
+
+        # 1. First a bit of file mapping / uploading of input items
+        s3_input_paths = {}
+        need_s3_uploads = set()
         for (key, path) in input_paths.items():
+            # First split the path, to see which scheme it is
+            path_split = urlsplit(path)
+            if path_split.scheme == 's3':
+                # Nothing to do. Already an S3 path.
+                s3_input_paths[key] = path
+            elif path_split.scheme == 'file' or path_split.scheme == '':
+                # File path. Will need to upload to S3 to a temporary key within a bucket
+                need_s3_uploads.add((key, path_split))
+            else:
+                raise ValueError("File storage scheme {} is not supported".format(
+                    path_split.scheme
+                ))
 
-            print(key, "::", path)
+        input_common_prefix = os.path.commonpath([
+            os.path.dirname(os.path.abspath(ps[1].path))
+            for ps in need_s3_uploads
+        ])
+        for k, ps in need_s3_uploads:
+            s3_file_temp_path = "{}{}/{}".format(
+                self.containerinfo.aws_s3_scratch_loc,
+                run_uuid,
+                os.path.relpath(ps.path, input_common_prefix)
+            )
+            s3_input_paths[k] = urlsplit(s3_file_temp_path)
+            s3_client.upload_file(
+                Filename=input_paths[k],
+                Bucket=s3_input_paths[k].netloc,
+                Key=s3_input_paths[k].path
+            )
 
-        # 1) Register / retrieve job definition
+        # While we are at it, make mappings for our outputs.
+        s3_output_paths = {}
+        need_s3_downloads = set()
+
+        for (key, path) in output_paths.items():
+            # First split the path, to see which scheme it is
+            path_split = urlsplit(path)
+            if path_split.scheme == 's3':
+                # Nothing to do. Already an S3 path.
+                s3_output_paths[key] = path
+            elif path_split.scheme == 'file' or path_split.scheme == '':
+                # File path. Will need to upload to S3 to a temporary key within a bucket
+                need_s3_downloads.add((key, path_split))
+            else:
+                raise ValueError("File storage scheme {} is not supported".format(
+                    path_split.scheme
+                ))
+        output_common_prefix = os.path.commonpath([
+            os.path.dirname(os.path.abspath(ps[1].path))
+            for ps in need_s3_downloads
+        ])
+
+        for k, ps in need_s3_downloads:
+            s3_file_temp_path = "{}{}/{}".format(
+                self.containerinfo.aws_s3_scratch_loc,
+                run_uuid,
+                os.path.relpath(ps.path, output_common_prefix)
+            )
+            s3_output_paths[k] = urlsplit(s3_file_temp_path)
+
+        # 2) Register / retrieve job definition
 
         # Make a UUID based on the container / command
         job_def_name = "sl_containertask__{}".format(
