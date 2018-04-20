@@ -292,11 +292,16 @@ class ContainerHelpers():
         run_uuid = uuid.uuid4()
 
         # 1. First a bit of file mapping / uploading of input items
+        # We need mappings for both two and from S3 and from S3 to within the container
+        # <local fs> <-> <s3> <-> <Container Mounts>
+        container_paths = {}
         s3_input_paths = {}
         need_s3_uploads = set()
+        ip = set()
         for (key, path) in input_paths.items():
             # First split the path, to see which scheme it is
             path_split = urlsplit(path)
+            ip.add(path_split)
             if path_split.scheme == 's3':
                 # Nothing to do. Already an S3 path.
                 s3_input_paths[key] = path
@@ -309,11 +314,11 @@ class ContainerHelpers():
                 ))
 
         input_common_prefix = os.path.commonpath([
-            os.path.dirname(os.path.abspath(ps[1].path))
-            for ps in need_s3_uploads
+            os.path.dirname(os.path.abspath(ip))
+            for ps in ip
         ])
         for k, ps in need_s3_uploads:
-            s3_file_temp_path = "{}{}/{}".format(
+            s3_file_temp_path = "{}{}/in/{}".format(
                 self.containerinfo.aws_s3_scratch_loc,
                 run_uuid,
                 os.path.relpath(ps.path, input_common_prefix)
@@ -325,7 +330,7 @@ class ContainerHelpers():
                 Key=s3_input_paths[k].path
             )
 
-        # While we are at it, make mappings for our outputs.
+        # Outputs
         s3_output_paths = {}
         need_s3_downloads = set()
 
@@ -348,7 +353,7 @@ class ContainerHelpers():
         ])
 
         for k, ps in need_s3_downloads:
-            s3_file_temp_path = "{}{}/{}".format(
+            s3_file_temp_path = "{}{}/out/{}".format(
                 self.containerinfo.aws_s3_scratch_loc,
                 run_uuid,
                 os.path.relpath(ps.path, output_common_prefix)
@@ -385,7 +390,7 @@ class ContainerHelpers():
                     'jobRoleArn': self.containerinfo.aws_jobRoleArn,
                 },
                 timeout={
-                    'attemptDurationSeconds': self.containerinfo.timeout * 60 
+                    'attemptDurationSeconds': self.containerinfo.timeout * 60
                 }
             )
         else:  # Already registered
