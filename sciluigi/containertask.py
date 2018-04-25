@@ -473,9 +473,9 @@ class ContainerHelpers():
             )
         else:  # Already registered
             aws_job_def = job_def_search['jobDefinitions'][0]
-            log.info('Found job definition for {} in {} under name {}'.format(
-                aws_job_def['containerProperties']['command'],
+            log.info('Found job definition for {} with job role {} under name {}'.format(
                 aws_job_def['containerProperties']['image'],
+                aws_job_def['containerProperties']['jobRoleArn'],
                 job_def_name,
             ))
 
