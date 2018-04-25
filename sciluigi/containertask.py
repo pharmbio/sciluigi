@@ -138,6 +138,7 @@ class ContainerHelpers():
             command,
             input_paths={},
             output_paths={},
+            extra_params={},
             mounts={},
             inputs_mode='ro',
             outputs_mode='rw'):
@@ -146,6 +147,7 @@ class ContainerHelpers():
                 command,
                 input_paths,
                 output_paths,
+                extra_params,
                 mounts,
                 inputs_mode,
                 outputs_mode
@@ -155,6 +157,7 @@ class ContainerHelpers():
                 command,
                 input_paths,
                 output_paths,
+                extra_params,
                 mounts,
                 inputs_mode,
                 outputs_mode
@@ -164,6 +167,7 @@ class ContainerHelpers():
                 command,
                 input_paths,
                 output_paths,
+                extra_params,
                 mounts,
                 inputs_mode,
                 outputs_mode
@@ -176,6 +180,7 @@ class ContainerHelpers():
             command,
             input_paths={},
             output_paths={},
+            extra_params={},
             mounts={},
             inputs_mode='ro',
             outputs_mode='rw'):
@@ -272,6 +277,7 @@ class ContainerHelpers():
             command,
             input_paths={},
             output_paths={},
+            extra_params={},
             mounts={},
             inputs_mode='ro',
             outputs_mode='rw'):
@@ -480,9 +486,11 @@ class ContainerHelpers():
             ))
 
         # Build our container command list
+        template_dict = container_paths.copy()
+        template_dict.update(extra_params)
         container_command_list = [
             'bucket_command_wrapper.py',
-            '--command', Template(command).safe_substitute(container_paths)
+            '--command', Template(command).safe_substitute(template_dict)
         ]
         # Add in our inputs
         for k in s3_input_paths:
@@ -555,6 +563,7 @@ class ContainerHelpers():
             command,
             input_paths={},
             output_paths={},
+            extra_params={},
             mounts={},
             inputs_mode='ro',
             outputs_mode='rw'):
@@ -592,7 +601,9 @@ class ContainerHelpers():
             # No matter what, add our mappings
             container_paths.update(input_container_paths)
 
-        command = Template(command).substitute(container_paths)
+        template_dict = container_paths.copy()
+        template_dict.update(extra_params)
+        command = Template(command).substitute(template_dict)
 
         try:
             log.info("Attempting to run {} in {}".format(
@@ -601,7 +612,7 @@ class ContainerHelpers():
             ))
             stdout = client.containers.run(
                 image=self.container,
-                command=command,
+                command=['bash', '-c', command],
                 volumes=mounts,
                 mem_limit="{}m".format(self.containerinfo.mem),
             )
