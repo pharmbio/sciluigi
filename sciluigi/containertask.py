@@ -8,6 +8,7 @@ import os
 from string import Template
 import shlex
 import uuid
+import time
 try:
     from urlparse import urlsplit, urljoin
 except ImportError:
@@ -40,6 +41,7 @@ class ContainerInfo():
     # AWS specific stuff
     aws_jobRoleArn = None
     aws_s3_scratch_loc = None
+    aws_batch_job_queue = None
 
     def __init__(self,
                  engine='docker',
@@ -49,6 +51,7 @@ class ContainerInfo():
                  container_cache='.',
                  aws_jobRoleArn='',
                  aws_s3_scratch_loc='',
+                 aws_batch_job_queue=''
                  ):
         self.engine = engine
         self.vcpu = vcpu
@@ -57,6 +60,7 @@ class ContainerInfo():
         self.container_cache = container_cache
         self.aws_jobRoleArn = aws_jobRoleArn
         self.aws_s3_scratch_loc = aws_s3_scratch_loc
+        self.aws_batch_job_queue = aws_batch_job_queue
 
     def __str__(self):
         """
@@ -289,50 +293,92 @@ class ContainerHelpers():
         batch_client = boto3.client('batch')
         s3_client = boto3.client('s3')
 
-        run_uuid = uuid.uuid4()
+        run_uuid = str(uuid.uuid4())
 
         # 1. First a bit of file mapping / uploading of input items
         # We need mappings for both two and from S3 and from S3 to within the container
         # <local fs> <-> <s3> <-> <Container Mounts>
+        # The script in the container, bucket_command_wrapper.py, handles the second half
+        # practically, but we need to provide the link s3://bucket/key::/container/path/file::mode
+        # the first half we have to do here.
+        # s3_input_paths will hold the s3 path 
         container_paths = {}
+
+        in_container_paths_from_s3 = {}
+        in_container_paths_from_local_fs = {}
         s3_input_paths = {}
         need_s3_uploads = set()
-        ip = set()
         for (key, path) in input_paths.items():
             # First split the path, to see which scheme it is
             path_split = urlsplit(path)
-            ip.add(path_split)
             if path_split.scheme == 's3':
                 # Nothing to do. Already an S3 path.
+                in_container_paths_from_s3[key] = os.path.join(
+                    path_split.netloc, 
+                    path_split.path
+                    )
                 s3_input_paths[key] = path
             elif path_split.scheme == 'file' or path_split.scheme == '':
                 # File path. Will need to upload to S3 to a temporary key within a bucket
+                in_container_paths_from_local_fs[key] = path_split.path
                 need_s3_uploads.add((key, path_split))
             else:
                 raise ValueError("File storage scheme {} is not supported".format(
                     path_split.scheme
                 ))
 
-        input_common_prefix = os.path.commonpath([
-            os.path.dirname(os.path.abspath(ip))
-            for ps in ip
-        ])
+        in_from_local_fs_common_prefix = os.path.dirname(
+            os.path.commonprefix([
+                p for p in in_container_paths_from_local_fs.values()
+            ])
+        )
+
         for k, ps in need_s3_uploads:
             s3_file_temp_path = "{}{}/in/{}".format(
                 self.containerinfo.aws_s3_scratch_loc,
                 run_uuid,
-                os.path.relpath(ps.path, input_common_prefix)
+                os.path.relpath(ps.path, in_from_local_fs_common_prefix)
             )
-            s3_input_paths[k] = urlsplit(s3_file_temp_path)
+            s3_input_paths[k] = s3_file_temp_path
+            log.info("Uploading {} to {}".format(
+                input_paths[k],
+                s3_input_paths[k],
+            ))
             s3_client.upload_file(
                 Filename=input_paths[k],
-                Bucket=s3_input_paths[k].netloc,
-                Key=s3_input_paths[k].path
+                Bucket=urlsplit(s3_input_paths[k]).netloc,
+                Key=urlsplit(s3_input_paths[k]).path.strip('/'),
+                ExtraArgs={
+                    'ServerSideEncryption': 'AES256'
+                }
             )
+        # build our container paths for inputs from fs and S3
+        for k in in_container_paths_from_local_fs:
+            container_paths[k] = os.path.join(
+                '/mnt/inputs/fs/',
+                os.path.relpath(
+                    in_container_paths_from_local_fs[k],
+                    in_from_local_fs_common_prefix)
+            )
+
+        in_from_s3_common_prefix = os.path.dirname(
+            os.path.commonprefix([
+                p for p in in_container_paths_from_s3.values()
+            ])
+        )
+        for k in in_container_paths_from_s3:
+            container_paths[k] = os.path.join(
+                '/mnt/inputs/s3/',
+                os.path.relpath(
+                    in_container_paths_from_s3[k],
+                    in_from_s3_common_prefix)
+                )
 
         # Outputs
         s3_output_paths = {}
         need_s3_downloads = set()
+        out_container_paths_from_s3 = {}
+        out_container_paths_from_local_fs = {}
 
         for (key, path) in output_paths.items():
             # First split the path, to see which scheme it is
@@ -340,9 +386,14 @@ class ContainerHelpers():
             if path_split.scheme == 's3':
                 # Nothing to do. Already an S3 path.
                 s3_output_paths[key] = path
+                out_container_paths_from_s3[key] = os.path.join(
+                    path_split.netloc,
+                    path_split.path
+                    )
             elif path_split.scheme == 'file' or path_split.scheme == '':
                 # File path. Will need to upload to S3 to a temporary key within a bucket
                 need_s3_downloads.add((key, path_split))
+                out_container_paths_from_local_fs[key] = path_split.path
             else:
                 raise ValueError("File storage scheme {} is not supported".format(
                     path_split.scheme
@@ -358,13 +409,40 @@ class ContainerHelpers():
                 run_uuid,
                 os.path.relpath(ps.path, output_common_prefix)
             )
-            s3_output_paths[k] = urlsplit(s3_file_temp_path)
+            s3_output_paths[k] = s3_file_temp_path
 
-        # 2) Register / retrieve job definition
+        # Make our container paths for outputs
+        out_from_local_fs_common_prefix = os.path.dirname(
+            os.path.commonprefix([
+                p for p in out_container_paths_from_local_fs.values()
+            ])
+        )
+        for k in out_container_paths_from_local_fs:
+            container_paths[k] = os.path.join(
+                '/mnt/outputs/fs/',
+                os.path.relpath(
+                    out_container_paths_from_local_fs[k], 
+                    out_from_local_fs_common_prefix)
+            )
+
+        out_from_s3_common_prefix = os.path.dirname(
+            os.path.commonprefix([
+                p for p in out_container_paths_from_s3.values()
+            ])
+        )
+        for k in out_container_paths_from_s3:
+            container_paths[k] = os.path.join(
+                '/mnt/outputs/s3/',
+                os.path.relpath(
+                    out_container_paths_from_s3[k],
+                    out_from_s3_common_prefix)
+                )
+
+        # 2) Register / retrieve job definition for this container, command, and job role arn
 
         # Make a UUID based on the container / command
         job_def_name = "sl_containertask__{}".format(
-                uuid.uuid5(uuid.NAMESPACE_URL, self.container+command)
+                uuid.uuid5(uuid.NAMESPACE_URL, self.container+self.containerinfo.aws_jobRoleArn)
             )
 
         # Search to see if this job is ALREADY defined.
@@ -374,9 +452,9 @@ class ContainerHelpers():
         )
         if len(job_def_search['jobDefinitions']) == 0:
             # Not registered yet. Register it now
-            log.info('Registering job definition for {} in {} under name {}'.format(
-                command,
+            log.info('Registering job definition for {} with role {} under name {}'.format(
                 self.container,
+                self.containerinfo.aws_jobRoleArn,
                 job_def_name,
             ))
             batch_client.register_job_definition(
@@ -384,8 +462,8 @@ class ContainerHelpers():
                 type='container',
                 containerProperties={
                     'image': self.container,
-                    'vcpus': 123,
-                    'memory': 123,
+                    'vcpus': 1,
+                    'memory': 1024,
                     'command': shlex.split(command),
                     'jobRoleArn': self.containerinfo.aws_jobRoleArn,
                 },
@@ -401,8 +479,76 @@ class ContainerHelpers():
                 job_def_name,
             ))
 
+        # Build our container command list
+        container_command_list = [
+            'bucket_command_wrapper.py',
+            '--command', Template(command).safe_substitute(container_paths)
+        ]
+        # Add in our inputs
+        for k in s3_input_paths:
+            container_command_list += [
+                '-DF',
+                "{}::{}::{}".format(
+                    s3_input_paths[k],
+                    container_paths[k],
+                    inputs_mode.lower()
+                )
+            ]
 
+        # And our outputs
+        for k in s3_output_paths:
+            container_command_list += [
+                '-UF',
+                "{}::{}".format(
+                    container_paths[k],
+                    s3_output_paths[k]
+                )
+            ]
 
+        # Submit the job
+        job_submission = batch_client.submit_job(
+            jobName=run_uuid,
+            jobQueue=self.containerinfo.aws_batch_job_queue,
+            jobDefinition=job_def_name,
+            containerOverrides={
+                'vcpus': self.containerinfo.vcpu,
+                'memory': self.containerinfo.mem,
+                'command': container_command_list,
+            },
+        )
+        job_submission_id = job_submission.get('jobId')
+        log.info("Running {} under jobId {}".format(
+            container_command_list,
+            job_submission_id
+        ))
+        while True:
+            job_status = batch_client.describe_jobs(
+                jobs=[job_submission_id]
+            ).get('jobs')[0]
+            if job_status.get('status') == 'SUCCEEDED' or job_status.get('status') == 'FAILED':
+                break
+            time.sleep(10)
+        if job_status.get('status') != 'SUCCEEDED':
+            raise Exception("Batch job failed. {}".format(
+                job_status.get('statusReason')
+            ))
+        # Implicit else we succeeded
+        # Now we need to copy back from S3 to our local filesystem
+        for k, ps in need_s3_downloads:
+            s3_client.download_file(
+                Filename=ps.path,
+                Bucket=urlsplit(s3_output_paths[k]).netloc,
+                Key=urlsplit(s3_output_paths[k]).path.strip('/')
+            )
+        # And the inputs if we are rw
+        if inputs_mode == 'rw':
+            for k, ps in need_s3_uploads:
+                s3_client.download_file(
+                    Filename=ps.path,
+                    Bucket=urlsplit(s3_input_paths[k]).netloc,
+                    Key=urlsplit(s3_input_paths[k]).path.strip('/')
+                )
+        # And done
 
     def ex_docker(
             self,
