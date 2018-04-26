@@ -34,6 +34,8 @@ class ContainerInfo():
     env = None
     # Timeout in minutes
     timeout = None
+    # Format is {'source_path': {'bind': '/container/path', 'mode': mode}}
+    mounts = None
     # Local Container cache location. For things like singularity that need to pull
     # And create a local container
     container_cache = None
@@ -47,7 +49,8 @@ class ContainerInfo():
                  engine='docker',
                  vcpu=1,
                  mem=4096,
-                 timeout=604800,  # Seven days of seconds
+                 timeout=10080,  # Seven days of minutes
+                 mounts={}, 
                  container_cache='.',
                  aws_jobRoleArn='',
                  aws_s3_scratch_loc='',
@@ -57,6 +60,7 @@ class ContainerInfo():
         self.vcpu = vcpu
         self.mem = mem
         self.timeout = timeout
+        self.mounts = mounts
         self.container_cache = container_cache
         self.aws_jobRoleArn = aws_jobRoleArn
         self.aws_s3_scratch_loc = aws_s3_scratch_loc
@@ -139,7 +143,6 @@ class ContainerHelpers():
             input_paths={},
             output_paths={},
             extra_params={},
-            mounts={},
             inputs_mode='ro',
             outputs_mode='rw'):
         if self.containerinfo.engine == 'docker':
@@ -148,7 +151,6 @@ class ContainerHelpers():
                 input_paths,
                 output_paths,
                 extra_params,
-                mounts,
                 inputs_mode,
                 outputs_mode
             )
@@ -158,7 +160,6 @@ class ContainerHelpers():
                 input_paths,
                 output_paths,
                 extra_params,
-                mounts,
                 inputs_mode,
                 outputs_mode
             )
@@ -168,7 +169,6 @@ class ContainerHelpers():
                 input_paths,
                 output_paths,
                 extra_params,
-                mounts,
                 inputs_mode,
                 outputs_mode
             )
@@ -181,7 +181,6 @@ class ContainerHelpers():
             input_paths={},
             output_paths={},
             extra_params={},
-            mounts={},
             inputs_mode='ro',
             outputs_mode='rw'):
         """
@@ -189,6 +188,7 @@ class ContainerHelpers():
         command is assumed to be in python template substitution format
         """
         container_paths = {}
+        mounts = self.containerinfo.mounts.copy()
 
         if len(output_paths) > 0:
             output_host_path_ca, output_container_paths = self.map_paths_to_container(
@@ -278,7 +278,6 @@ class ContainerHelpers():
             input_paths={},
             output_paths={},
             extra_params={},
-            mounts={},
             inputs_mode='ro',
             outputs_mode='rw'):
         """
@@ -564,7 +563,6 @@ class ContainerHelpers():
             input_paths={},
             output_paths={},
             extra_params={},
-            mounts={},
             inputs_mode='ro',
             outputs_mode='rw'):
         """
@@ -573,6 +571,7 @@ class ContainerHelpers():
         """
         client = docker.from_env()
         container_paths = {}
+        mounts = self.containerinfo.mounts.copy()
 
         if len(output_paths) > 0:
             output_host_path_ca, output_container_paths = self.map_paths_to_container(
