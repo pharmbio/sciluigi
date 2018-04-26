@@ -472,9 +472,10 @@ class ContainerHelpers():
             aws_volumes = []
             aws_mountPoints = []
             for (host_path, container_details) in self.containerinfo.mounts.items():
+                name = uuid.uuid5(uuid.NAMESPACE_URL, host_path)
                 aws_volumes.append({
                     'host': {'sourcePath': host_path},
-                    'name': host_path
+                    'name': name
                 })
                 if container_details['mode'].lower() == 'ro':
                     read_only = True
@@ -482,7 +483,7 @@ class ContainerHelpers():
                     read_only = False
                 aws_mountPoints.append({
                     'containerPath': container_details['bind'],
-                    'sourceVolume': host_path,
+                    'sourceVolume': name,
                     'readOnly': read_only,
                 })
 
