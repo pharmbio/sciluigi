@@ -447,7 +447,10 @@ class ContainerHelpers():
 
         # Make a UUID based on the container / command
         job_def_name = "sl_containertask__{}".format(
-                uuid.uuid5(uuid.NAMESPACE_URL, self.container+self.containerinfo.aws_jobRoleArn)
+                uuid.uuid5(
+                    uuid.NAMESPACE_URL, 
+                    self.container+self.containerinfo.aws_jobRoleArn+str(self.containerinfo.mounts)
+                    )
             )
 
         # Search to see if this job is ALREADY defined.
@@ -457,11 +460,32 @@ class ContainerHelpers():
         )
         if len(job_def_search['jobDefinitions']) == 0:
             # Not registered yet. Register it now
-            log.info('Registering job definition for {} with role {} under name {}'.format(
-                self.container,
-                self.containerinfo.aws_jobRoleArn,
-                job_def_name,
-            ))
+            log.info(
+                """Registering job definition for {} with role {} and mounts {} under name {}
+                """.format(
+                           self.container,
+                           self.containerinfo.aws_jobRoleArn,
+                           self.containerinfo.mounts,
+                           job_def_name,
+                ))
+            # To be passed along for container properties
+            aws_volumes = set()
+            aws_mountPoints = set()
+            for (host_path, container_details) in self.containerinfo.mounts.items():
+                aws_volumes.add({
+                    'host': {'sourcePath': host_path},
+                    'name': host_path
+                })
+                if container_details['mode'].lower() == 'ro':
+                    read_only = 'True'
+                else:
+                    read_only = 'False'
+                aws_mountPoints.add({
+                    'containerPath': container_details['bind'],
+                    'sourceVolume': host_path,
+                    'readOnly': read_only,
+                })
+
             batch_client.register_job_definition(
                 jobDefinitionName=job_def_name,
                 type='container',
@@ -471,6 +495,8 @@ class ContainerHelpers():
                     'memory': 1024,
                     'command': shlex.split(command),
                     'jobRoleArn': self.containerinfo.aws_jobRoleArn,
+                    'mountPoints': list(aws_mountPoints),
+                    'volumes': list(aws_volumes)
                 },
                 timeout={
                     'attemptDurationSeconds': self.containerinfo.timeout * 60
