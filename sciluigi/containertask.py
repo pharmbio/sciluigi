@@ -477,9 +477,9 @@ class ContainerHelpers():
                     'name': host_path
                 })
                 if container_details['mode'].lower() == 'ro':
-                    read_only = 'True'
+                    read_only = True
                 else:
-                    read_only = 'False'
+                    read_only = False
                 aws_mountPoints.append({
                     'containerPath': container_details['bind'],
                     'sourceVolume': host_path,
