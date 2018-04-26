@@ -469,10 +469,10 @@ class ContainerHelpers():
                            job_def_name,
                 ))
             # To be passed along for container properties
-            aws_volumes = set()
-            aws_mountPoints = set()
+            aws_volumes = []
+            aws_mountPoints = []
             for (host_path, container_details) in self.containerinfo.mounts.items():
-                aws_volumes.add({
+                aws_volumes.append({
                     'host': {'sourcePath': host_path},
                     'name': host_path
                 })
@@ -480,7 +480,7 @@ class ContainerHelpers():
                     read_only = 'True'
                 else:
                     read_only = 'False'
-                aws_mountPoints.add({
+                aws_mountPoints.append({
                     'containerPath': container_details['bind'],
                     'sourceVolume': host_path,
                     'readOnly': read_only,
@@ -495,8 +495,8 @@ class ContainerHelpers():
                     'memory': 1024,
                     'command': shlex.split(command),
                     'jobRoleArn': self.containerinfo.aws_jobRoleArn,
-                    'mountPoints': list(aws_mountPoints),
-                    'volumes': list(aws_volumes)
+                    'mountPoints': aws_mountPoints,
+                    'volumes': aws_volumes
                 },
                 timeout={
                     'attemptDurationSeconds': self.containerinfo.timeout * 60
