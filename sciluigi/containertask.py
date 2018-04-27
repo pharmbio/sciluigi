@@ -50,7 +50,7 @@ class ContainerInfo():
                  vcpu=1,
                  mem=4096,
                  timeout=10080,  # Seven days of minutes
-                 mounts={}, 
+                 mounts={},
                  container_cache='.',
                  aws_jobRoleArn='',
                  aws_s3_scratch_loc='',
@@ -516,7 +516,7 @@ class ContainerHelpers():
         template_dict = container_paths.copy()
         template_dict.update(extra_params)
         container_command_list = [
-            'bucket_command_wrapper.py',
+            'bucket_command_wrapper',
             '--command', Template(command).safe_substitute(template_dict)
         ]
         # Add in our inputs
@@ -583,6 +583,14 @@ class ContainerHelpers():
                     Bucket=urlsplit(s3_input_paths[k]).netloc,
                     Key=urlsplit(s3_input_paths[k]).path.strip('/')
                 )
+
+        # Cleanup the temp S3
+        for k, ps in need_s3_uploads:
+            s3_client.delete_object(
+                Bucket=urlsplit(s3_input_paths[k]).netloc,
+                Key=urlsplit(s3_input_paths[k]).path.strip('/'),
+            )
+
         # And done
 
     def ex_docker(
