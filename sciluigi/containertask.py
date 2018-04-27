@@ -403,10 +403,13 @@ class ContainerHelpers():
                 raise ValueError("File storage scheme {} is not supported".format(
                     path_split.scheme
                 ))
-        output_common_prefix = os.path.commonpath([
-            os.path.dirname(os.path.abspath(ps[1].path))
-            for ps in need_s3_downloads
-        ])
+        if len(need_s3_downloads) > 0:
+            output_common_prefix = os.path.commonpath([
+                os.path.dirname(os.path.abspath(ps[1].path))
+                for ps in need_s3_downloads
+            ])
+        else:
+            output_common_prefix = ''
 
         for k, ps in need_s3_downloads:
             s3_file_temp_path = "{}{}/out/{}".format(
