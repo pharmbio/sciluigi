@@ -473,7 +473,7 @@ class ContainerHelpers():
             aws_volumes = []
             aws_mountPoints = []
             for (host_path, container_details) in self.containerinfo.mounts.items():
-                name = uuid.uuid5(uuid.NAMESPACE_URL, host_path)
+                name = str(uuid.uuid5(uuid.NAMESPACE_URL, host_path))
                 aws_volumes.append({
                     'host': {'sourcePath': host_path},
                     'name': name
