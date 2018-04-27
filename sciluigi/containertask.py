@@ -456,6 +456,7 @@ class ContainerHelpers():
         # Search to see if this job is ALREADY defined.
         job_def_search = batch_client.describe_job_definitions(
             maxResults=1,
+            status='ACTIVE',
             jobDefinitionName=job_def_name,
         )
         if len(job_def_search['jobDefinitions']) == 0:
