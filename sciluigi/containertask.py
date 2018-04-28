@@ -106,27 +106,54 @@ class ContainerHelpers():
     # The ID of the container (docker registry style).
     container = None
 
-    def map_paths_to_container(self, paths, container_base_path='/mnt'):
+    def map_targets_to_container(self, targets):
         """
         Accepts a dictionary where the keys are identifiers for various targets
-        and the value is the HOST path for that target
+        and the value is the target
 
-        What this does is find a common HOST prefix
-        and remaps to the CONTAINER BASE PATH
+        This breaks down the targets by their schema (file, s3, etc). 
+        For each schema a lowest-common-path is found and a suggested container 
+        mountpoint is generated
 
-        Returns a dict of the paths for the targets as they would be seen
-        if the common prefix is mounted within the container at the container_base_path
-        """
-        common_prefix = os.path.commonprefix(
-            [os.path.dirname(p) for p in paths.values()]
-        )
-        container_paths = {
-            i: os.path.join(
-                container_base_path,
-                os.path.relpath(paths[i], common_prefix))
-            for i in paths
+        What one gets back is a nested dict
+        {
+            'scheme': {
+                'common_prefix': '/path/on/source/shared/by/all/targets/of/schema',
+                'rel_paths': {
+                    'identifier': 'path_rel_to_common_prefix'
+                }
+                'targets': {
+                    'identifier': target,
+                }
+            }
         }
-        return os.path.abspath(common_prefix), container_paths
+        """
+        # Determine the schema for these targets via comprehension
+        schema = {t.scheme for t in targets.values()}
+        return_dict = {}
+        for scheme in schema:
+            return_dict[scheme] = {}
+            # Get only the targets for this scheme
+            scheme_targets = {i: t for i, t in targets.items() if t.scheme == scheme}
+            common_prefix = os.path.commonprefix(
+                [os.path.dirname(
+                    os.path.join(
+                        urlsplit(t.path).netloc,
+                        urlsplit(t.path).path
+                        )
+                ) for t in scheme_targets.values()])
+            return_dict[scheme]['common_prefix'] = common_prefix
+            return_dict[scheme]['targets'] = scheme_targets
+            return_dict[scheme]['relpaths'] = {
+                                                    i: os.path.relpath(
+                                                            os.path.join(
+                                                                urlsplit(t.path).netloc,
+                                                                urlsplit(t.path).path
+                                                            ),
+                                                            common_prefix)
+                                                    for i, t in scheme_targets.items() 
+                                                }
+        return return_dict
 
     def make_fs_name(self, uri):
         uri_list = uri.split('://')
@@ -140,16 +167,16 @@ class ContainerHelpers():
     def ex(
             self,
             command,
-            input_paths={},
-            output_paths={},
+            input_targets={},
+            output_targets={},
             extra_params={},
             inputs_mode='ro',
             outputs_mode='rw'):
         if self.containerinfo.engine == 'docker':
             return self.ex_docker(
                 command,
-                input_paths,
-                output_paths,
+                input_targets,
+                output_targets,
                 extra_params,
                 inputs_mode,
                 outputs_mode
@@ -599,11 +626,13 @@ class ContainerHelpers():
     def ex_docker(
             self,
             command,
-            input_paths={},
-            output_paths={},
+            input_targets={},
+            output_targets={},
             extra_params={},
             inputs_mode='ro',
-            outputs_mode='rw'):
+            outputs_mode='rw',
+            input_mount_point='/mnt/inputs',
+            output_mount_point='/mnt/outputs'):
         """
         Run command in the container using docker, with mountpoints
         command is assumed to be in python template substitution format
@@ -611,46 +640,100 @@ class ContainerHelpers():
         client = docker.from_env()
         container_paths = {}
         mounts = self.containerinfo.mounts.copy()
+        UF = []
+        DF = []
 
-        if len(output_paths) > 0:
-            output_host_path_ca, output_container_paths = self.map_paths_to_container(
-                output_paths,
-                container_base_path='/mnt/outputs'
+        if len(output_targets) > 0:
+            output_target_maps = self.map_targets_to_container(
+                output_targets,
             )
-            container_paths.update(output_container_paths)
-            mounts[output_host_path_ca] = {'bind': '/mnt/outputs', 'mode': outputs_mode}
+            out_schema = set(output_target_maps.keys())
+            # Local file targets can just be mapped.
+            file_output_common_prefix = None
+            if 'file' in out_schema:
+                file_output_common_prefix = output_target_maps['file']['common_prefix']
+                mounts[os.path.abspath(output_target_maps['file']['common_prefix'])] = {
+                    'bind': os.path.join(output_mount_point, 'file'),
+                    'mode': outputs_mode
+                }
+                container_paths.update({
+                    i: os.path.join(output_mount_point, 'file', rp)
+                    for i, rp in output_target_maps['file']['relpaths'].items()
+                })
+                out_schema.remove('file')
+            # Handle other schema here using BCW, creating the appropriate UF parameters
+            for scheme in out_schema:
+                for identifier in output_target_maps[scheme]['targets']:
+                    container_paths[identifier] = os.path.join(
+                        output_mount_point,
+                        scheme,
+                        output_target_maps[scheme]['relpaths'][identifier]
+                        )
+                    UF.append("{}::{}".format(
+                        container_paths[identifier],
+                        output_target_maps[scheme]['targets'][identifier].path
+                    ))
 
-        if len(input_paths) > 0:
-            input_host_path_ca, input_container_paths = self.map_paths_to_container(
-                input_paths,
-                container_base_path='/mnt/inputs'
+        if len(input_targets) > 0:
+            input_target_maps = self.map_targets_to_container(
+                input_targets
             )
-            # Handle the edge case where the common directory for inputs is equal to the outputs
-            if len(output_paths) > 0 and (output_host_path_ca == input_host_path_ca):
-                log.warn("Input and Output host paths the same {}".format(output_host_path_ca))
-                # Repeat our mapping, now using the outputs path for both
-                input_host_path_ca, input_container_paths = self.map_paths_to_container(
-                    input_paths,
-                    container_base_path='/mnt/outputs'
-                )
-            else:  # output and input paths different OR there are only input paths
-                mounts[input_host_path_ca] = {'bind': '/mnt/inputs', 'mode': inputs_mode}
+            in_schema = set(input_target_maps.keys())
+            if 'file' in in_schema:
+                # Check for the edge case where our common prefix for input and output is the same
+                if file_output_common_prefix and file_output_common_prefix == input_target_maps['file']['common_prefix']:
+                    # It is! Skip adding a mount for inputs then, and reset our input mountpoint
+                    input_mount_point = output_mount_point
+                    pass
+                else:  # Add our mount
+                    mounts[os.path.abspath(input_target_maps['file']['common_prefix'])] = {
+                        'bind': os.path.join(input_mount_point, 'file'),
+                        'mode': inputs_mode
+                    }
+                container_paths.update({
+                    i: os.path.join(input_mount_point, 'file', rp)
+                    for i, rp in input_target_maps['file']['relpaths'].items()
+                })
+                in_schema.remove('file')
 
-            # No matter what, add our mappings
-            container_paths.update(input_container_paths)
+            # Handle other schema here using BCW, creating the appropriate DF parameters
+            for scheme in in_schema:
+                for identifier in input_target_maps[scheme]['targets']:
+                    container_paths[identifier] = os.path.join(
+                        input_mount_point,
+                        scheme,
+                        input_target_maps[scheme]['relpaths'][identifier]
+                        )
+                    DF.append("{}::{}::{}".format(
+                        input_target_maps[scheme]['targets'][identifier].path,
+                        container_paths[identifier],
+                        inputs_mode,
+                    ))
 
         template_dict = container_paths.copy()
         template_dict.update(extra_params)
         command = Template(command).substitute(template_dict)
 
+        command_list = [
+            'bucket_command_wrapper',
+            '--command', command,
+            ]
+        for df in DF:
+            command_list.append('-DF')
+            command_list.append(df)
+        for uf in UF:
+            command_list.append('-UF')
+            command_list.append(uf)
+
         try:
-            log.info("Attempting to run {} in {}".format(
-                command,
-                self.container
+            log.info("Attempting to run {} in {} with mounts {}".format(
+                command_list,
+                self.container,
+                mounts,
             ))
             stdout = client.containers.run(
                 image=self.container,
-                command=['bash', '-c', command],
+                command=command_list,
                 volumes=mounts,
                 mem_limit="{}m".format(self.containerinfo.mem),
             )
