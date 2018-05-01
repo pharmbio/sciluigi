@@ -61,8 +61,8 @@ class ContainerInfo():
                  aws_jobRoleArn='',
                  aws_s3_scratch_loc='',
                  aws_batch_job_queue='',
-                 aws_secrets_loc=os.path.expanduser('~/.aws',
-                 slurm_partition='')
+                 aws_secrets_loc=os.path.expanduser('~/.aws'),
+                 slurm_partition=''
                  ):
         self.engine = engine
         self.vcpu = vcpu
@@ -168,13 +168,13 @@ class ContainerHelpers():
         return return_dict
 
     def mounts_CP_DF_UF(
-        self,
-        input_targets,
-        output_targets,
-        inputs_mode,
-        outputs_mode,
-        input_mount_point,
-        output_mount_point):
+            self,
+            input_targets,
+            output_targets,
+            inputs_mode,
+            outputs_mode,
+            input_mount_point,
+            output_mount_point):
 
         container_paths = {}
         mounts = self.containerinfo.mounts.copy()
@@ -674,9 +674,6 @@ class ContainerHelpers():
         # Implicit else we succeeded
         # Now we need to copy back from S3 to our local filesystem
         for (s3_loc, target) in needs_s3_download:
-            print(urlsplit(s3_loc).netloc)
-            print(urlsplit(s3_loc).path.strip('/'))
-            print(os.path.abspath(target.path))
             if target.scheme == 'file':
                 s3_client.download_file(
                     Bucket=urlsplit(s3_loc).netloc,
