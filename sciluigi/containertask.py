@@ -48,6 +48,9 @@ class ContainerInfo():
     aws_batch_job_queue = None
     aws_secrets_loc = None
 
+    # SLURM specifics
+    slurm_partition = None
+
     def __init__(self,
                  engine='docker',
                  vcpu=1,
@@ -58,7 +61,8 @@ class ContainerInfo():
                  aws_jobRoleArn='',
                  aws_s3_scratch_loc='',
                  aws_batch_job_queue='',
-                 aws_secrets_loc=os.path.expanduser('~/.aws')
+                 aws_secrets_loc=os.path.expanduser('~/.aws',
+                 slurm_partition='')
                  ):
         self.engine = engine
         self.vcpu = vcpu
@@ -66,10 +70,13 @@ class ContainerInfo():
         self.timeout = timeout
         self.mounts = mounts
         self.container_cache = container_cache
+
         self.aws_jobRoleArn = aws_jobRoleArn
         self.aws_s3_scratch_loc = aws_s3_scratch_loc
         self.aws_batch_job_queue = aws_batch_job_queue
         self.aws_secrets_loc = aws_secrets_loc
+
+        self.slurm_partition = slurm_partition
 
     def __str__(self):
         """
@@ -156,9 +163,94 @@ class ContainerHelpers():
                                                                 urlsplit(t.path).path
                                                             ),
                                                             common_prefix)
-                                                    for i, t in scheme_targets.items() 
+                                                    for i, t in scheme_targets.items()
                                                 }
         return return_dict
+
+    def mounts_CP_DF_UF(
+        self,
+        input_targets,
+        output_targets,
+        inputs_mode,
+        outputs_mode,
+        input_mount_point,
+        output_mount_point):
+
+        container_paths = {}
+        mounts = self.containerinfo.mounts.copy()
+        UF = []
+        DF = []
+
+        output_target_maps = self.map_targets_to_container(
+            output_targets,
+        )
+        out_schema = set(output_target_maps.keys())
+        # Local file targets can just be mapped.
+        file_output_common_prefix = None
+        if 'file' in out_schema:
+            file_output_common_prefix = output_target_maps['file']['common_prefix']
+            mounts[os.path.abspath(output_target_maps['file']['common_prefix'])] = {
+                'bind': os.path.join(output_mount_point, 'file'),
+                'mode': outputs_mode
+            }
+            container_paths.update({
+                i: os.path.join(output_mount_point, 'file', rp)
+                for i, rp in output_target_maps['file']['relpaths'].items()
+            })
+            out_schema.remove('file')
+        # Handle other schema here using BCW, creating the appropriate UF parameters
+        for scheme in out_schema:
+            for identifier in output_target_maps[scheme]['targets']:
+                container_paths[identifier] = os.path.join(
+                    output_mount_point,
+                    scheme,
+                    output_target_maps[scheme]['relpaths'][identifier]
+                    )
+                UF.append("{}::{}".format(
+                    container_paths[identifier],
+                    output_target_maps[scheme]['targets'][identifier].path
+                ))
+
+        input_target_maps = self.map_targets_to_container(
+            input_targets
+        )
+        in_schema = set(input_target_maps.keys())
+        if 'file' in in_schema:
+            # Check for the edge case where our common prefix for input and output is the same
+            if file_output_common_prefix and file_output_common_prefix == input_target_maps['file']['common_prefix']:
+                # It is! Skip adding a mount for inputs then, and reset our input mountpoint
+                input_mount_point = output_mount_point
+                pass
+            else:  # Add our mount
+                mounts[os.path.abspath(input_target_maps['file']['common_prefix'])] = {
+                    'bind': os.path.join(input_mount_point, 'file'),
+                    'mode': inputs_mode
+                }
+            container_paths.update({
+                i: os.path.join(input_mount_point, 'file', rp)
+                for i, rp in input_target_maps['file']['relpaths'].items()
+            })
+            in_schema.remove('file')
+
+        # Handle other schema here using BCW, creating the appropriate DF parameters
+        for scheme in in_schema:
+            for identifier in input_target_maps[scheme]['targets']:
+                container_paths[identifier] = os.path.join(
+                    input_mount_point,
+                    scheme,
+                    input_target_maps[scheme]['relpaths'][identifier]
+                    )
+                DF.append("{}::{}::{}".format(
+                    input_target_maps[scheme]['targets'][identifier].path,
+                    container_paths[identifier],
+                    inputs_mode,
+                ))
+
+        # Mount the AWS secrets if we have some AND s3 is in one of our schema
+        if self.containerinfo.aws_secrets_loc and ('s3' in out_schema or 's3' in in_schema):
+            mounts[self.containerinfo.aws_secrets_loc] = {'bind': '/root/.aws', 'mode': 'ro'}
+        
+        return (mounts, container_paths, DF, UF)
 
     def make_fs_name(self, uri):
         uri_list = uri.split('://')
@@ -218,44 +310,24 @@ class ContainerHelpers():
     def ex_singularity_slurm(
             self,
             command,
-            input_paths={},
-            output_paths={},
+            input_targets={},
+            output_targets={},
             extra_params={},
             inputs_mode='ro',
-            outputs_mode='rw'):
+            outputs_mode='rw',
+            input_mount_point='/mnt/inputs',
+            output_mount_point='/mnt/outputs'):
         """
-        Run command in the container using singularity, with mountpoints
+        Run command in the container using singularity on slurm, with mountpoints
         command is assumed to be in python template substitution format
         """
-        container_paths = {}
-        mounts = self.containerinfo.mounts.copy()
-
-        if len(output_paths) > 0:
-            output_host_path_ca, output_container_paths = self.map_paths_to_container(
-                output_paths,
-                container_base_path='/mnt/outputs'
-            )
-            container_paths.update(output_container_paths)
-            mounts[output_host_path_ca] = {'bind': '/mnt/outputs', 'mode': outputs_mode}
-
-        if len(input_paths) > 0:
-            input_host_path_ca, input_container_paths = self.map_paths_to_container(
-                input_paths,
-                container_base_path='/mnt/inputs'
-            )
-            # Handle the edge case where the common directory for inputs is equal to the outputs
-            if len(output_paths) > 0 and (output_host_path_ca == input_host_path_ca):
-                log.warn("Input and Output host paths the same {}".format(output_host_path_ca))
-                # Repeat our mapping, now using the outputs path for both
-                input_host_path_ca, input_container_paths = self.map_paths_to_container(
-                    input_paths,
-                    container_base_path='/mnt/outputs'
-                )
-            else:  # output and input paths different OR there are only input paths
-                mounts[input_host_path_ca] = {'bind': '/mnt/inputs', 'mode': inputs_mode}
-
-            # No matter what, add our mappings
-            container_paths.update(input_container_paths)
+        mounts, container_paths, DF, UF = self.mounts_CP_DF_UF(
+            input_targets,
+            output_targets,
+            inputs_mode,
+            outputs_mode,
+            input_mount_point,
+            output_mount_point)
 
         img_location = os.path.join(
             self.containerinfo.container_cache,
@@ -281,7 +353,7 @@ class ContainerHelpers():
                     'pull',
                     '--name',
                     os.path.basename(img_location),
-                    self.container
+                    "docker://{}".format(self.container)
                 ],
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE
@@ -290,19 +362,32 @@ class ContainerHelpers():
             # Move back
             os.chdir(cwd)
 
-        command = Template(command).substitute(container_paths)
+        template_dict = container_paths.copy()
+        template_dict.update(extra_params)
+        command = Template(command).substitute(template_dict)
+
         log.info("Attempting to run {} in {}".format(
                 command,
                 self.container
             ))
 
         command_list = [
-            'singularity', 'exec'
+            'salloc', 
+            '-c', self.containerinfo.vcpu,
+            '--mem={}M'.format(self.containerinfo.mem),
+            '-t', self.containerinfo.timeout,
+            '-p', self.containerinfo.slurm_partition,
+            'singularity', 'exec', '-c',
         ]
         for mp in mounts:
             command_list += ['-B', "{}:{}:{}".format(mp, mounts[mp]['bind'], mounts[mp]['mode'])]
         command_list.append(img_location)
-        command_list += shlex.split(command)
+        command_list+=['bucket_command_wrapper', '-c', command]
+        for uf in UF:
+            command_list+=['-UF', uf]
+        for df in DF:
+            command_list+=['-DF', df]
+
         command_proc = subprocess.run(
             command_list,
             stdout=subprocess.PIPE,
@@ -417,7 +502,7 @@ class ContainerHelpers():
                     # And actually upload to the S3 temp location now
                     if scheme == 'file' or scheme == '':
                         s3_client.upload_file(
-                            Filename=target.path,
+                            Filename=os.path.abspath(target.path),
                             Bucket=urlsplit(s3_temp_loc).netloc,
                             Key=urlsplit(s3_temp_loc).path.strip('/'),
                             ExtraArgs={
@@ -588,18 +673,21 @@ class ContainerHelpers():
             ))
         # Implicit else we succeeded
         # Now we need to copy back from S3 to our local filesystem
-        for s3_loc, target in needs_s3_download:
+        for (s3_loc, target) in needs_s3_download:
+            print(urlsplit(s3_loc).netloc)
+            print(urlsplit(s3_loc).path.strip('/'))
+            print(os.path.abspath(target.path))
             if target.scheme == 'file':
                 s3_client.download_file(
                     Bucket=urlsplit(s3_loc).netloc,
-                    Key=urlsplit(s3_loc).path.split('/'),
-                    Filename=target.path,
+                    Key=urlsplit(s3_loc).path.strip('/'),
+                    Filename=os.path.abspath(target.path),
                 )
             else:
                 with target.open('w') as target_h:
                     s3_client.download_file(
                         Bucket=urlsplit(s3_loc).netloc,
-                        Key=urlsplit(s3_loc).path.split('/'),
+                        Key=urlsplit(s3_loc).path.strip('/'),
                         Fileobj=target_h,
                     )
         # Cleanup the temp S3
@@ -626,80 +714,15 @@ class ContainerHelpers():
         command is assumed to be in python template substitution format
         """
         client = docker.from_env()
-        container_paths = {}
-        mounts = self.containerinfo.mounts.copy()
-        UF = []
-        DF = []
-
-        output_target_maps = self.map_targets_to_container(
+        
+        mounts, container_paths, DF, UF = self.mounts_CP_DF_UF(
+            input_targets,
             output_targets,
-        )
-        out_schema = set(output_target_maps.keys())
-        # Local file targets can just be mapped.
-        file_output_common_prefix = None
-        if 'file' in out_schema:
-            file_output_common_prefix = output_target_maps['file']['common_prefix']
-            mounts[os.path.abspath(output_target_maps['file']['common_prefix'])] = {
-                'bind': os.path.join(output_mount_point, 'file'),
-                'mode': outputs_mode
-            }
-            container_paths.update({
-                i: os.path.join(output_mount_point, 'file', rp)
-                for i, rp in output_target_maps['file']['relpaths'].items()
-            })
-            out_schema.remove('file')
-        # Handle other schema here using BCW, creating the appropriate UF parameters
-        for scheme in out_schema:
-            for identifier in output_target_maps[scheme]['targets']:
-                container_paths[identifier] = os.path.join(
-                    output_mount_point,
-                    scheme,
-                    output_target_maps[scheme]['relpaths'][identifier]
-                    )
-                UF.append("{}::{}".format(
-                    container_paths[identifier],
-                    output_target_maps[scheme]['targets'][identifier].path
-                ))
-
-        input_target_maps = self.map_targets_to_container(
-            input_targets
-        )
-        in_schema = set(input_target_maps.keys())
-        if 'file' in in_schema:
-            # Check for the edge case where our common prefix for input and output is the same
-            if file_output_common_prefix and file_output_common_prefix == input_target_maps['file']['common_prefix']:
-                # It is! Skip adding a mount for inputs then, and reset our input mountpoint
-                input_mount_point = output_mount_point
-                pass
-            else:  # Add our mount
-                mounts[os.path.abspath(input_target_maps['file']['common_prefix'])] = {
-                    'bind': os.path.join(input_mount_point, 'file'),
-                    'mode': inputs_mode
-                }
-            container_paths.update({
-                i: os.path.join(input_mount_point, 'file', rp)
-                for i, rp in input_target_maps['file']['relpaths'].items()
-            })
-            in_schema.remove('file')
-
-        # Handle other schema here using BCW, creating the appropriate DF parameters
-        for scheme in in_schema:
-            for identifier in input_target_maps[scheme]['targets']:
-                container_paths[identifier] = os.path.join(
-                    input_mount_point,
-                    scheme,
-                    input_target_maps[scheme]['relpaths'][identifier]
-                    )
-                DF.append("{}::{}::{}".format(
-                    input_target_maps[scheme]['targets'][identifier].path,
-                    container_paths[identifier],
-                    inputs_mode,
-                ))
-
-        # Mount the AWS secrets if we have some AND s3 is in one of our schema
-        if self.containerinfo.aws_secrets_loc and ('s3' in out_schema or 's3' in in_schema):
-            mounts[self.containerinfo.aws_secrets_loc] = {'bind': '/root/.aws', 'mode': 'ro'}
-
+            inputs_mode,
+            outputs_mode,
+            input_mount_point,
+            output_mount_point)
+            
         template_dict = container_paths.copy()
         template_dict.update(extra_params)
         command = Template(command).substitute(template_dict)
