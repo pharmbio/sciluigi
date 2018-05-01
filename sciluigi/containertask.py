@@ -9,6 +9,8 @@ from string import Template
 import shlex
 import uuid
 import time
+import io 
+
 try:
     from urlparse import urlsplit, urljoin
 except ImportError:
@@ -44,6 +46,7 @@ class ContainerInfo():
     aws_jobRoleArn = None
     aws_s3_scratch_loc = None
     aws_batch_job_queue = None
+    aws_secrets_loc = None
 
     def __init__(self,
                  engine='docker',
@@ -54,7 +57,8 @@ class ContainerInfo():
                  container_cache='.',
                  aws_jobRoleArn='',
                  aws_s3_scratch_loc='',
-                 aws_batch_job_queue=''
+                 aws_batch_job_queue='',
+                 aws_secrets_loc=os.path.expanduser('~/.aws')
                  ):
         self.engine = engine
         self.vcpu = vcpu
@@ -65,6 +69,7 @@ class ContainerInfo():
         self.aws_jobRoleArn = aws_jobRoleArn
         self.aws_s3_scratch_loc = aws_s3_scratch_loc
         self.aws_batch_job_queue = aws_batch_job_queue
+        self.aws_secrets_loc = aws_secrets_loc
 
     def __str__(self):
         """
@@ -111,7 +116,7 @@ class ContainerHelpers():
         Accepts a dictionary where the keys are identifiers for various targets
         and the value is the target
 
-        This breaks down the targets by their schema (file, s3, etc). 
+        This breaks down the targets by their schema (file, s3, etc).
         For each schema a lowest-common-path is found and a suggested container 
         mountpoint is generated
 
@@ -171,7 +176,9 @@ class ContainerHelpers():
             output_targets={},
             extra_params={},
             inputs_mode='ro',
-            outputs_mode='rw'):
+            outputs_mode='rw',
+            input_mount_point='/mnt/inputs',
+            output_mount_point='/mnt/outputs'):
         if self.containerinfo.engine == 'docker':
             return self.ex_docker(
                 command,
@@ -179,25 +186,31 @@ class ContainerHelpers():
                 output_targets,
                 extra_params,
                 inputs_mode,
-                outputs_mode
+                outputs_mode,
+                input_mount_point,
+                output_mount_point
             )
         elif self.containerinfo.engine == 'aws_batch':
             return self.ex_aws_batch(
                 command,
-                input_paths,
-                output_paths,
+                input_targets,
+                output_targets,
                 extra_params,
                 inputs_mode,
-                outputs_mode
+                outputs_mode,
+                input_mount_point,
+                output_mount_point
             )
         elif self.containerinfo.engine == 'singularity_slurm':
             return self.ex_singularity_slurm(
                 command,
-                input_paths,
-                output_paths,
+                input_targets,
+                output_targets,
                 extra_params,
                 inputs_mode,
-                outputs_mode
+                outputs_mode,
+                input_mount_point,
+                output_mount_point
             )
         else:
             raise Exception("Container engine {} is invalid".format(self.containerinfo.engine))
@@ -302,11 +315,13 @@ class ContainerHelpers():
     def ex_aws_batch(
             self,
             command,
-            input_paths={},
-            output_paths={},
+            input_targets={},
+            output_targets={},
             extra_params={},
             inputs_mode='ro',
-            outputs_mode='rw'):
+            outputs_mode='rw',
+            input_mount_point='/mnt/inputs',
+            output_mount_point='/mnt/outputs'):
         """
         Run a command in a container using AWS batch.
         Handles uploading of files to / from s3 and then into the container. 
@@ -327,151 +342,132 @@ class ContainerHelpers():
 
         run_uuid = str(uuid.uuid4())
 
-        # 1. First a bit of file mapping / uploading of input items
-        # We need mappings for both two and from S3 and from S3 to within the container
+        # We need mappings for both to and from S3 and from S3 to within the container
         # <local fs> <-> <s3> <-> <Container Mounts>
         # The script in the container, bucket_command_wrapper.py, handles the second half
         # practically, but we need to provide the link s3://bucket/key::/container/path/file::mode
         # the first half we have to do here.
-        # s3_input_paths will hold the s3 path 
-        container_paths = {}
 
-        in_container_paths_from_s3 = {}
-        in_container_paths_from_local_fs = {}
-        s3_input_paths = {}
-        need_s3_uploads = set()
-        for (key, path) in input_paths.items():
-            # First split the path, to see which scheme it is
-            path_split = urlsplit(path)
-            if path_split.scheme == 's3':
-                # Nothing to do. Already an S3 path.
-                in_container_paths_from_s3[key] = os.path.join(
-                    path_split.netloc, 
-                    path_split.path
-                    )
-                s3_input_paths[key] = path
-            elif path_split.scheme == 'file' or path_split.scheme == '':
-                # File path. Will need to upload to S3 to a temporary key within a bucket
-                in_container_paths_from_local_fs[key] = path_split.path
-                need_s3_uploads.add((key, path_split))
-            else:
-                raise ValueError("File storage scheme {} is not supported".format(
-                    path_split.scheme
-                ))
+        container_paths = {}  # Dict key is command template key. Value is in-container path
+        UF = set()  # Set of UF lines to be added. Format is container_path::bucket_file_uri
+        DF = set()  # Set of UF lines to be added. Format is bucket_file_uri::container_path::mode
+        needs_s3_download = set()  # Set of  Tuples. (s3::/bucket/key, target)
+        s3_temp_to_be_deleted = set() # S3 paths to be deleted.
 
-        in_from_local_fs_common_prefix = os.path.dirname(
-            os.path.commonprefix([
-                p for p in in_container_paths_from_local_fs.values()
-            ])
+        # Group our output targets by schema
+        output_target_maps = self.map_targets_to_container(
+            output_targets,
         )
-
-        for k, ps in need_s3_uploads:
-            s3_file_temp_path = "{}{}/in/{}".format(
-                self.containerinfo.aws_s3_scratch_loc,
-                run_uuid,
-                os.path.relpath(ps.path, in_from_local_fs_common_prefix)
-            )
-            s3_input_paths[k] = s3_file_temp_path
-            log.info("Uploading {} to {}".format(
-                input_paths[k],
-                s3_input_paths[k],
-            ))
-            s3_client.upload_file(
-                Filename=input_paths[k],
-                Bucket=urlsplit(s3_input_paths[k]).netloc,
-                Key=urlsplit(s3_input_paths[k]).path.strip('/'),
-                ExtraArgs={
-                    'ServerSideEncryption': 'AES256'
-                }
-            )
-        # build our container paths for inputs from fs and S3
-        for k in in_container_paths_from_local_fs:
-            container_paths[k] = os.path.join(
-                '/mnt/inputs/fs/',
-                os.path.relpath(
-                    in_container_paths_from_local_fs[k],
-                    in_from_local_fs_common_prefix)
-            )
-
-        in_from_s3_common_prefix = os.path.dirname(
-            os.path.commonprefix([
-                p for p in in_container_paths_from_s3.values()
-            ])
+        out_schema = set(output_target_maps.keys())
+        # Make our container paths
+        for schema, schema_targets in output_target_maps.items():
+            for k, relpath in schema_targets['relpaths'].items():
+                container_paths[k] = os.path.join(
+                    output_mount_point,
+                    schema,
+                    relpath
+                )     
+        # Inputs too
+        # Group by schema
+        input_target_maps = self.map_targets_to_container(
+            input_targets,
         )
-        for k in in_container_paths_from_s3:
-            container_paths[k] = os.path.join(
-                '/mnt/inputs/s3/',
-                os.path.relpath(
-                    in_container_paths_from_s3[k],
-                    in_from_s3_common_prefix)
+        in_schema = set(input_target_maps.keys())
+        # Make our container paths
+        for schema, schema_targets in input_target_maps.items():
+            for k, relpath in schema_targets['relpaths'].items():
+                container_paths[k] = os.path.join(
+                    input_mount_point,
+                    schema,
+                    relpath
                 )
+        # Container paths should be done now.
+
+        # Now the need to handle our mapping to-from S3.
+        # Inputs
+        for scheme, schema_targets in input_target_maps.items():
+            if scheme == 's3':  # Already coming from S3. Just make our DF entry
+                for k, target in schema_targets['targets'].items():
+                    DF.add('{}::{}::{}'.format(
+                        target.path,
+                        container_paths[k],
+                        inputs_mode
+                    ))
+            else:  # NOT in S3. Will need to be upload to a temp location
+                for k, target in schema_targets['targets'].items():
+                    s3_temp_loc = os.path.join(
+                            self.containerinfo.aws_s3_scratch_loc,
+                            run_uuid,
+                            scheme,
+                            'in',
+                            schema_targets['relpaths'][k]
+                        )
+                    # Add to DF for inside the container
+                    DF.add('{}::{}::{}'.format(
+                        s3_temp_loc,
+                        container_paths[k],
+                        inputs_mode
+                    ))
+                    # If we are read-write, we can add this to our todo list later
+                    if inputs_mode == 'rw':
+                        needs_s3_download.add((
+                            s3_temp_loc,
+                            target
+                        ))
+                    # And actually upload to the S3 temp location now
+                    if scheme == 'file' or scheme == '':
+                        s3_client.upload_file(
+                            Filename=target.path,
+                            Bucket=urlsplit(s3_temp_loc).netloc,
+                            Key=urlsplit(s3_temp_loc).path.strip('/'),
+                            ExtraArgs={
+                                'ServerSideEncryption': 'AES256'
+                            }
+                        )
+                    else:
+                        # Have to use BytesIO because luigi targets can ONLY be opened in 
+                        # binary mode, and upload / download fileobj can ONLY accept binary mode files
+                        # For reasons.
+                        s3_client.upload_fileobj(
+                            Fileobj=io.BytesIO(
+                                target.open('r').read().encode('utf-8')
+                            ),
+                            Bucket=urlsplit(s3_temp_loc).netloc,
+                            Key=urlsplit(s3_temp_loc).path.strip('/'),
+                            ExtraArgs={
+                                'ServerSideEncryption': 'AES256'
+                            }
+                        )
+                    s3_temp_to_be_deleted.add(s3_temp_loc)
 
         # Outputs
-        s3_output_paths = {}
-        need_s3_downloads = set()
-        out_container_paths_from_s3 = {}
-        out_container_paths_from_local_fs = {}
-
-        for (key, path) in output_paths.items():
-            # First split the path, to see which scheme it is
-            path_split = urlsplit(path)
-            if path_split.scheme == 's3':
-                # Nothing to do. Already an S3 path.
-                s3_output_paths[key] = path
-                out_container_paths_from_s3[key] = os.path.join(
-                    path_split.netloc,
-                    path_split.path
-                    )
-            elif path_split.scheme == 'file' or path_split.scheme == '':
-                # File path. Will need to upload to S3 to a temporary key within a bucket
-                need_s3_downloads.add((key, path_split))
-                out_container_paths_from_local_fs[key] = path_split.path
-            else:
-                raise ValueError("File storage scheme {} is not supported".format(
-                    path_split.scheme
-                ))
-        if len(need_s3_downloads) > 0:
-            output_common_prefix = os.path.commonpath([
-                os.path.dirname(os.path.abspath(ps[1].path))
-                for ps in need_s3_downloads
-            ])
-        else:
-            output_common_prefix = ''
-
-        for k, ps in need_s3_downloads:
-            s3_file_temp_path = "{}{}/out/{}".format(
-                self.containerinfo.aws_s3_scratch_loc,
-                run_uuid,
-                os.path.relpath(ps.path, output_common_prefix)
-            )
-            s3_output_paths[k] = s3_file_temp_path
-
-        # Make our container paths for outputs
-        out_from_local_fs_common_prefix = os.path.dirname(
-            os.path.commonprefix([
-                p for p in out_container_paths_from_local_fs.values()
-            ])
-        )
-        for k in out_container_paths_from_local_fs:
-            container_paths[k] = os.path.join(
-                '/mnt/outputs/fs/',
-                os.path.relpath(
-                    out_container_paths_from_local_fs[k], 
-                    out_from_local_fs_common_prefix)
-            )
-
-        out_from_s3_common_prefix = os.path.dirname(
-            os.path.commonprefix([
-                p for p in out_container_paths_from_s3.values()
-            ])
-        )
-        for k in out_container_paths_from_s3:
-            container_paths[k] = os.path.join(
-                '/mnt/outputs/s3/',
-                os.path.relpath(
-                    out_container_paths_from_s3[k],
-                    out_from_s3_common_prefix)
-                )
+        for scheme, schema_targets in output_target_maps.items():
+            if scheme == 's3':  # Already going to S3. Just make our UF entry
+                for k, target in schema_targets['targets'].items():
+                    UF.add('{}::{}'.format(
+                        container_paths[k],
+                        target.path,
+                    ))
+            else:  # NOT ending in S3. Will need to download to target and make a temp destination in s3
+                for k, target in schema_targets['targets'].items():
+                    s3_temp_loc = os.path.join(
+                            self.containerinfo.aws_s3_scratch_loc,
+                            run_uuid,
+                            scheme,
+                            'out',
+                            schema_targets['relpaths'][k]
+                        )
+                    # Add to UF for inside the container
+                    UF.add('{}::{}'.format(
+                        container_paths[k],
+                        s3_temp_loc
+                    ))
+                    # add this to our download from s3 list later
+                    needs_s3_download.add((
+                        s3_temp_loc,
+                        target
+                    ))
+                    s3_temp_to_be_deleted.add(s3_temp_loc)
 
         # 2) Register / retrieve job definition for this container, command, and job role arn
 
@@ -550,24 +546,17 @@ class ContainerHelpers():
             '--command', Template(command).safe_substitute(template_dict)
         ]
         # Add in our inputs
-        for k in s3_input_paths:
+        for df in DF:
             container_command_list += [
                 '-DF',
-                "{}::{}::{}".format(
-                    s3_input_paths[k],
-                    container_paths[k],
-                    inputs_mode.lower()
-                )
+                df
             ]
 
         # And our outputs
-        for k in s3_output_paths:
+        for uf in UF:
             container_command_list += [
                 '-UF',
-                "{}::{}".format(
-                    container_paths[k],
-                    s3_output_paths[k]
-                )
+                uf
             ]
 
         # Submit the job
@@ -599,26 +588,25 @@ class ContainerHelpers():
             ))
         # Implicit else we succeeded
         # Now we need to copy back from S3 to our local filesystem
-        for k, ps in need_s3_downloads:
-            s3_client.download_file(
-                Filename=ps.path,
-                Bucket=urlsplit(s3_output_paths[k]).netloc,
-                Key=urlsplit(s3_output_paths[k]).path.strip('/')
-            )
-        # And the inputs if we are rw
-        if inputs_mode == 'rw':
-            for k, ps in need_s3_uploads:
+        for s3_loc, target in needs_s3_download:
+            if target.scheme == 'file':
                 s3_client.download_file(
-                    Filename=ps.path,
-                    Bucket=urlsplit(s3_input_paths[k]).netloc,
-                    Key=urlsplit(s3_input_paths[k]).path.strip('/')
+                    Bucket=urlsplit(s3_loc).netloc,
+                    Key=urlsplit(s3_loc).path.split('/'),
+                    Filename=target.path,
                 )
-
+            else:
+                with target.open('w') as target_h:
+                    s3_client.download_file(
+                        Bucket=urlsplit(s3_loc).netloc,
+                        Key=urlsplit(s3_loc).path.split('/'),
+                        Fileobj=target_h,
+                    )
         # Cleanup the temp S3
-        for k, ps in need_s3_uploads:
+        for s3_path in s3_temp_to_be_deleted:
             s3_client.delete_object(
-                Bucket=urlsplit(s3_input_paths[k]).netloc,
-                Key=urlsplit(s3_input_paths[k]).path.strip('/'),
+                Bucket=urlsplit(s3_path).netloc,
+                Key=urlsplit(s3_path).path.strip('/'),
             )
 
         # And done
@@ -643,72 +631,74 @@ class ContainerHelpers():
         UF = []
         DF = []
 
-        if len(output_targets) > 0:
-            output_target_maps = self.map_targets_to_container(
-                output_targets,
-            )
-            out_schema = set(output_target_maps.keys())
-            # Local file targets can just be mapped.
-            file_output_common_prefix = None
-            if 'file' in out_schema:
-                file_output_common_prefix = output_target_maps['file']['common_prefix']
-                mounts[os.path.abspath(output_target_maps['file']['common_prefix'])] = {
-                    'bind': os.path.join(output_mount_point, 'file'),
-                    'mode': outputs_mode
+        output_target_maps = self.map_targets_to_container(
+            output_targets,
+        )
+        out_schema = set(output_target_maps.keys())
+        # Local file targets can just be mapped.
+        file_output_common_prefix = None
+        if 'file' in out_schema:
+            file_output_common_prefix = output_target_maps['file']['common_prefix']
+            mounts[os.path.abspath(output_target_maps['file']['common_prefix'])] = {
+                'bind': os.path.join(output_mount_point, 'file'),
+                'mode': outputs_mode
+            }
+            container_paths.update({
+                i: os.path.join(output_mount_point, 'file', rp)
+                for i, rp in output_target_maps['file']['relpaths'].items()
+            })
+            out_schema.remove('file')
+        # Handle other schema here using BCW, creating the appropriate UF parameters
+        for scheme in out_schema:
+            for identifier in output_target_maps[scheme]['targets']:
+                container_paths[identifier] = os.path.join(
+                    output_mount_point,
+                    scheme,
+                    output_target_maps[scheme]['relpaths'][identifier]
+                    )
+                UF.append("{}::{}".format(
+                    container_paths[identifier],
+                    output_target_maps[scheme]['targets'][identifier].path
+                ))
+
+        input_target_maps = self.map_targets_to_container(
+            input_targets
+        )
+        in_schema = set(input_target_maps.keys())
+        if 'file' in in_schema:
+            # Check for the edge case where our common prefix for input and output is the same
+            if file_output_common_prefix and file_output_common_prefix == input_target_maps['file']['common_prefix']:
+                # It is! Skip adding a mount for inputs then, and reset our input mountpoint
+                input_mount_point = output_mount_point
+                pass
+            else:  # Add our mount
+                mounts[os.path.abspath(input_target_maps['file']['common_prefix'])] = {
+                    'bind': os.path.join(input_mount_point, 'file'),
+                    'mode': inputs_mode
                 }
-                container_paths.update({
-                    i: os.path.join(output_mount_point, 'file', rp)
-                    for i, rp in output_target_maps['file']['relpaths'].items()
-                })
-                out_schema.remove('file')
-            # Handle other schema here using BCW, creating the appropriate UF parameters
-            for scheme in out_schema:
-                for identifier in output_target_maps[scheme]['targets']:
-                    container_paths[identifier] = os.path.join(
-                        output_mount_point,
-                        scheme,
-                        output_target_maps[scheme]['relpaths'][identifier]
-                        )
-                    UF.append("{}::{}".format(
-                        container_paths[identifier],
-                        output_target_maps[scheme]['targets'][identifier].path
-                    ))
+            container_paths.update({
+                i: os.path.join(input_mount_point, 'file', rp)
+                for i, rp in input_target_maps['file']['relpaths'].items()
+            })
+            in_schema.remove('file')
 
-        if len(input_targets) > 0:
-            input_target_maps = self.map_targets_to_container(
-                input_targets
-            )
-            in_schema = set(input_target_maps.keys())
-            if 'file' in in_schema:
-                # Check for the edge case where our common prefix for input and output is the same
-                if file_output_common_prefix and file_output_common_prefix == input_target_maps['file']['common_prefix']:
-                    # It is! Skip adding a mount for inputs then, and reset our input mountpoint
-                    input_mount_point = output_mount_point
-                    pass
-                else:  # Add our mount
-                    mounts[os.path.abspath(input_target_maps['file']['common_prefix'])] = {
-                        'bind': os.path.join(input_mount_point, 'file'),
-                        'mode': inputs_mode
-                    }
-                container_paths.update({
-                    i: os.path.join(input_mount_point, 'file', rp)
-                    for i, rp in input_target_maps['file']['relpaths'].items()
-                })
-                in_schema.remove('file')
+        # Handle other schema here using BCW, creating the appropriate DF parameters
+        for scheme in in_schema:
+            for identifier in input_target_maps[scheme]['targets']:
+                container_paths[identifier] = os.path.join(
+                    input_mount_point,
+                    scheme,
+                    input_target_maps[scheme]['relpaths'][identifier]
+                    )
+                DF.append("{}::{}::{}".format(
+                    input_target_maps[scheme]['targets'][identifier].path,
+                    container_paths[identifier],
+                    inputs_mode,
+                ))
 
-            # Handle other schema here using BCW, creating the appropriate DF parameters
-            for scheme in in_schema:
-                for identifier in input_target_maps[scheme]['targets']:
-                    container_paths[identifier] = os.path.join(
-                        input_mount_point,
-                        scheme,
-                        input_target_maps[scheme]['relpaths'][identifier]
-                        )
-                    DF.append("{}::{}::{}".format(
-                        input_target_maps[scheme]['targets'][identifier].path,
-                        container_paths[identifier],
-                        inputs_mode,
-                    ))
+        # Mount the AWS secrets if we have some AND s3 is in one of our schema
+        if self.containerinfo.aws_secrets_loc and ('s3' in out_schema or 's3' in in_schema):
+            mounts[self.containerinfo.aws_secrets_loc] = {'bind': '/root/.aws', 'mode': 'ro'}
 
         template_dict = container_paths.copy()
         template_dict.update(extra_params)
