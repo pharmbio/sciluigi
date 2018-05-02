@@ -372,7 +372,7 @@ class ContainerHelpers():
             ))
 
         command_list = [
-            'singularity', 'exec', '--contain', '--scratch', '/working/'
+            'singularity', 'exec', '--contain', '--scratch', '/scratch/'
         ]
         for mp in mounts:
             command_list += ['-B', "{}:{}:{}".format(mp, mounts[mp]['bind'], mounts[mp]['mode'])]
