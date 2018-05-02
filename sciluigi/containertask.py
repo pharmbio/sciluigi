@@ -62,7 +62,7 @@ class ContainerInfo():
                  aws_s3_scratch_loc='',
                  aws_batch_job_queue='',
                  aws_secrets_loc=os.path.expanduser('~/.aws'),
-                 slurm_partition=''
+                 slurm_partition=None
                  ):
         self.engine = engine
         self.vcpu = vcpu
@@ -372,27 +372,36 @@ class ContainerHelpers():
             ))
 
         command_list = [
-            'salloc', 
-            '-c', self.containerinfo.vcpu,
-            '--mem={}M'.format(self.containerinfo.mem),
-            '-t', self.containerinfo.timeout,
-            '-p', self.containerinfo.slurm_partition,
             'singularity', 'exec', '-c',
         ]
         for mp in mounts:
             command_list += ['-B', "{}:{}:{}".format(mp, mounts[mp]['bind'], mounts[mp]['mode'])]
         command_list.append(img_location)
-        command_list+=['bucket_command_wrapper', '-c', command]
+        command_list += ['bucket_command_wrapper', '-c', command]
         for uf in UF:
-            command_list+=['-UF', uf]
+            command_list += ['-UF', uf]
         for df in DF:
-            command_list+=['-DF', df]
+            command_list += ['-DF', df]
 
-        command_proc = subprocess.run(
-            command_list,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-        )
+        if not self.containerinfo.slurm_partition:  # No slurm partition. Run without slurm
+            command_proc = subprocess.run(
+                command_list,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+            )
+        else:
+            command_proc = subprocess.run(
+                [
+                    'salloc',
+                    '-c', str(self.containerinfo.vcpu),
+                    '--mem={}M'.format(self.containerinfo.mem),
+                    '-t', str(self.containerinfo.timeout),
+                    '-p', self.containerinfo.slurm_partition,
+                ]+command_list,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+            )
+            
         log.info(command_proc.stdout)
         if command_proc.stderr:
             log.warn(command_proc.stderr)
@@ -559,7 +568,7 @@ class ContainerHelpers():
         # Make a UUID based on the container / command
         job_def_name = "sl_containertask__{}".format(
                 uuid.uuid5(
-                    uuid.NAMESPACE_URL, 
+                    uuid.NAMESPACE_URL,
                     self.container+self.containerinfo.aws_jobRoleArn+str(self.containerinfo.mounts)
                     )
             )
