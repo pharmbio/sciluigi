@@ -372,7 +372,7 @@ class ContainerHelpers():
             ))
 
         command_list = [
-            'singularity', 'exec', '--contain', '--scratch', '/working/'
+            'singularity', 'exec', '--contain', '--scratch', '/scratch'
         ]
         for mp in mounts:
             command_list += ['-B', "{}:{}:{}".format(mp, mounts[mp]['bind'], mounts[mp]['mode'])]
@@ -401,7 +401,7 @@ class ContainerHelpers():
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
             )
-            
+
         log.info(command_proc.stdout)
         if command_proc.stderr:
             log.warn(command_proc.stderr)
@@ -418,7 +418,7 @@ class ContainerHelpers():
             output_mount_point='/mnt/outputs'):
         """
         Run a command in a container using AWS batch.
-        Handles uploading of files to / from s3 and then into the container. 
+        Handles uploading of files to / from s3 and then into the container.
         Assumes the container has batch_command_wrapper.py
         """
         #
