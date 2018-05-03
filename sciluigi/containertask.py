@@ -10,6 +10,7 @@ import shlex
 import uuid
 import time
 import io 
+from botocore.exceptions import ClientError
 
 try:
     from urlparse import urlsplit, urljoin
@@ -565,11 +566,17 @@ class ContainerHelpers():
             )
 
         # Search to see if this job is ALREADY defined.
-        job_def_search = batch_client.describe_job_definitions(
-            maxResults=1,
-            status='ACTIVE',
-            jobDefinitionName=job_def_name,
-        )
+        while True:
+            try:
+                job_def_search = batch_client.describe_job_definitions(
+                    maxResults=1,
+                    status='ACTIVE',
+                    jobDefinitionName=job_def_name,
+                )
+                break
+            except ClientError:
+                log.info("Caught boto3 client error, sleeping for 10 seconds")
+                time.sleep(10)
         if len(job_def_search['jobDefinitions']) == 0:
             # Not registered yet. Register it now
             log.info(
@@ -599,22 +606,28 @@ class ContainerHelpers():
                     'readOnly': read_only,
                 })
 
-            batch_client.register_job_definition(
-                jobDefinitionName=job_def_name,
-                type='container',
-                containerProperties={
-                    'image': self.container,
-                    'vcpus': 1,
-                    'memory': 1024,
-                    'command': shlex.split(command),
-                    'jobRoleArn': self.containerinfo.aws_jobRoleArn,
-                    'mountPoints': aws_mountPoints,
-                    'volumes': aws_volumes
-                },
-                timeout={
-                    'attemptDurationSeconds': self.containerinfo.timeout * 60
-                }
-            )
+            while True:
+                try:
+                    batch_client.register_job_definition(
+                        jobDefinitionName=job_def_name,
+                        type='container',
+                        containerProperties={
+                            'image': self.container,
+                            'vcpus': 1,
+                            'memory': 1024,
+                            'command': shlex.split(command),
+                            'jobRoleArn': self.containerinfo.aws_jobRoleArn,
+                            'mountPoints': aws_mountPoints,
+                            'volumes': aws_volumes
+                        },
+                        timeout={
+                            'attemptDurationSeconds': self.containerinfo.timeout * 60
+                        }
+                    )
+                    break
+                except ClientError:
+                    log.info("Caught boto3 client error, sleeping for 10 seconds")
+                    time.sleep(10)
         else:  # Already registered
             aws_job_def = job_def_search['jobDefinitions'][0]
             log.info('Found job definition for {} with job role {} under name {}'.format(
@@ -645,28 +658,38 @@ class ContainerHelpers():
             ]
 
         # Submit the job
-        job_submission = batch_client.submit_job(
-            jobName=run_uuid,
-            jobQueue=self.containerinfo.aws_batch_job_queue,
-            jobDefinition=job_def_name,
-            containerOverrides={
-                'vcpus': self.containerinfo.vcpu,
-                'memory': self.containerinfo.mem,
-                'command': container_command_list,
-            },
-        )
+        while True:
+            try:
+                job_submission = batch_client.submit_job(
+                    jobName=run_uuid,
+                    jobQueue=self.containerinfo.aws_batch_job_queue,
+                    jobDefinition=job_def_name,
+                    containerOverrides={
+                        'vcpus': self.containerinfo.vcpu,
+                        'memory': self.containerinfo.mem,
+                        'command': container_command_list,
+                    },
+                )
+                break
+            except ClientError:
+                log.info("Caught boto3 client error, sleeping for 10 seconds")
+                time.sleep(10)
         job_submission_id = job_submission.get('jobId')
         log.info("Running {} under jobId {}".format(
             container_command_list,
             job_submission_id
         ))
         while True:
-            job_status = batch_client.describe_jobs(
-                jobs=[job_submission_id]
-            ).get('jobs')[0]
-            if job_status.get('status') == 'SUCCEEDED' or job_status.get('status') == 'FAILED':
-                break
-            time.sleep(10)
+            try:
+                job_status = batch_client.describe_jobs(
+                    jobs=[job_submission_id]
+                ).get('jobs')[0]
+                if job_status.get('status') == 'SUCCEEDED' or job_status.get('status') == 'FAILED':
+                    break
+                time.sleep(10)
+            except ClientError:
+                log.info("Caught boto3 client error, sleeping for 10 seconds")
+                time.sleep(10)
         if job_status.get('status') != 'SUCCEEDED':
             raise Exception("Batch job failed. {}".format(
                 job_status.get('statusReason')
