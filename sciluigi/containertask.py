@@ -48,6 +48,7 @@ class ContainerInfo():
     aws_s3_scratch_loc = None
     aws_batch_job_queue = None
     aws_secrets_loc = None
+    aws_boto_max_tries = None
 
     # SLURM specifics
     slurm_partition = None
@@ -63,6 +64,7 @@ class ContainerInfo():
                  aws_s3_scratch_loc='',
                  aws_batch_job_queue='',
                  aws_secrets_loc=os.path.expanduser('~/.aws'),
+                 aws_boto_max_tries=10,
                  slurm_partition=''
                  ):
         self.engine = engine
@@ -76,6 +78,7 @@ class ContainerInfo():
         self.aws_s3_scratch_loc = aws_s3_scratch_loc
         self.aws_batch_job_queue = aws_batch_job_queue
         self.aws_secrets_loc = aws_secrets_loc
+        self.aws_boto_max_tries = aws_boto_max_tries
 
         self.slurm_partition = slurm_partition
 
@@ -407,8 +410,7 @@ class ContainerHelpers():
             inputs_mode='ro',
             outputs_mode='rw',
             input_mount_point='/mnt/inputs',
-            output_mount_point='/mnt/outputs',
-            MAX_BOTO_TRIES=10):
+            output_mount_point='/mnt/outputs'):
         """
         Run a command in a container using AWS batch.
         Handles uploading of files to / from s3 and then into the container. 
@@ -439,7 +441,7 @@ class ContainerHelpers():
         UF = set()  # Set of UF lines to be added. Format is container_path::bucket_file_uri
         DF = set()  # Set of UF lines to be added. Format is bucket_file_uri::container_path::mode
         needs_s3_download = set()  # Set of  Tuples. (s3::/bucket/key, target)
-        s3_temp_to_be_deleted = set() # S3 paths to be deleted.
+        s3_temp_to_be_deleted = set()  # S3 paths to be deleted.
 
         # Group our output targets by schema
         output_target_maps = self.map_targets_to_container(
@@ -568,7 +570,7 @@ class ContainerHelpers():
 
         # Search to see if this job is ALREADY defined.
         boto_tries = 0
-        while boto_tries < MAX_BOTO_TRIES:
+        while boto_tries < self.containerinfo.aws_boto_max_tries:
             boto_tries += 1
             try:
                 job_def_search = batch_client.describe_job_definitions(
@@ -610,7 +612,7 @@ class ContainerHelpers():
                 })
 
             boto_tries = 0
-            while boto_tries < MAX_BOTO_TRIES:
+            while boto_tries < self.containerinfo.aws_boto_max_tries:
                 boto_tries += 1
                 try:
                     batch_client.register_job_definition(
@@ -664,7 +666,7 @@ class ContainerHelpers():
 
         # Submit the job
         boto_tries = 0
-        while boto_tries < MAX_BOTO_TRIES:
+        while boto_tries < self.containerinfo.aws_boto_max_tries:
             boto_tries += 1
             try:
                 job_submission = batch_client.submit_job(
@@ -687,16 +689,12 @@ class ContainerHelpers():
             job_submission_id
         ))
         while True:
-            boto_tries = 0
-            while boto_tries < MAX_BOTO_TRIES:
-                boto_tries += 1
-                try:
-                    job_status = batch_client.describe_jobs(
-                        jobs=[job_submission_id]
-                    ).get('jobs')[0]
-                except ClientError:
-                    log.info("Caught boto3 client error, sleeping for 10 seconds")
-                    time.sleep(10)
+            try:
+                job_status = batch_client.describe_jobs(
+                    jobs=[job_submission_id]
+                ).get('jobs')[0]
+            except ClientError:
+                log.info("Caught boto3 client error, sleeping for 10 seconds")
             if job_status.get('status') == 'SUCCEEDED' or job_status.get('status') == 'FAILED':
                 break
             time.sleep(10)
