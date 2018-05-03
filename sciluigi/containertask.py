@@ -703,7 +703,8 @@ class ContainerHelpers():
                     jobs=[job_submission_id]
                 ).get('jobs')[0]
             except ClientError:
-                log.info("Caught boto3 client error, sleeping for 10 seconds")
+                job_status = {}
+                log.info("Caught boto3 client error")
             if job_status.get('status') == 'SUCCEEDED' or job_status.get('status') == 'FAILED':
                 break
             time.sleep(10)
