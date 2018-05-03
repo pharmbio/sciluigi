@@ -407,7 +407,8 @@ class ContainerHelpers():
             inputs_mode='ro',
             outputs_mode='rw',
             input_mount_point='/mnt/inputs',
-            output_mount_point='/mnt/outputs'):
+            output_mount_point='/mnt/outputs',
+            MAX_BOTO_TRIES=10):
         """
         Run a command in a container using AWS batch.
         Handles uploading of files to / from s3 and then into the container. 
@@ -566,7 +567,9 @@ class ContainerHelpers():
             )
 
         # Search to see if this job is ALREADY defined.
-        while True:
+        boto_tries = 0
+        while boto_tries < MAX_BOTO_TRIES:
+            boto_tries += 1
             try:
                 job_def_search = batch_client.describe_job_definitions(
                     maxResults=1,
@@ -606,7 +609,9 @@ class ContainerHelpers():
                     'readOnly': read_only,
                 })
 
-            while True:
+            boto_tries = 0
+            while boto_tries < MAX_BOTO_TRIES:
+                boto_tries += 1
                 try:
                     batch_client.register_job_definition(
                         jobDefinitionName=job_def_name,
@@ -658,7 +663,9 @@ class ContainerHelpers():
             ]
 
         # Submit the job
-        while True:
+        boto_tries = 0
+        while boto_tries < MAX_BOTO_TRIES:
+            boto_tries += 1
             try:
                 job_submission = batch_client.submit_job(
                     jobName=run_uuid,
@@ -680,16 +687,19 @@ class ContainerHelpers():
             job_submission_id
         ))
         while True:
-            try:
-                job_status = batch_client.describe_jobs(
-                    jobs=[job_submission_id]
-                ).get('jobs')[0]
-                if job_status.get('status') == 'SUCCEEDED' or job_status.get('status') == 'FAILED':
-                    break
-                time.sleep(10)
-            except ClientError:
-                log.info("Caught boto3 client error, sleeping for 10 seconds")
-                time.sleep(10)
+            boto_tries = 0
+            while boto_tries < MAX_BOTO_TRIES:
+                boto_tries += 1
+                try:
+                    job_status = batch_client.describe_jobs(
+                        jobs=[job_submission_id]
+                    ).get('jobs')[0]
+                except ClientError:
+                    log.info("Caught boto3 client error, sleeping for 10 seconds")
+                    time.sleep(10)
+            if job_status.get('status') == 'SUCCEEDED' or job_status.get('status') == 'FAILED':
+                break
+            time.sleep(10)
         if job_status.get('status') != 'SUCCEEDED':
             raise Exception("Batch job failed. {}".format(
                 job_status.get('statusReason')
