@@ -47,6 +47,7 @@ class ContainerInfo():
     aws_jobRoleArn = None
     aws_s3_scratch_loc = None
     aws_batch_job_queue = None
+    aws_batch_job_prefix = None
     aws_secrets_loc = None
     aws_boto_max_tries = None
 
@@ -63,6 +64,7 @@ class ContainerInfo():
                  aws_jobRoleArn='',
                  aws_s3_scratch_loc='',
                  aws_batch_job_queue='',
+                 aws_batch_job_prefix=None,
                  aws_secrets_loc=os.path.expanduser('~/.aws'),
                  aws_boto_max_tries=10,
                  slurm_partition=None,
@@ -77,6 +79,7 @@ class ContainerInfo():
         self.aws_jobRoleArn = aws_jobRoleArn
         self.aws_s3_scratch_loc = aws_s3_scratch_loc
         self.aws_batch_job_queue = aws_batch_job_queue
+        self.aws_batch_job_prefix = aws_batch_job_prefix
         self.aws_secrets_loc = aws_secrets_loc
         self.aws_boto_max_tries = aws_boto_max_tries
 
@@ -438,7 +441,13 @@ class ContainerHelpers():
         batch_client = boto3.client('batch')
         s3_client = boto3.client('s3')
 
-        run_uuid = str(uuid.uuid4())
+        if self.containerinfo.aws_batch_job_prefix is None:
+            run_uuid = str(uuid.uuid4())
+        else:
+            run_uuid = "{}-{}".format(
+                self.containerinfo.aws_batch_job_prefix,
+                str(uuid.uuid4())
+            )
 
         # We need mappings for both to and from S3 and from S3 to within the container
         # <local fs> <-> <s3> <-> <Container Mounts>
