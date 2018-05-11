@@ -532,8 +532,8 @@ class ContainerHelpers():
                             }
                         )
                     else:
-                        # Have to use BytesIO because luigi targets can ONLY be opened in 
-                        # binary mode, and upload / download fileobj can ONLY accept binary mode files
+                        # Have to use BytesIO because luigi targets can ONLY be opened in
+                        # text mode, and upload / download fileobj can ONLY accept binary mode files
                         # For reasons.
                         s3_client.upload_fileobj(
                             Fileobj=io.BytesIO(
