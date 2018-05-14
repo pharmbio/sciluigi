@@ -555,7 +555,9 @@ class ContainerHelpers():
                         container_paths[k],
                         target.path,
                     ))
-            else:  # NOT ending in S3. Will need to download to target and make a temp destination in s3
+            else: 
+                # NOT ending in S3. Will need to download to target 
+                # and make a temp destination in s3
                 for k, target in schema_targets['targets'].items():
                     s3_temp_loc = os.path.join(
                             self.containerinfo.aws_s3_scratch_loc,
@@ -725,6 +727,14 @@ class ContainerHelpers():
         # Now we need to copy back from S3 to our local filesystem
         for (s3_loc, target) in needs_s3_download:
             if target.scheme == 'file':
+                try:
+                    os.makedirs(
+                        os.path.dirname(
+                            target.path
+                            )
+                        )
+                except FileExistsError:
+                    pass
                 s3_client.download_file(
                     Bucket=urlsplit(s3_loc).netloc,
                     Key=urlsplit(s3_loc).path.strip('/'),
