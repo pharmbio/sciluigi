@@ -599,8 +599,10 @@ class ContainerHelpers():
                     jobDefinitionName=job_def_name,
                 )
                 break
-            except ClientError:
-                log.info("Caught boto3 client error, sleeping for 10 seconds")
+            except ClientError as e:
+                log.info("Caught boto3 client error, sleeping for 10 seconds ({})".format(
+                    e.response['Error']['Message']
+                ))
                 time.sleep(10)
         if len(job_def_search['jobDefinitions']) == 0:
             # Not registered yet. Register it now
@@ -652,8 +654,10 @@ class ContainerHelpers():
                         }
                     )
                     break
-                except ClientError:
-                    log.info("Caught boto3 client error, sleeping for 10 seconds")
+                except ClientError as e:
+                    log.info("Caught boto3 client error, sleeping for 10 seconds ({})".format(
+                        e.response['Error']['Message']
+                    ))
                     time.sleep(10)
         else:  # Already registered
             aws_job_def = job_def_search['jobDefinitions'][0]
@@ -700,8 +704,10 @@ class ContainerHelpers():
                     },
                 )
                 break
-            except ClientError:
-                log.info("Caught boto3 client error, sleeping for 10 seconds")
+            except ClientError as e:
+                log.info("Caught boto3 client error, sleeping for 10 seconds ({})".format(
+                    e.response['Error']['Message']
+                ))
                 time.sleep(10)
         job_submission_id = job_submission.get('jobId')
         log.info("Running {} under jobId {}".format(
@@ -713,7 +719,10 @@ class ContainerHelpers():
                 job_status = batch_client.describe_jobs(
                     jobs=[job_submission_id]
                 ).get('jobs')[0]
-            except ClientError:
+            except ClientError as e:
+                log.info("Caught boto3 client error, sleeping for 10 seconds ({})".format(
+                    e.response['Error']['Message']
+                ))
                 job_status = {}
                 log.info("Caught boto3 client error")
             if job_status.get('status') == 'SUCCEEDED' or job_status.get('status') == 'FAILED':
