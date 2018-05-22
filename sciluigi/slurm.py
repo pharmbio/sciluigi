@@ -73,8 +73,12 @@ class SlurmInfo:
         Return a formatted string with arguments and option flags to SLURM
         commands such as salloc and sbatch, for non-MPI, HPC jobs.
         """
-        argstr = ' -A {pr} -p {pt} -n {c} -t {t} -J {j} srun -n 1 -c {thr} '.format(
-                pr=self.project,
+
+        argstr = " "
+        if self.project is not None:
+            argstr += "-A {pr} ".format(pr=self.project)
+
+        argstr += '-p {pt} -n {c} -t {t} -J {j} srun -n 1 -c {thr} '.format(
                 pt=self.partition,
                 c=self.cores,
                 t=self.time,
@@ -87,8 +91,12 @@ class SlurmInfo:
         Return a formatted string with arguments and option flags to SLURM
         commands such as salloc and sbatch, for MPI jobs.
         """
-        argstr = ' -A {pr} -p {pt} -n {c1} -t {t} -J {j} mpirun -v -np {c2} '.format(
-                pr=self.project,
+
+        argstr = " "
+        if self.project is not None:
+            argstr += "-A {pr} ".format(pr=self.project)
+
+        argstr += '-p {pt} -n {c1} -t {t} -J {j} mpirun -v -np {c2} '.format(
                 pt=self.partition,
                 c1=self.cores,
                 t=self.time,
