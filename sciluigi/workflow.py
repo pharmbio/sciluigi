@@ -1,6 +1,6 @@
-'''
+"""
 This module contains sciluigi's subclasses of luigi's Task class.
-'''
+"""
 
 import datetime
 import luigi
@@ -12,15 +12,28 @@ import sciluigi.interface
 import sciluigi.dependencies
 import sciluigi.slurm
 
+
 log = logging.getLogger('sciluigi-interface')
+
 
 # ==============================================================================
 
+
+class WorkflowNotImplementedException(Exception):
+    """
+    Exception to throw if the workflow() SciLuigi API method is not implemented.
+    """
+    pass
+
+
+# ================================================================================
+
+
 class WorkflowTask(sciluigi.audit.AuditTrailHelpers, luigi.Task):
-    '''
+    """
     SciLuigi-specific task, that has a method for implementing a (dynamic) workflow
     definition (workflow()).
-    '''
+    """
 
     instance_name = luigi.Parameter(default='sciluigi_workflow')
 
@@ -32,16 +45,16 @@ class WorkflowTask(sciluigi.audit.AuditTrailHelpers, luigi.Task):
     _hasaddedhandler = False
 
     def _ensure_timestamp(self):
-        '''
+        """
         Make sure that there is a time stamp for when the workflow started.
-        '''
+        """
         if self._wfstart == '':
             self._wfstart = datetime.datetime.utcnow().strftime('%Y%m%d_%H%M%S_%f')
 
     def get_wflogpath(self):
-        '''
+        """
         Get the path to the workflow-speicfic log file.
-        '''
+        """
         if self._wflogpath == '':
             self._ensure_timestamp()
             clsname = self.__class__.__name__.lower()
@@ -50,41 +63,41 @@ class WorkflowTask(sciluigi.audit.AuditTrailHelpers, luigi.Task):
         return self._wflogpath
 
     def get_auditdirpath(self):
-        '''
+        """
         Get the path to the workflow-speicfic audit trail directory.
-        '''
+        """
         self._ensure_timestamp()
         clsname = self.__class__.__name__.lower()
         audit_dirpath = 'audit/.audit_%s_%s' % (clsname, self._wfstart)
         return audit_dirpath
 
     def get_auditlogpath(self):
-        '''
+        """
         Get the path to the workflow-speicfic audit trail file.
-        '''
+        """
         self._ensure_timestamp()
         clsname = self.__class__.__name__.lower()
         audit_dirpath = 'audit/workflow_%s_started_%s.audit' % (clsname, self._wfstart)
         return audit_dirpath
 
     def add_auditinfo(self, infotype, infolog):
-        '''
+        """
         Add audit information to the audit log.
-        '''
+        """
         return self._add_auditinfo(self.__class__.__name__.lower(), infotype, infolog)
 
     def workflow(self):
-        '''
+        """
         SciLuigi API methoed. Implement your workflow here, and return the last task(s)
         of the dependency graph.
-        '''
+        """
         raise WorkflowNotImplementedException(
                 'workflow() method is not implemented, for ' + str(self))
 
     def requires(self):
-        '''
+        """
         Implementation of Luigi API method.
-        '''
+        """
         if not self._hasaddedhandler:
             wflog_formatter = logging.Formatter(
                     sciluigi.interface.LOGFMT_STREAM,
@@ -110,16 +123,16 @@ class WorkflowTask(sciluigi.audit.AuditTrailHelpers, luigi.Task):
         return workflow_output
 
     def output(self):
-        '''
+        """
         Implementation of Luigi API method
-        '''
+        """
         return {'log': luigi.LocalTarget(self.get_wflogpath()),
                 'audit': luigi.LocalTarget(self.get_auditlogpath())}
 
     def run(self):
-        '''
+        """
         Implementation of Luigi API method
-        '''
+        """
         if self.output()['audit'].exists():
             errmsg = ('Audit file already exists, '
                       'when trying to create it: %s') % self.output()['audit'].path
@@ -139,17 +152,9 @@ class WorkflowTask(sciluigi.audit.AuditTrailHelpers, luigi.Task):
             self._hasloggedfinish = True
 
     def new_task(self, instance_name, cls, **kwargs):
-        '''
+        """
         Create new task instance, and link it to the current workflow.
-        '''
+        """
         newtask = sciluigi.new_task(instance_name, cls, self, **kwargs)
         self._tasks[instance_name] = newtask
         return newtask
-
-# ================================================================================
-
-class WorkflowNotImplementedException(Exception):
-    '''
-    Exception to throw if the workflow() SciLuigi API method is not implemented.
-    '''
-    pass

@@ -2,48 +2,53 @@ import inspect
 import os
 import shutil
 import luigi
+import six
+
 
 projdir_struct = {
-    'bin':None,
-    'conf':None,
-    'doc' : 
-        { 'paper': None },
-    'experiments' :
-        { '2000-01-01-example' :
-            { 'audit':None,
-              'bin':None,
-              'conf':None,
-              'data':None,
-              'doc':None,
-              'lib':None,
-              'log':None,
-              'raw':None,
-              'results':None,
-              'run':None,
-              'tmp':None }},
-    'lib':None,
-    'raw':None,
-    'results':None,
-    'src':None }
+    'bin': None,
+    'conf': None,
+    'doc': {'paper': None},
+    'experiments':
+        {'2000-01-01-example':
+            {'audit': None,
+             'bin': None,
+             'conf': None,
+             'data': None,
+             'doc': None,
+             'lib': None,
+             'log': None,
+             'raw': None,
+             'results': None,
+             'run': None,
+             'tmp': None}},
+    'lib': None,
+    'raw': None,
+    'results': None,
+    'src': None}
+
 
 def get_file_dir():
     return os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 
+
 def print_dirs(dir_structure, padding, padstep):
     if type(dir_structure) is dict:
-        for k,v in dir_structure.iteritems():
-            print str(' ' * padding) + k
-            print_dirs(v, padding+padstep, padstep)
+        for k,v in six.iteritems(dir_structure):
+            six.print_(str(' ' * padding) + k)
+            six.print_(print_dirs(v, padding+padstep, padstep))
+
 
 def create_dirs(dirtree):
     if type(dirtree) is dict:
-        for dir,subtree in dirtree.iteritems():
+        for dir,subtree in six.iteritems(dirtree):
             print('Creating ' + dir + ' ...')
             os.makedirs(dir)
             if subtree is not None:
               os.chdir(dir)
               create_dirs(subtree)
               os.chdir('..')
+
 
 def print_and_create_projdirs():
     print('Now creating the following directory structure:')
@@ -55,6 +60,7 @@ def print_and_create_projdirs():
 
 
 class InitProj(luigi.Task):
+
     projname = luigi.Parameter()
 
     def output(self):
@@ -62,6 +68,7 @@ class InitProj(luigi.Task):
 
     def run(self):
         shutil.copytree(get_file_dir() + '/../.projtpl', self.projname)
+
 
 if __name__ == '__main__':
     luigi.run()

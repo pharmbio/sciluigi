@@ -1,7 +1,7 @@
-'''
+"""
 This module contains functionality for dependency resolution for constructing
 the dependency graph of workflows.
-'''
+"""
 
 import luigi
 from luigi.contrib.postgres import PostgresTarget
@@ -10,11 +10,12 @@ from luigi.six import iteritems
 
 # ==============================================================================
 
+
 class TargetInfo(object):
-    '''
+    """
     Class to be used for sending specification of which target, from which
     task, to use, when stitching workflow tasks' outputs and inputs together.
-    '''
+    """
     task = None
     path = None
     target = None
@@ -25,20 +26,23 @@ class TargetInfo(object):
         self.target = luigi.LocalTarget(path, format, is_tmp)
 
     def open(self, *args, **kwargs):
-        '''
+        """
         Forward open method, from luigi's target class
-        '''
+        """
         return self.target.open(*args, **kwargs)
 
 # ==============================================================================
 
+
 class S3TargetInfo(TargetInfo):
+
     def __init__(self, task, path, format=None, client=None):
         self.task = task
         self.path = path
         self.target = S3Target(path, format=format, client=client)
 
 # ==============================================================================
+
 
 class PostgresTargetInfo(TargetInfo):
     def __init__(self, task, host, database, user, password, update_id, table=None, port=None):
@@ -54,28 +58,30 @@ class PostgresTargetInfo(TargetInfo):
 
 # ==============================================================================
 
+
 class DependencyHelpers(object):
-    '''
+
+    """
     Mixin implementing methods for supporting dynamic, and target-based
     workflow definition, as opposed to the task-based one in vanilla luigi.
-    '''
+    """
 
     # --------------------------------------------------------
     # Handle inputs
     # --------------------------------------------------------
 
     def requires(self):
-        '''
+        """
         Implement luigi API method by returning upstream tasks
-        '''
+        """
         return self._upstream_tasks()
 
     def _upstream_tasks(self):
-        '''
+        """
         Extract upstream tasks from the TargetInfo objects
         or functions returning those (or lists of both the earlier)
         for use in luigi's requires() method.
-        '''
+        """
         upstream_tasks = []
         for attrname, attrval in iteritems(self.__dict__):
             if 'in_' == attrname[0:3]:
@@ -84,11 +90,11 @@ class DependencyHelpers(object):
         return upstream_tasks
 
     def _parse_inputitem(self, val, tasks):
-        '''
+        """
         Recursively loop through lists of TargetInfos, or
         callables returning TargetInfos, or lists of ...
         (repeat recursively) ... and return all tasks.
-        '''
+        """
         if callable(val):
             val = val()
         if isinstance(val, TargetInfo):
@@ -108,17 +114,17 @@ class DependencyHelpers(object):
     # --------------------------------------------------------
 
     def output(self):
-        '''
+        """
         Implement luigi API method
-        '''
+        """
         return self._output_targets()
 
     def _output_targets(self):
-        '''
+        """
         Extract output targets from the TargetInfo objects
         or functions returning those (or lists of both the earlier)
         for use in luigi's output() method.
-        '''
+        """
         output_targets = []
         for attrname in dir(self):
             attrval = getattr(self, attrname)
@@ -128,11 +134,11 @@ class DependencyHelpers(object):
         return output_targets
 
     def _parse_outputitem(self, val, targets):
-        '''
+        """
         Recursively loop through lists of TargetInfos, or
         callables returning TargetInfos, or lists of ...
         (repeat recursively) ... and return all targets.
-        '''
+        """
         if callable(val):
             val = val()
         if isinstance(val, TargetInfo):

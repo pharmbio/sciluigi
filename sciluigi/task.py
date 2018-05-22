@@ -1,6 +1,6 @@
-'''
+"""
 This module contains sciluigi's subclasses of luigi's Task class.
-'''
+"""
 import json
 import luigi
 from luigi.six import iteritems, string_types
@@ -15,11 +15,12 @@ log = logging.getLogger('sciluigi-interface')
 
 # ==============================================================================
 
+
 def new_task(name, cls, workflow_task, **kwargs):
-    '''
+    """
     Instantiate a new task. Not supposed to be used by the end-user
     (use WorkflowTask.new_task() instead).
-    '''
+    """
     slurminfo = None
     for key, val in [(key, val) for key, val in iteritems(kwargs)]:
         # Handle non-string keys
@@ -42,18 +43,19 @@ def new_task(name, cls, workflow_task, **kwargs):
         newtask.slurminfo = slurminfo
     return newtask
 
+
 class Task(sciluigi.audit.AuditTrailHelpers, sciluigi.dependencies.DependencyHelpers, luigi.Task):
-    '''
+    """
     SciLuigi Task, implementing SciLuigi specific functionality for dependency resolution
     and audit trail logging.
-    '''
+    """
     workflow_task = luigi.Parameter()
     instance_name = luigi.Parameter()
 
     def ex_local(self, command):
-        '''
+        """
         Execute command locally (not through resource manager).
-        '''
+        """
         # If list, convert to string
         if isinstance(command, list):
             command = sub.list2cmdline(command)
@@ -80,21 +82,23 @@ class Task(sciluigi.audit.AuditTrailHelpers, sciluigi.dependencies.DependencyHel
         return (retcode, stdout, stderr)
 
     def ex(self, command):
-        '''
+        """
         Execute command. This is a short-hand function, to be overridden e.g. if supporting
         execution via SLURM
-        '''
+        """
         return self.ex_local(command)
 
+
 # ==============================================================================
+
 
 class ExternalTask(
         sciluigi.audit.AuditTrailHelpers,
         sciluigi.dependencies.DependencyHelpers,
         luigi.ExternalTask):
-    '''
+    """
     SviLuigi specific implementation of luigi.ExternalTask, representing existing
     files.
-    '''
+    """
     workflow_task = luigi.Parameter()
     instance_name = luigi.Parameter()

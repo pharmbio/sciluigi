@@ -1,7 +1,7 @@
-'''
+"""
 This module contains functionality related to integration with the SLURM HPC
 resource manger.
-'''
+"""
 
 import datetime
 import logging
@@ -10,6 +10,7 @@ import time
 import sciluigi.parameter
 import sciluigi.task
 import subprocess as sub
+from multiprocessing import cpu_count
 
 # ================================================================================
 
@@ -23,10 +24,11 @@ RUNMODE_MPI = 'runmode_mpi'
 
 # ================================================================================
 
-class SlurmInfo():
-    '''
+
+class SlurmInfo:
+    """
     A data object for keeping slurm run parameters.
-    '''
+    """
     runmode = None # One of RUNMODE_LOCAL|RUNMODE_HPC|RUNMODE_MPI
     project = None
     partition = None
@@ -36,10 +38,10 @@ class SlurmInfo():
     threads = None
 
     def __init__(self, runmode, project, partition, cores, time, jobname, threads):
-        '''
+        """
         Init a SlurmInfo object, from string data.
         Time is on format: [[[d-]HH:]MM:]SS
-        '''
+        """
         self.runmode = runmode
         self.project = project
         self.partition = partition
@@ -49,9 +51,9 @@ class SlurmInfo():
         self.threads = threads
 
     def __str__(self):
-        '''
+        """
         Return a readable string representation of the info stored
-        '''
+        """
         strrepr = ('(time: {t}, '
                    'partition: {pt}, '
                    'cores: {c}, '
@@ -67,10 +69,10 @@ class SlurmInfo():
         return strrepr
 
     def get_argstr_hpc(self):
-        '''
+        """
         Return a formatted string with arguments and option flags to SLURM
         commands such as salloc and sbatch, for non-MPI, HPC jobs.
-        '''
+        """
         argstr = ' -A {pr} -p {pt} -n {c} -t {t} -J {j} srun -n 1 -c {thr} '.format(
                 pr=self.project,
                 pt=self.partition,
@@ -81,10 +83,10 @@ class SlurmInfo():
         return argstr
 
     def get_argstr_mpi(self):
-        '''
+        """
         Return a formatted string with arguments and option flags to SLURM
         commands such as salloc and sbatch, for MPI jobs.
-        '''
+        """
         argstr = ' -A {pr} -p {pt} -n {c1} -t {t} -J {j} mpirun -v -np {c2} '.format(
                 pr=self.project,
                 pt=self.partition,
@@ -96,10 +98,16 @@ class SlurmInfo():
 
 # ================================================================================
 
+
+default_info = SlurmInfo(RUNMODE_LOCAL,
+                         "sciluigi", None, cpu_count(),
+                         "1-00:00:00", "sciluigi", cpu_count())
+
+
 class SlurmInfoParameter(sciluigi.parameter.Parameter):
-    '''
+    """
     A specialized luigi parameter, taking SlurmInfo objects.
-    '''
+    """
     def parse(self, x):
         if isinstance(x, SlurmInfo):
             return x
@@ -108,18 +116,19 @@ class SlurmInfoParameter(sciluigi.parameter.Parameter):
 
 # ================================================================================
 
+
 class SlurmHelpers():
-    '''
+    """
     Mixin with various convenience methods for executing jobs via SLURM
-    '''
+    """
     # Other class-fields
-    slurminfo = SlurmInfoParameter(default=None) # Class: SlurmInfo
+    slurminfo = SlurmInfoParameter(default=default_info)  # Class: SlurmInfo
 
     # Main Execution methods
     def ex(self, command):
-        '''
+        """
         Execute either locally or via SLURM, depending on config
-        '''
+        """
         if isinstance(command, list):
             command = ' '.join(command)
 
@@ -133,25 +142,23 @@ class SlurmHelpers():
             log.info('Executing command in MPI mode: %s', command)
             self.ex_mpi(command)
 
-
     def ex_hpc(self, command):
-        '''
+        """
         Execute command in HPC mode
-        '''
+        """
         if isinstance(command, list):
             command = sub.list2cmdline(command)
 
-        fullcommand = 'salloc %s %s' % (self.slurminfo.get_argstr_hpc(), command)
+        fullcommand = 'salloc {} {}'.format(self.slurminfo.get_argstr_hpc(), command)
         (retcode, stdout, stderr) = self.ex_local(fullcommand)
 
         self.log_slurm_info(stderr)
         return (retcode, stdout, stderr)
 
-
     def ex_mpi(self, command):
-        '''
+        """
         Execute command in HPC mode with MPI support (multi-node, message passing interface).
-        '''
+        """
         if isinstance(command, list):
             command = sub.list2cmdline(command)
 
@@ -161,35 +168,39 @@ class SlurmHelpers():
         self.log_slurm_info(stderr)
         return (retcode, stdout, stderr)
 
-
     # Various convenience methods
 
-    def assert_matches_character_class(self, char_class, a_string):
-        '''
+    @staticmethod
+    def assert_matches_character_class(char_class, a_string):
+        """
         Helper method, that tests whether a string matches a regex character class.
-        '''
+        """
         if not bool(re.match('^{c}+$'.format(c=char_class), a_string)):
             raise Exception('String {s} does not match character class {cc}'.format(
                 s=a_string, cc=char_class))
 
-    def clean_filename(self, filename):
-        '''
+    @staticmethod
+    def clean_filename(filename):
+        """
         Clean up a string to make it suitable for use as file name.
-        '''
+        """
         return re.sub('[^A-Za-z0-9\_\ ]', '_', str(filename)).replace(' ', '_')
 
     #def get_task_config(self, name):
     #    return luigi.configuration.get_config().get(self.task_family, name)
 
     def log_slurm_info(self, slurm_stderr):
-        '''
+        """
         Parse information of the following example form:
 
         salloc: Granted job allocation 5836263
         srun: Job step created
         salloc: Relinquishing job allocation 5836263
         salloc: Job allocation 5836263 has been revoked.
-        '''
+        """
+
+        if isinstance(slurm_stderr, bytes):
+            slurm_stderr = slurm_stderr.decode()
 
         matches = re.search('[0-9]+', str(slurm_stderr))
         if matches:
@@ -198,10 +209,12 @@ class SlurmHelpers():
             # Write slurm execution time to audit log
             cmd = 'sacct -j {jobid} --noheader --format=elapsed'.format(jobid=jobid)
             (_, jobinfo_stdout, _) = self.ex_local(cmd)
+            if isinstance(jobinfo_stdout, bytes):
+                jobinfo_stdout = jobinfo_stdout.decode()
             sacct_matches = re.findall('([0-9\:\-]+)', str(jobinfo_stdout))
 
             if len(sacct_matches) < 2:
-                log.warn('Not enough matches from sacct for task %s: %s',
+                log.warning('Not enough matches from sacct for task %s: %s',
                     self.instance_name, ', '.join(['Match: %s' % m for m in sacct_matches])
                     )
             else:
@@ -237,8 +250,9 @@ class SlurmHelpers():
 
 # ================================================================================
 
+
 class SlurmTask(SlurmHelpers, sciluigi.task.Task):
-    '''
+    """
     luigi task that includes the SlurmHelpers mixin.
-    '''
+    """
     pass

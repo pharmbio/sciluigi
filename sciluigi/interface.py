@@ -1,6 +1,6 @@
-'''
+"""
 This module contains mappings of methods that are part of the sciluigi API
-'''
+"""
 
 import luigi
 import logging
@@ -11,10 +11,11 @@ LOGFMT_LUIGI = '%(asctime)s %(levelname)8s    LUIGI %(message)s'
 LOGFMT_SCILUIGI = '%(asctime)s %(levelname)8s SCILUIGI %(message)s'
 DATEFMT = '%Y-%m-%d %H:%M:%S'
 
+
 def setup_logging():
-    '''
+    """
     Set up SciLuigi specific logging
-    '''
+    """
     sciluigi.util.ensuredir('log')
     log_path = 'log/sciluigi_run_%s_detailed.log' % sciluigi.util.timepath()
 
@@ -49,16 +50,19 @@ def setup_logging():
     sciluigi_logger.addHandler(sciluigi_file_handler)
     sciluigi_logger.setLevel(logging.DEBUG)
 
+
 setup_logging()
 
+
 def run(*args, **kwargs):
-    '''
+    """
     Forwarding luigi's run method
-    '''
+    """
     luigi.run(*args, **kwargs)
 
+
 def run_local(*args, **kwargs):
-    '''
+    """
     Forwarding luigi's run method, with local scheduler
-    '''
+    """
     run(local_scheduler=True, *args, **kwargs)
