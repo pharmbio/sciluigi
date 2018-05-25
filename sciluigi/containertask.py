@@ -48,8 +48,10 @@ class ContainerInfo():
     aws_s3_scratch_loc = None
     aws_batch_job_queue = None
     aws_batch_job_prefix = None
+    aws_batch_job_pol_sec = None
     aws_secrets_loc = None
     aws_boto_max_tries = None
+    aws_batch_job_poll_sec = None
 
     # SLURM specifics
     slurm_partition = None
@@ -65,6 +67,7 @@ class ContainerInfo():
                  aws_s3_scratch_loc='',
                  aws_batch_job_queue='',
                  aws_batch_job_prefix=None,
+                 aws_batch_job_poll_sec=10,
                  aws_secrets_loc=os.path.expanduser('~/.aws'),
                  aws_boto_max_tries=10,
                  slurm_partition=None,
@@ -80,6 +83,7 @@ class ContainerInfo():
         self.aws_s3_scratch_loc = aws_s3_scratch_loc
         self.aws_batch_job_queue = aws_batch_job_queue
         self.aws_batch_job_prefix = aws_batch_job_prefix
+        self.aws_batch_job_pol_sec = aws_batch_job_poll_sec
         self.aws_secrets_loc = aws_secrets_loc
         self.aws_boto_max_tries = aws_boto_max_tries
 
@@ -601,7 +605,7 @@ class ContainerHelpers():
                 break
             except ClientError:
                 log.info("Caught boto3 client error, sleeping for 10 seconds")
-                time.sleep(10)
+                time.sleep(self.containerinfo.aws_batch_job_poll_sec)
         if len(job_def_search['jobDefinitions']) == 0:
             # Not registered yet. Register it now
             log.info(
@@ -654,7 +658,7 @@ class ContainerHelpers():
                     break
                 except ClientError:
                     log.info("Caught boto3 client error, sleeping for 10 seconds")
-                    time.sleep(10)
+                    time.sleep(self.containerinfo.aws_batch_job_poll_sec)
         else:  # Already registered
             aws_job_def = job_def_search['jobDefinitions'][0]
             log.info('Found job definition for {} with job role {} under name {}'.format(
@@ -702,7 +706,7 @@ class ContainerHelpers():
                 break
             except ClientError:
                 log.info("Caught boto3 client error, sleeping for 10 seconds")
-                time.sleep(10)
+                time.sleep(self.containerinfo.aws_batch_job_poll_sec)
         job_submission_id = job_submission.get('jobId')
         log.info("Running {} under jobId {}".format(
             container_command_list,
@@ -718,7 +722,7 @@ class ContainerHelpers():
                 log.info("Caught boto3 client error")
             if job_status.get('status') == 'SUCCEEDED' or job_status.get('status') == 'FAILED':
                 break
-            time.sleep(10)
+            time.sleep(self.containerinfo.aws_batch_job_poll_sec)
         if job_status.get('status') != 'SUCCEEDED':
             raise Exception("Batch job failed. {}".format(
                 job_status.get('statusReason')
