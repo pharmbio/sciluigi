@@ -158,7 +158,7 @@ class ContainerHelpers():
             return_dict[scheme] = {}
             # Get only the targets for this scheme
             scheme_targets = {i: t for i, t in targets.items() if t.scheme == scheme}
-            common_prefix = os.path.commonprefix(
+            common_prefix = os.path.commonpath(
                 [os.path.dirname(
                     os.path.join(
                         urlsplit(t.path).netloc,
