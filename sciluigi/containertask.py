@@ -260,7 +260,7 @@ class ContainerHelpers():
         # Mount the AWS secrets if we have some AND s3 is in one of our schema
         if self.containerinfo.aws_secrets_loc and ('s3' in out_schema or 's3' in in_schema):
             mounts[self.containerinfo.aws_secrets_loc] = {'bind': '/root/.aws', 'mode': 'ro'}
-        
+
         return (mounts, container_paths, DF, UF)
 
     def make_fs_name(self, uri):
@@ -603,9 +603,13 @@ class ContainerHelpers():
                     jobDefinitionName=job_def_name,
                 )
                 break
-            except ClientError:
-                log.info("Caught boto3 client error, sleeping for 10 seconds")
-                time.sleep(self.containerinfo.aws_batch_job_poll_sec)
+
+            except ClientError as e:
+                log.info("Caught boto3 client error, sleeping for 10 seconds ({})".format(
+                    e.response['Error']['Message']
+                ))
+                time.sleep(self.containerinfo.aws_batch_job_poll_sec))
+
         if len(job_def_search['jobDefinitions']) == 0:
             # Not registered yet. Register it now
             log.info(
@@ -656,9 +660,13 @@ class ContainerHelpers():
                         }
                     )
                     break
-                except ClientError:
-                    log.info("Caught boto3 client error, sleeping for 10 seconds")
-                    time.sleep(self.containerinfo.aws_batch_job_poll_sec)
+
+                except ClientError as e:
+                    log.info("Caught boto3 client error, sleeping for 10 seconds ({})".format(
+                        e.response['Error']['Message']
+                    ))
+                    time.sleep(self.containerinfo.aws_batch_job_poll_sec))
+
         else:  # Already registered
             aws_job_def = job_def_search['jobDefinitions'][0]
             log.info('Found job definition for {} with job role {} under name {}'.format(
@@ -704,9 +712,13 @@ class ContainerHelpers():
                     },
                 )
                 break
-            except ClientError:
-                log.info("Caught boto3 client error, sleeping for 10 seconds")
-                time.sleep(self.containerinfo.aws_batch_job_poll_sec)
+
+            except ClientError as e:
+                log.info("Caught boto3 client error, sleeping for 10 seconds ({})".format(
+                    e.response['Error']['Message']
+                ))
+                time.sleep(self.containerinfo.aws_batch_job_poll_sec))
+
         job_submission_id = job_submission.get('jobId')
         log.info("Running {} under jobId {}".format(
             container_command_list,
@@ -717,7 +729,10 @@ class ContainerHelpers():
                 job_status = batch_client.describe_jobs(
                     jobs=[job_submission_id]
                 ).get('jobs')[0]
-            except ClientError:
+            except ClientError as e:
+                log.info("Caught boto3 client error, sleeping for 10 seconds ({})".format(
+                    e.response['Error']['Message']
+                ))
                 job_status = {}
                 log.info("Caught boto3 client error")
             if job_status.get('status') == 'SUCCEEDED' or job_status.get('status') == 'FAILED':
