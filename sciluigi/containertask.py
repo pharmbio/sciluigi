@@ -48,7 +48,7 @@ class ContainerInfo():
     aws_s3_scratch_loc = None
     aws_batch_job_queue = None
     aws_batch_job_prefix = None
-    aws_batch_job_pol_sec = None
+    aws_batch_job_poll_sec = None
     aws_secrets_loc = None
     aws_boto_max_tries = None
     aws_batch_job_poll_sec = None
@@ -83,7 +83,7 @@ class ContainerInfo():
         self.aws_s3_scratch_loc = aws_s3_scratch_loc
         self.aws_batch_job_queue = aws_batch_job_queue
         self.aws_batch_job_prefix = aws_batch_job_prefix
-        self.aws_batch_job_pol_sec = aws_batch_job_poll_sec
+        self.aws_batch_job_poll_sec = aws_batch_job_poll_sec
         self.aws_secrets_loc = aws_secrets_loc
         self.aws_boto_max_tries = aws_boto_max_tries
 
