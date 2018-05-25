@@ -608,7 +608,7 @@ class ContainerHelpers():
                 log.info("Caught boto3 client error, sleeping for 10 seconds ({})".format(
                     e.response['Error']['Message']
                 ))
-                time.sleep(self.containerinfo.aws_batch_job_poll_sec))
+                time.sleep(self.containerinfo.aws_batch_job_poll_sec)
 
         if len(job_def_search['jobDefinitions']) == 0:
             # Not registered yet. Register it now
@@ -665,7 +665,7 @@ class ContainerHelpers():
                     log.info("Caught boto3 client error, sleeping for 10 seconds ({})".format(
                         e.response['Error']['Message']
                     ))
-                    time.sleep(self.containerinfo.aws_batch_job_poll_sec))
+                    time.sleep(self.containerinfo.aws_batch_job_poll_sec)
 
         else:  # Already registered
             aws_job_def = job_def_search['jobDefinitions'][0]
@@ -717,7 +717,7 @@ class ContainerHelpers():
                 log.info("Caught boto3 client error, sleeping for 10 seconds ({})".format(
                     e.response['Error']['Message']
                 ))
-                time.sleep(self.containerinfo.aws_batch_job_poll_sec))
+                time.sleep(self.containerinfo.aws_batch_job_poll_sec)
 
         job_submission_id = job_submission.get('jobId')
         log.info("Running {} under jobId {}".format(
