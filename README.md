@@ -286,6 +286,13 @@ This work is funded by:
 Many ideas and inspiration for the API is taken from:
 - [John Paul Morrison's invention and works on Flow-Based Programming](http://jpaulmorrison.com/fbp)
 
+Publications using SciLuigi
+---------------------------
+
+Below is an incomplete list of publications using SciLuigi for computational analysis. If you are using SciLuigi in a publication, please consider adding your own here.
+
+Schulz W, Durant T, Siddon A, Torres R. Use of application containers and workflows for genomic data analysis. J Pathol Inform. 2016;7(1):53. DOI: [10.4103/2153-3539.197197](https://dx.doi.org/10.4103%2F2153-3539.197197)
+
 See also: [SciPipe](http://scipipe.org)
 ---------------------------------------
 
