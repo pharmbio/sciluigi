@@ -264,7 +264,7 @@ If you run into any of these problems, you might be interested in a new workflow
 
 Changelog
 ---------
-- 0.9.4.ct
+- 0.9.6b7_ct
   - Support for containerized tasks and `ContainerTargetInfo`
 - 0.9.3b4
   - Support for Python 3 (Thanks to @jeffcjohnson for contributing this!).
