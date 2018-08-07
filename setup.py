@@ -33,6 +33,7 @@ setup(
         'luigi',
         'boto3',
         'mongo',
+        'docker',
         ],
     classifiers=[
         'Development Status :: 4 - Beta',
