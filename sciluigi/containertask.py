@@ -5,12 +5,15 @@ import logging
 import subprocess
 import docker
 import os
+import stat
 from string import Template
 import shlex
 import uuid
 import time
 import io
 from botocore.exceptions import ClientError
+import tempfile
+import datetime
 
 try:
     from urlparse import urlsplit, urljoin
@@ -52,6 +55,9 @@ class ContainerInfo():
     aws_secrets_loc = None
     aws_boto_max_tries = None
     aws_batch_job_poll_sec = None
+    pbs_account = None
+    pbs_queue = None
+    pbs_scriptpath = None
 
     # SLURM specifics
     slurm_partition = None
@@ -71,6 +77,9 @@ class ContainerInfo():
                  aws_secrets_loc=os.path.expanduser('~/.aws'),
                  aws_boto_max_tries=10,
                  slurm_partition=None,
+                 pbs_account='',
+                 pbs_queue='',
+                 pbs_scriptpath=None,
                  ):
         self.engine = engine
         self.vcpu = vcpu
@@ -88,6 +97,10 @@ class ContainerInfo():
         self.aws_boto_max_tries = aws_boto_max_tries
 
         self.slurm_partition = slurm_partition
+
+        self.pbs_account = pbs_account
+        self.pbs_queue = pbs_queue
+        self.pbs_scriptpath = pbs_scriptpath
 
     def __str__(self):
         """
@@ -200,6 +213,12 @@ class ContainerHelpers():
         file_output_common_prefix = None
         if 'file' in out_schema:
             file_output_common_prefix = output_target_maps['file']['common_prefix']
+            # Be sure the output directory exists
+            try:
+                os.makedirs(os.path.abspath(output_target_maps['file']['common_prefix']))
+            except FileExistsError:
+                # No big deal
+                pass
             mounts[os.path.abspath(output_target_maps['file']['common_prefix'])] = {
                 'bind': os.path.join(output_mount_point, 'file'),
                 'mode': outputs_mode
@@ -272,6 +291,18 @@ class ContainerHelpers():
         keepcharacters = ('.', '_')
         return "".join(c if (c.isalnum() or c in keepcharacters) else '_' for c in name).rstrip()
 
+    def timeout_to_walltime(self):
+        td = datetime.timedelta(minutes=self.containerinfo.timeout)
+        hours = td.days * 7 + td.seconds//3600
+        if hours > 99:
+            hours = 99
+        minutes = (td.seconds - (td.seconds//3600)*3600) // 60
+        seconds = 0
+        return "{:02d}:{:02d}:{:02d}".format(
+            hours,
+            minutes,
+            seconds
+        )
     def ex(
             self,
             command,
@@ -315,8 +346,138 @@ class ContainerHelpers():
                 input_mount_point,
                 output_mount_point
             )
+        elif self.containerinfo.engine == 'singularity_pbs':
+            return self.ex_singularity_pbs(
+                command,
+                input_targets,
+                output_targets,
+                extra_params,
+                inputs_mode,
+                outputs_mode,
+                input_mount_point,
+                output_mount_point
+            )
         else:
             raise Exception("Container engine {} is invalid".format(self.containerinfo.engine))
+
+    def ex_singularity_pbs(
+                self,
+                command,
+                input_targets={},
+                output_targets={},
+                extra_params={},
+                inputs_mode='ro',
+                outputs_mode='rw',
+                input_mount_point='/mnt/inputs',
+                output_mount_point='/mnt/outputs'):
+            """
+            Run command in the container using singularity on slurm, with mountpoints
+            command is assumed to be in python template substitution format
+            """
+            mounts, container_paths, DF, UF = self.mounts_CP_DF_UF(
+                input_targets,
+                output_targets,
+                inputs_mode,
+                outputs_mode,
+                input_mount_point,
+                output_mount_point)
+
+            img_location = os.path.join(
+                self.containerinfo.container_cache,
+                "{}.singularity.simg".format(self.make_fs_name(self.container))
+            )
+            log.info("Looking for singularity image {}".format(img_location))
+            if not os.path.exists(img_location):
+                log.info("No image at {} Creating....".format(img_location))
+                try:
+                    os.makedirs(os.path.dirname(img_location))
+                except FileExistsError:
+                    # No big deal
+                    pass
+                # Singularity is dumb and can only pull images to the working dir
+                # So, get our current working dir.
+                cwd = os.getcwd()
+                # Move to our target dir
+                os.chdir(os.path.dirname(img_location))
+                # Attempt to pull our image
+                pull_proc = subprocess.run(
+                    [
+                        'singularity',
+                        'pull',
+                        '--name',
+                        os.path.basename(img_location),
+                        "docker://{}".format(self.container)
+                    ],
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE
+                )
+                log.info(pull_proc)
+                # Move back
+                os.chdir(cwd)
+
+            template_dict = container_paths.copy()
+            template_dict.update(extra_params)
+            command = Template(command).substitute(template_dict)
+
+            log.info(
+                "Attempting to run {} in {}".format(
+                    command,
+                    self.container
+                )
+            )
+
+            command_list = [
+                'singularity', 'exec', '--contain',
+            ]
+            for mp in mounts:
+                command_list += ['-B', "{}:{}:{}".format(mp, mounts[mp]['bind'], mounts[mp]['mode'])]
+            command_list.append(img_location)
+            command_list += ['bucket_command_wrapper', '-c', shlex.quote(command)]
+            for uf in UF:
+                command_list += ['-UF', uf]
+            for df in DF:
+                command_list += ['-DF', df]
+
+            # Write the command to a script for PBS / QSUB to consume
+
+            with tempfile.NamedTemporaryFile(
+                mode='wt',
+                dir=self.containerinfo.pbs_scriptpath,
+                delete=False) as script_h:
+                # Make executable, readable, and writable by owner
+                os.chmod(
+                    script_h.name,
+                    stat.S_IRUSR |
+                    stat.S_IWUSR |
+                    stat.S_IXUSR
+                )
+                script_h.write("!#/bin/bash\n")
+                script_h.write(" ".join(command_list))
+                script_h.close()
+            command_proc = subprocess.run(
+                [
+                    'qsub',
+                    '-I',
+                    '-x',
+                    '-V',
+                    '-A', self.containerinfo.pbs_account,
+                    '-q', self.containerinfo.pbs_queue,
+                    '-l',
+                    'nodes={}:ppn={},mem={}mb,walltime={}'.format(
+                        1,
+                        self.containerinfo.vcpu,
+                        int(self.containerinfo.mem),
+                        self.containerinfo.timeout * 60
+                    ),
+                    script_h.name
+                ],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+            )
+            os.unlink(script_h.name)
+            log.info(command_proc.stdout)
+            if command_proc.stderr:
+                log.warn(command_proc.stderr)
 
     def ex_singularity_slurm(
             self,
