@@ -451,7 +451,7 @@ class ContainerHelpers():
                     stat.S_IWUSR |
                     stat.S_IXUSR
                 )
-                script_h.write("!#/bin/bash\n")
+                script_h.write("#!/bin/bash\n")
                 script_h.write(" ".join(command_list))
                 script_h.close()
             command_proc = subprocess.run(
