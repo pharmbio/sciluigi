@@ -425,9 +425,9 @@ class ContainerHelpers():
                     self.container
                 )
             )
-
+            working_dir = tempfile.mkdtemp()
             command_list = [
-                'singularity', 'exec', '--contain',
+                'singularity', 'exec', '--contain', '--workdir', working_dir
             ]
             for mp in mounts:
                 command_list += ['-B', "{}:{}:{}".format(mp, mounts[mp]['bind'], mounts[mp]['mode'])]
@@ -530,7 +530,7 @@ class ContainerHelpers():
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE
             )
-            print(pull_proc)
+            log.info(pull_proc)
             # Move back
             os.chdir(cwd)
 
