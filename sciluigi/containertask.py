@@ -335,7 +335,7 @@ class ContainerHelpers():
                 input_mount_point,
                 output_mount_point
             )
-        elif self.containerinfo.engine == 'singularity_slurm':
+        elif self.containerinfo.engine == 'slurm':
             return self.ex_singularity_slurm(
                 command,
                 input_targets,
@@ -346,7 +346,7 @@ class ContainerHelpers():
                 input_mount_point,
                 output_mount_point
             )
-        elif self.containerinfo.engine == 'singularity_pbs':
+        elif self.containerinfo.engine == 'pbs':
             return self.ex_singularity_pbs(
                 command,
                 input_targets,
