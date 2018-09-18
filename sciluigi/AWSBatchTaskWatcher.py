@@ -19,38 +19,43 @@ class AWSBatchTaskWatcher():
 
     def pollJobState(self):
         while True:
-            self.__log__.debug("Poll tick. {} jobs".format(
-                len(self.__jobStateDict__))
-            )
-            jobIDs_needing_update = [
-                jID for jID, state in self.__jobStateDict__.items()
-                if state not in self.COMPLETED_JOB_STATES
-            ]
-            if len(jobIDs_needing_update) > 0:
-                self.__log__.info("Polling AWS about {} jobs".format(
-                    len(jobIDs_needing_update))
+            try:
+                self.__log__.debug("Poll tick. {} jobs".format(
+                    len(self.__jobStateDict__))
                 )
-                update_result = self.__batch_client__.describe_jobs(
-                    jobs=jobIDs_needing_update
-                )
-                update_result_jobs = update_result.get('jobs', [])
-                updated_job_status = {
-                    j['jobId']: j['status']
-                    for j in update_result_jobs
-                }
-                jobIdsWithoutResult = list(set(jobIDs_needing_update) - set(updated_job_status.keys()))
-                updated_job_status.update({
-                    jID: "DOESNOTEXIST"
-                    for jID in jobIdsWithoutResult
-                })
-                self.__jobStateDict__.update(updated_job_status)
+                jobIDs_needing_update = [
+                    jID for jID, state in self.__jobStateDict__.items()
+                    if state not in self.COMPLETED_JOB_STATES
+                ]
+                if len(jobIDs_needing_update) > 0:
+                    self.__log__.info("Polling AWS about {} jobs".format(
+                        len(jobIDs_needing_update))
+                    )
+                    update_result = self.__batch_client__.describe_jobs(
+                        jobs=jobIDs_needing_update
+                    )
+                    update_result_jobs = update_result.get('jobs', [])
+                    updated_job_status = {
+                        j['jobId']: j['status']
+                        for j in update_result_jobs
+                    }
+                    jobIdsWithoutResult = list(set(jobIDs_needing_update) - set(updated_job_status.keys()))
+                    updated_job_status.update({
+                        jID: "DOESNOTEXIST"
+                        for jID in jobIdsWithoutResult
+                    })
+                    self.__jobStateDict__.update(updated_job_status)
 
-            time.sleep(self.POLLING_DELAY_SEC)
+                time.sleep(self.POLLING_DELAY_SEC)
+            except BrokenPipeError:
+                # Handle if the calling process ends, destroying the manager.
+                # We should terminate too
+                return
 
     def waitOnJob(self, jobID):
         # Works by adding this jobID to the dict if it does not exist
         if jobID not in self.__jobStateDict__:
-            self.__log__.info("Adding jobId {} to our list".format(jobID))
+            self.__log__.info("Adding jobId {} to our watch list".format(jobID))
             self.__jobStateDict__[jobID] = None
         # And then waiting for the polling child process to update the job status
         while self.__jobStateDict__[jobID] not in self.COMPLETED_JOB_STATES:
