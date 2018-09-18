@@ -115,7 +115,7 @@ class AToT_ContainerTask(sl.ContainerTask):
         # ContainerTasks use the python string template system to handle inputs and outputs
         # Same command as above, but with template placeholders $inFile for in and $outFile.
         # This often works out neater than the more complex string combinations as above
-        # in the non-containerized task. 
+        # in the non-containerized task.
         cmd = 'cat $inFile | sed "s/A/T/g" > $outFile'
         self.ex(
             command=cmd,

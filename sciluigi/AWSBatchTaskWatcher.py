@@ -10,6 +10,8 @@ class AWSBatchTaskWatcher():
     COMPLETED_JOB_STATES = {
         'SUCCEEDED',
         'FAILED',
+        # A state I've added for jobs that no longer exist on batch.
+        # This can be for older jobs whose status is deleted from AWS
         'DOESNOTEXIST'
     }
     POLLING_DELAY_SEC = 10
@@ -17,12 +19,18 @@ class AWSBatchTaskWatcher():
 
     def pollJobState(self):
         while True:
+            self.__log__.debug("Poll tick. {} jobs".format(
+                len(self.__jobStateDict__))
+            )
             jobIDs_needing_update = [
-                jID for jID, state in self.jobStateDict.items()
+                jID for jID, state in self.__jobStateDict__.items()
                 if state not in self.COMPLETED_JOB_STATES
             ]
             if len(jobIDs_needing_update) > 0:
-                update_result = self.batch_client.describe_jobs(
+                self.__log__.info("Polling AWS about {} jobs".format(
+                    len(jobIDs_needing_update))
+                )
+                update_result = self.__batch_client__.describe_jobs(
                     jobs=jobIDs_needing_update
                 )
                 update_result_jobs = update_result.get('jobs', [])
@@ -35,43 +43,54 @@ class AWSBatchTaskWatcher():
                     jID: "DOESNOTEXIST"
                     for jID in jobIdsWithoutResult
                 })
-                self.jobStateDict.update(updated_job_status)
+                self.__jobStateDict__.update(updated_job_status)
 
             time.sleep(self.POLLING_DELAY_SEC)
 
     def waitOnJob(self, jobID):
         # Works by adding this jobID to the dict if it does not exist
-        if jobID not in self.jobStateDict:
-            self.log.info("Adding jobId {} to our list".format(jobID))
-            self.jobStateDict[jobID] = None
+        if jobID not in self.__jobStateDict__:
+            self.__log__.info("Adding jobId {} to our list".format(jobID))
+            self.__jobStateDict__[jobID] = None
         # And then waiting for the polling child process to update the job status
-        while self.jobStateDict[jobID] not in self.COMPLETED_JOB_STATES:
+        while self.__jobStateDict__[jobID] not in self.COMPLETED_JOB_STATES:
+            self.__log__.debug("Still waiting on {}".format(jobID))
             time.sleep(self.JOB_WAIT_SECS)
         # Implicitly our job has reached a completed state
-        if self.jobStateDict[jobID] == 'DOESNOTEXIST':
-            self.log.warning("JobID {} did not exist on batch".format(jobID))
+        self.__log__.info("JobID {} returned with status {}".format(
+            jobID,
+            self.__jobStateDict__[jobID]
+        ))
+        if self.__jobStateDict__[jobID] == 'DOESNOTEXIST':
+            self.__log__.warning("JobID {} did not exist on batch".format(jobID))
+        return self.__jobStateDict__[jobID]
 
     def __init__(
             self,
-            session_options={}):
+            session_options={},
+            debug=False):
         # Logging first:
-        self.log = logging.getLogger('AWSBatchTaskWatcher')
-        self.log.setLevel(logging.INFO)
+        self.__log__ = logging.getLogger('AWSBatchTaskWatcher')
+        self.__log__.setLevel(logging.INFO)
         console_handler = logging.StreamHandler()
-        console_handler.setLevel(logging.INFO)
-        self.log.addHandler(console_handler)
+        if debug:
+            console_handler.setLevel(logging.DEBUG)
+        else:
+            console_handler.setLevel(logging.INFO)
+        self.__log__.addHandler(console_handler)
         # BOTO3 / Batch client
-        self.session = boto3.session(session_options)
-        self.batch_client = self.session.client(
+        self.__session__ = boto3.Session(session_options)
+        self.__batch_client__ = self.__session__.client(
             'batch'
         )
         # Use the multiprocessing manager to create a job state dict
         # that can safely be shared among processes
-        self.manager = mp.Manager()
-        self.jobStateDict = self.manager.dict()
+        self.__manager__ = mp.Manager()
+        self.__jobStateDict__ = self.__manager__.dict()
         # Start a child process to poll batch for job status
-        self.jobStatePoller = mp.Process(target=self.pollJobState)
+        self.__jobStatePoller__ = mp.Process(target=self.pollJobState)
+        self.__jobStatePoller__.start()
 
     def __del__(self):
         # Explicitly stop the polling process when this class is destroyed.
-        self.jobStatePoller.terminate()
+        self.__jobStatePoller__.terminate()
