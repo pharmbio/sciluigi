@@ -630,7 +630,6 @@ class ContainerHelpers():
         output_target_maps = self.map_targets_to_container(
             output_targets,
         )
-        out_schema = set(output_target_maps.keys())
         # Make our container paths
         for schema, schema_targets in output_target_maps.items():
             for k, relpath in schema_targets['relpaths'].items():
@@ -644,7 +643,6 @@ class ContainerHelpers():
         input_target_maps = self.map_targets_to_container(
             input_targets,
         )
-        in_schema = set(input_target_maps.keys())
         # Make our container paths
         for schema, schema_targets in input_target_maps.items():
             for k, relpath in schema_targets['relpaths'].items():

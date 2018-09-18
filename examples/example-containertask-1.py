@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
 
+# This is an example of how the ContainerTask and ContainerTargetInfo
+# classes extend sciluigi, and allow commands to be run in containers
+# seamlessly on different container engines / HPC systems
+# Start, ironically, at the bottom and work your way up!
+
 import logging
 import luigi
 import sciluigi as sl
@@ -91,6 +96,7 @@ class AToT_ContainerTask(sl.ContainerTask):
     # In this simple example, there isn't much advantage of running in a container
     # But when dealing with specialized software (requiring complex and brittle dependencies)
     # or with heavy tasks needing big harware to run, there is an advantage.
+    # This task will run identically locally via docker, on AWS, or via PBS.
 
     # ALL ContainerTasks must specify which container is to be used
     container = 'golob/sciluigi-example:0.1.0__bcw.0.3.0'
@@ -107,7 +113,9 @@ class AToT_ContainerTask(sl.ContainerTask):
 
     def run(self):
         # ContainerTasks use the python string template system to handle inputs and outputs
-        # Same command as above, but with template placeholders $inFile for in and $outFile
+        # Same command as above, but with template placeholders $inFile for in and $outFile.
+        # This often works out neater than the more complex string combinations as above
+        # in the non-containerized task. 
         cmd = 'cat $inFile | sed "s/A/T/g" > $outFile'
         self.ex(
             command=cmd,
@@ -201,7 +209,7 @@ if __name__ == '__main__':
         "--{}={}".format(k.replace('_', '-'), v)
         for k, v in vars(args).items()
     ]
-    print(args_list)
+
     sl.run(
         local_scheduler=True,
         main_task_cls=MyWorkflow,
