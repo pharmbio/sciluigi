@@ -23,6 +23,10 @@ except ImportError:
 # Setup logging
 log = logging.getLogger('sciluigi-interface')
 
+# Create a holder variable for an AWSBatchTaskWatcher
+# So we can ONLY load if needed
+batch_task_watcher = None
+
 
 class ContainerInfo():
     """
@@ -335,7 +339,7 @@ class ContainerHelpers():
                 input_mount_point,
                 output_mount_point
             )
-        elif self.containerinfo.engine == 'singularity_slurm':
+        elif self.containerinfo.engine == 'slurm':
             return self.ex_singularity_slurm(
                 command,
                 input_targets,
@@ -346,7 +350,7 @@ class ContainerHelpers():
                 input_mount_point,
                 output_mount_point
             )
-        elif self.containerinfo.engine == 'singularity_pbs':
+        elif self.containerinfo.engine == 'pbs':
             return self.ex_singularity_pbs(
                 command,
                 input_targets,
@@ -605,6 +609,11 @@ class ContainerHelpers():
         import boto3
         batch_client = boto3.client('batch')
         s3_client = boto3.client('s3')
+        # And batch_task_watcher if not already done
+        global batch_task_watcher
+        if batch_task_watcher is None:
+            from sciluigi.AWSBatchTaskWatcher import AWSBatchTaskWatcher
+            batch_task_watcher = AWSBatchTaskWatcher()
 
         if self.containerinfo.aws_batch_job_prefix is None:
             run_uuid = str(uuid.uuid4())
@@ -630,7 +639,6 @@ class ContainerHelpers():
         output_target_maps = self.map_targets_to_container(
             output_targets,
         )
-        out_schema = set(output_target_maps.keys())
         # Make our container paths
         for schema, schema_targets in output_target_maps.items():
             for k, relpath in schema_targets['relpaths'].items():
@@ -644,7 +652,6 @@ class ContainerHelpers():
         input_target_maps = self.map_targets_to_container(
             input_targets,
         )
-        in_schema = set(input_target_maps.keys())
         # Make our container paths
         for schema, schema_targets in input_target_maps.items():
             for k, relpath in schema_targets['relpaths'].items():
@@ -885,24 +892,16 @@ class ContainerHelpers():
             container_command_list,
             job_submission_id
         ))
-        while True:
-            try:
-                job_status = batch_client.describe_jobs(
-                    jobs=[job_submission_id]
-                ).get('jobs')[0]
-            except ClientError as e:
-                log.info("Caught boto3 client error, sleeping for 10 seconds ({})".format(
-                    e.response['Error']['Message']
-                ))
-                job_status = {}
-                log.info("Caught boto3 client error")
-            if job_status.get('status') == 'SUCCEEDED' or job_status.get('status') == 'FAILED':
-                break
-            time.sleep(self.containerinfo.aws_batch_job_poll_sec)
-        if job_status.get('status') != 'SUCCEEDED':
-            raise Exception("Batch job failed. {}".format(
-                job_status.get('statusReason')
+        # Wait for the job here
+        job_final_status = batch_task_watcher.waitOnJob(
+            job_submission_id
+        )
+        if job_final_status != 'SUCCEEDED':
+            log.error("Job {} failed with status".format(
+                job_submission_id,
+                job_final_status
             ))
+            return
         # Implicit else we succeeded
         # Now we need to copy back from S3 to our local filesystem
         for (s3_loc, target) in needs_s3_download:
