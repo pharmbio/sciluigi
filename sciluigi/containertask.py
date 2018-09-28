@@ -14,6 +14,7 @@ import io
 from botocore.exceptions import ClientError
 import tempfile
 import datetime
+import configparser
 
 try:
     from urlparse import urlsplit, urljoin
@@ -105,6 +106,90 @@ class ContainerInfo():
         self.pbs_account = pbs_account
         self.pbs_queue = pbs_queue
         self.pbs_scriptpath = pbs_scriptpath
+
+    # Method to allow population from a config file
+    # Sparing the user from having to repeat this
+    def from_config(
+            self,
+            configfile_path=os.path.expanduser('~/.sciluigi/containerinfo.ini'),
+            section='DEFAULT'):
+        config = configparser.ConfigParser()
+        if not os.path.exists(configfile_path):
+            log.error(
+                """Could not find a sciluigi configuration file at {}""".format(
+                    configfile_path)
+            )
+            return
+        # Implicit else
+        config.read(configfile_path)
+        if section not in config.sections():
+            log.error(
+                """Section {} not found in the sciluigi configuration file at {}""".format(
+                    section,
+                    configfile_path
+                )
+            )
+            return
+        # Implicit else, override values if the config value is not a blank string
+        config_values = config[section]
+        if config_values['engine'] != "":
+            self.engine = config_values['engine']
+        if config_values['vcpu'] != "":
+            try:
+                self.vcpu = int(config_values['vcpu'])
+            except ValueError:
+                log.error("Could not convert vcpu {} to int".format(config_values['vcpu']))
+        if config_values['mem'] != "":
+            try:
+                self.mem = int(config_values['mem'])
+            except ValueError:
+                log.error("Could not convert mem {} to int".format(config_values['mem']))
+        if config_values['timeout'] != "":
+            try:
+                self.timeout = int(config_values['timeout'])
+            except ValueError:
+                log.error("Could not convert timeout {} to int".format(config_values['timeout']))
+
+        if config_values['container_cache'] != "":
+            self.container_cache = config_values['container_cache']
+
+        if config_values['aws_jobRoleArn'] != "":
+            self.aws_jobRoleArn = config_values['aws_jobRoleArn']
+        if config_values['aws_s3_scratch_loc'] != "":
+            self.aws_s3_scratch_loc = config_values['aws_s3_scratch_loc']
+        if config_values['aws_batch_job_queue'] != "":
+            self.aws_batch_job_queue = config_values['aws_batch_job_queue']
+        if config_values['aws_batch_job_prefix'] != "":
+            self.aws_batch_job_prefix = config_values['aws_batch_job_prefix']
+        if config_values['aws_batch_job_poll_sec'] != "":
+            try:
+                self.aws_batch_job_poll_sec = int(config_values['aws_batch_job_poll_sec'])
+            except ValueError:
+                log.error("Could not convert batch poll time of {} to int".format(
+                    config_values['aws_batch_job_poll_sec'])
+                )
+        if config_values['aws_secrets_loc'] != "":
+            self.aws_secrets_loc = config_values['aws_secrets_loc']
+        
+        if config_values['aws_boto_max_tries'] != "":
+            try:
+                self.aws_boto_max_tries = int(config_values['aws_boto_max_tries'])
+            except ValueError:
+                log.error("Could not convert boto max tries {} to int".format(
+                    config_values['aws_boto_max_tries'])
+                )
+
+        if config_values['slurm_partition'] != "":
+            self.slurm_partition = config_values['slurm_partition']
+
+        if config_values['pbs_account'] != "":
+            self.pbs_account = config_values['pbs_account']
+
+        if config_values['pbs_queue'] != "":
+            self.pbs_queue = config_values['pbs_queue']
+
+        if config_values['pbs_scriptpath'] != "":
+            self.pbs_scriptpath = config_values['pbs_scriptpath']
 
     def __str__(self):
         """
