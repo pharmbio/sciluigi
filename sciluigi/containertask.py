@@ -516,7 +516,7 @@ class ContainerHelpers():
             )
             working_dir = tempfile.mkdtemp()
             command_list = [
-                'singularity', 'exec', '--contain', '--workdir', working_dir
+                'singularity', 'exec', '--contain', '-e', '--workdir', working_dir
             ]
             for mp in mounts:
                 command_list += ['-B', "{}:{}:{}".format(mp, mounts[mp]['bind'], mounts[mp]['mode'])]
@@ -633,7 +633,7 @@ class ContainerHelpers():
             ))
 
         command_list = [
-            'singularity', 'exec', '--contain', '--scratch', '/scratch'
+            'singularity', 'exec', '-e','--contain', '--scratch', '/scratch'
         ]
         for mp in mounts:
             command_list += ['-B', "{}:{}:{}".format(mp, mounts[mp]['bind'], mounts[mp]['mode'])]
