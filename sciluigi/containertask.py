@@ -150,6 +150,12 @@ class ContainerInfo():
             except ValueError:
                 log.error("Could not convert timeout {} to int".format(config_values['timeout']))
 
+        if config_values['mounts'] != "":
+            try:
+                json.loads(config_values['mounts'])
+            except ValueError:
+                log.error("Could not convert {} to a dict".format(config_values['mounts']))
+
         if config_values['container_cache'] != "":
             self.container_cache = config_values['container_cache']
 
