@@ -132,52 +132,52 @@ class ContainerInfo():
             return
         # Implicit else, override values if the config value is not a blank string
         config_values = config[section]
-        if config_values['engine'] != "":
+        if config_values.get('engine', "") != "":
             self.engine = config_values['engine']
-        if config_values['vcpu'] != "":
+        if config_values.get('vcpu', "") != "":
             try:
                 self.vcpu = int(config_values['vcpu'])
             except ValueError:
                 log.error("Could not convert vcpu {} to int".format(config_values['vcpu']))
-        if config_values['mem'] != "":
+        if config_values.get('mem', "") != "":
             try:
                 self.mem = int(config_values['mem'])
             except ValueError:
                 log.error("Could not convert mem {} to int".format(config_values['mem']))
-        if config_values['timeout'] != "":
+        if config_values.get('timeout', "") != "":
             try:
                 self.timeout = int(config_values['timeout'])
             except ValueError:
                 log.error("Could not convert timeout {} to int".format(config_values['timeout']))
 
-        if config_values['mounts'] != "":
+        if config_values.get('mounts',"") != "":
             try:
                 json.loads(config_values['mounts'])
             except ValueError:
                 log.error("Could not convert {} to a dict".format(config_values['mounts']))
 
-        if config_values['container_cache'] != "":
+        if config_values.get('container_cache', "") != "":
             self.container_cache = config_values['container_cache']
 
-        if config_values['aws_jobRoleArn'] != "":
+        if config_values.get('aws_jobRoleArn', "") != "":
             self.aws_jobRoleArn = config_values['aws_jobRoleArn']
-        if config_values['aws_s3_scratch_loc'] != "":
+        if config_values.get('aws_s3_scratch_loc', "") != "":
             self.aws_s3_scratch_loc = config_values['aws_s3_scratch_loc']
-        if config_values['aws_batch_job_queue'] != "":
+        if config_values.get('aws_batch_job_queue', "") != "":
             self.aws_batch_job_queue = config_values['aws_batch_job_queue']
-        if config_values['aws_batch_job_prefix'] != "":
+        if config_values.get('aws_batch_job_prefix', "") != "":
             self.aws_batch_job_prefix = config_values['aws_batch_job_prefix']
-        if config_values['aws_batch_job_poll_sec'] != "":
+        if config_values.get('aws_batch_job_poll_sec', "") != "":
             try:
                 self.aws_batch_job_poll_sec = int(config_values['aws_batch_job_poll_sec'])
             except ValueError:
                 log.error("Could not convert batch poll time of {} to int".format(
                     config_values['aws_batch_job_poll_sec'])
                 )
-        if config_values['aws_secrets_loc'] != "":
+        if config_values('aws_secrets_loc', "") != "":
             self.aws_secrets_loc = config_values['aws_secrets_loc']
         
-        if config_values['aws_boto_max_tries'] != "":
+        if config_values.get('aws_boto_max_tries', "") != "":
             try:
                 self.aws_boto_max_tries = int(config_values['aws_boto_max_tries'])
             except ValueError:
@@ -185,16 +185,16 @@ class ContainerInfo():
                     config_values['aws_boto_max_tries'])
                 )
 
-        if config_values['slurm_partition'] != "":
+        if config_values.get('slurm_partition', "") != "":
             self.slurm_partition = config_values['slurm_partition']
 
-        if config_values['pbs_account'] != "":
+        if config_values.get('pbs_account', "") != "":
             self.pbs_account = config_values['pbs_account']
 
-        if config_values['pbs_queue'] != "":
+        if config_values.get('pbs_queue', "") != "":
             self.pbs_queue = config_values['pbs_queue']
 
-        if config_values['pbs_scriptpath'] != "":
+        if config_values.get('pbs_scriptpath', "") != "":
             self.pbs_scriptpath = config_values['pbs_scriptpath']
 
     def __str__(self):
