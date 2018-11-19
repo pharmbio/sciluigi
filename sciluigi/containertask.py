@@ -174,7 +174,7 @@ class ContainerInfo():
                 log.error("Could not convert batch poll time of {} to int".format(
                     config_values['aws_batch_job_poll_sec'])
                 )
-        if config_values('aws_secrets_loc', "") != "":
+        if config_values.get('aws_secrets_loc', "") != "":
             self.aws_secrets_loc = config_values['aws_secrets_loc']
         
         if config_values.get('aws_boto_max_tries', "") != "":
