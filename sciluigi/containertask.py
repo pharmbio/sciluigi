@@ -152,7 +152,7 @@ class ContainerInfo():
 
         if config_values.get('mounts', "") != "":
             try:
-                json.loads(config_values['mounts'])
+                self.mounts = json.loads(config_values['mounts'])
             except ValueError:
                 log.error("Could not convert {} to a dict".format(config_values['mounts']))
 
