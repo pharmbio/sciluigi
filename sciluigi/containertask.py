@@ -847,7 +847,7 @@ class ContainerHelpers():
         job_def_name = "sl_containertask__{}".format(
             uuid.uuid5(
                 uuid.NAMESPACE_URL,
-                self.container + self.containerinfo.aws_jobRoleArn + str(self.containerinfo.mounts)
+                self.container + str(self.containerinfo.mounts) + self.containerinfo.aws_jobRoleArn
             )
         )
 
