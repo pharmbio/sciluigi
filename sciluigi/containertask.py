@@ -150,7 +150,7 @@ class ContainerInfo():
             except ValueError:
                 log.error("Could not convert timeout {} to int".format(config_values['timeout']))
 
-        if config_values.get('mounts',"") != "":
+        if config_values.get('mounts', "") != "":
             try:
                 json.loads(config_values['mounts'])
             except ValueError:
@@ -176,7 +176,7 @@ class ContainerInfo():
                 )
         if config_values.get('aws_secrets_loc', "") != "":
             self.aws_secrets_loc = config_values['aws_secrets_loc']
-        
+
         if config_values.get('aws_boto_max_tries', "") != "":
             try:
                 self.aws_boto_max_tries = int(config_values['aws_boto_max_tries'])
@@ -845,11 +845,11 @@ class ContainerHelpers():
 
         # Make a UUID based on the container / command
         job_def_name = "sl_containertask__{}".format(
-                uuid.uuid5(
-                    uuid.NAMESPACE_URL,
-                    self.container+self.containerinfo.aws_jobRoleArn+str(self.containerinfo.mounts)
-                    )
+            uuid.uuid5(
+                uuid.NAMESPACE_URL,
+                self.container + self.containerinfo.aws_jobRoleArn + str(self.containerinfo.mounts)
             )
+        )
 
         # Search to see if this job is ALREADY defined.
         boto_tries = 0
@@ -897,7 +897,8 @@ class ContainerHelpers():
                     'sourceVolume': name,
                     'readOnly': read_only,
                 })
-
+            log.info("AWS Volumes: {}".format(str(aws_volumes)))
+            log.info("AWS mounts: {}".format(str(aws_mountPoints)))
             boto_tries = 0
             while boto_tries < self.containerinfo.aws_boto_max_tries:
                 boto_tries += 1
