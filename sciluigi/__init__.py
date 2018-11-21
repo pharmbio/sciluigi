@@ -50,3 +50,7 @@ from sciluigi.containertask import ContainerInfo
 from sciluigi.containertask import ContainerTask
 from sciluigi.containertask import ContainerHelpers
 
+# Create a holder variable for an AWSBatchTaskWatcher
+# So we can ONLY load if needed
+batch_task_watcher = None
+

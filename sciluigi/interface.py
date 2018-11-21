@@ -52,10 +52,6 @@ def setup_logging():
 
 setup_logging()
 
-# Create a holder variable for an AWSBatchTaskWatcher
-# So we can ONLY load if needed
-batch_task_watcher = None
-
 
 def run(*args, **kwargs):
     '''

@@ -697,13 +697,15 @@ class ContainerHelpers():
         batch_client = boto3.client('batch')
         s3_client = boto3.client('s3')
         # And batch_task_watcher if not already done
-        global batch_task_watcher
-        if batch_task_watcher is None:
+
+        if sciluigi.batch_task_watcher is None:
             log.info("Creating new batch task watcher")
             from sciluigi.AWSBatchTaskWatcher import AWSBatchTaskWatcher
-            batch_task_watcher = AWSBatchTaskWatcher()
+            sciluigi.batch_task_watcher = AWSBatchTaskWatcher()
+            batch_task_watcher = sciluigi.batch_task_watcher
         else:
             log.info("Using existing batch task watcher")
+            batch_task_watcher = sciluigi.batch_task_watcher
 
         if self.containerinfo.aws_batch_job_prefix is None:
             run_uuid = str(uuid.uuid4())
