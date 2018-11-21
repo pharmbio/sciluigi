@@ -703,8 +703,11 @@ class ContainerHelpers():
         # And batch_task_watcher if not already done
         global batch_task_watcher
         if batch_task_watcher is None:
+            log.info("Creating new batch task watcher")
             from sciluigi.AWSBatchTaskWatcher import AWSBatchTaskWatcher
             batch_task_watcher = AWSBatchTaskWatcher()
+        else:
+            log.info("Using existing batch task watcher")
 
         if self.containerinfo.aws_batch_job_prefix is None:
             run_uuid = str(uuid.uuid4())
