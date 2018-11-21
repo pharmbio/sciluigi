@@ -11,6 +11,7 @@ LOGFMT_LUIGI = '%(asctime)s %(levelname)8s    LUIGI %(message)s'
 LOGFMT_SCILUIGI = '%(asctime)s %(levelname)8s SCILUIGI %(message)s'
 DATEFMT = '%Y-%m-%d %H:%M:%S'
 
+
 def setup_logging():
     '''
     Set up SciLuigi specific logging
@@ -51,11 +52,17 @@ def setup_logging():
 
 setup_logging()
 
+# Create a holder variable for an AWSBatchTaskWatcher
+# So we can ONLY load if needed
+batch_task_watcher = None
+
+
 def run(*args, **kwargs):
     '''
     Forwarding luigi's run method
     '''
     luigi.run(*args, **kwargs)
+
 
 def run_local(*args, **kwargs):
     '''
