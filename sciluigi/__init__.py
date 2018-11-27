@@ -49,11 +49,16 @@ from sciluigi import containertask
 from sciluigi.containertask import ContainerInfo
 from sciluigi.containertask import ContainerTask
 from sciluigi.containertask import ContainerHelpers
-from sciluigi.AWSBatchTaskWatcher import AWSBatchTaskWatcher
 
-batch_task_watcher = None
-batch_task_watcher = AWSBatchTaskWatcher()
+from sciluigi.AWSBatchTaskWatcher import AWSBatchTaskWatcher
+try:
+    batch_task_watcher = AWSBatchTaskWatcher()
+except:
+    batch_task_watcher = None
 
 
 def getBatchTaskWatcher():
+    global batch_task_watcher
+    if batch_task_watcher is None:
+        raise NotImplementedError
     return batch_task_watcher
