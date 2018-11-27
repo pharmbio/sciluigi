@@ -267,19 +267,19 @@ class ContainerHelpers():
                     os.path.join(
                         urlsplit(t.path).netloc,
                         urlsplit(t.path).path
-                        )
+                    )
                 ) for t in scheme_targets.values()])
             return_dict[scheme]['common_prefix'] = common_prefix
             return_dict[scheme]['targets'] = scheme_targets
             return_dict[scheme]['relpaths'] = {
-                                                    i: os.path.relpath(
-                                                            os.path.join(
-                                                                urlsplit(t.path).netloc,
-                                                                urlsplit(t.path).path
-                                                            ),
-                                                            common_prefix)
-                                                    for i, t in scheme_targets.items()
-                                                }
+                i: os.path.relpath(
+                    os.path.join(
+                        urlsplit(t.path).netloc,
+                        urlsplit(t.path).path
+                    ),
+                    common_prefix)
+                for i, t in scheme_targets.items()
+            }
         return return_dict
 
     def mounts_CP_DF_UF(
@@ -326,7 +326,7 @@ class ContainerHelpers():
                     output_mount_point,
                     scheme,
                     output_target_maps[scheme]['relpaths'][identifier]
-                    )
+                )
                 UF.append("{}::{}".format(
                     container_paths[identifier],
                     output_target_maps[scheme]['targets'][identifier].path
@@ -360,7 +360,7 @@ class ContainerHelpers():
                     input_mount_point,
                     scheme,
                     input_target_maps[scheme]['relpaths'][identifier]
-                    )
+                )
                 DF.append("{}::{}::{}".format(
                     input_target_maps[scheme]['targets'][identifier].path,
                     container_paths[identifier],
@@ -384,16 +384,17 @@ class ContainerHelpers():
 
     def timeout_to_walltime(self):
         td = datetime.timedelta(minutes=self.containerinfo.timeout)
-        hours = td.days * 7 + td.seconds//3600
+        hours = td.days * 7 + td.seconds // 3600
         if hours > 99:
             hours = 99
-        minutes = (td.seconds - (td.seconds//3600)*3600) // 60
+        minutes = (td.seconds - (td.seconds // 3600) * 3600) // 60
         seconds = 0
         return "{:02d}:{:02d}:{:02d}".format(
             hours,
             minutes,
             seconds
         )
+
     def ex(
             self,
             command,
@@ -452,15 +453,16 @@ class ContainerHelpers():
             raise Exception("Container engine {} is invalid".format(self.containerinfo.engine))
 
     def ex_singularity_pbs(
-                self,
-                command,
-                input_targets={},
-                output_targets={},
-                extra_params={},
-                inputs_mode='ro',
-                outputs_mode='rw',
-                input_mount_point='/mnt/inputs',
-                output_mount_point='/mnt/outputs'):
+        self,
+        command,
+        input_targets={},
+        output_targets={},
+        extra_params={},
+        inputs_mode='ro',
+        outputs_mode='rw',
+        input_mount_point='/mnt/inputs',
+        output_mount_point='/mnt/outputs'
+    ):
             """
             Run command in the container using singularity on slurm, with mountpoints
             command is assumed to be in python template substitution format
@@ -534,17 +536,18 @@ class ContainerHelpers():
             with tempfile.NamedTemporaryFile(
                 mode='wt',
                 dir=self.containerinfo.pbs_scriptpath,
-                delete=False) as script_h:
-                # Make executable, readable, and writable by owner
-                os.chmod(
-                    script_h.name,
-                    stat.S_IRUSR |
-                    stat.S_IWUSR |
-                    stat.S_IXUSR
-                )
-                script_h.write("#!/bin/bash\n")
-                script_h.write(" ".join(command_list))
-                script_h.close()
+                delete=False
+            ) as script_h:
+                    # Make executable, readable, and writable by owner
+                    os.chmod(
+                        script_h.name,
+                        stat.S_IRUSR |
+                        stat.S_IWUSR |
+                        stat.S_IXUSR
+                    )
+                    script_h.write("#!/bin/bash\n")
+                    script_h.write(" ".join(command_list))
+                    script_h.close()
             command_proc = subprocess.run(
                 [
                     'qsub',
@@ -595,7 +598,7 @@ class ContainerHelpers():
         img_location = os.path.join(
             self.containerinfo.container_cache,
             "{}.singularity.img".format(self.make_fs_name(self.container))
-            )
+        )
         log.info("Looking for singularity image {}".format(img_location))
         if not os.path.exists(img_location):
             log.info("No image at {} Creating....".format(img_location))
@@ -630,12 +633,12 @@ class ContainerHelpers():
         command = Template(command).substitute(template_dict)
 
         log.info("Attempting to run {} in {}".format(
-                command,
-                self.container
-            ))
+            command,
+            self.container
+        ))
 
         command_list = [
-            'singularity', 'exec', '-e','--contain', '--scratch', '/scratch'
+            'singularity', 'exec', '-e', '--contain', '--scratch', '/scratch'
         ]
         for mp in mounts:
             command_list += ['-B', "{}:{}:{}".format(mp, mounts[mp]['bind'], mounts[mp]['mode'])]
@@ -660,7 +663,7 @@ class ContainerHelpers():
                     '--mem={}M'.format(self.containerinfo.mem),
                     '-t', str(self.containerinfo.timeout),
                     '-p', self.containerinfo.slurm_partition,
-                ]+command_list,
+                ] + command_list,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
             )
@@ -816,12 +819,12 @@ class ContainerHelpers():
                 # and make a temp destination in s3
                 for k, target in schema_targets['targets'].items():
                     s3_temp_loc = os.path.join(
-                            self.containerinfo.aws_s3_scratch_loc,
-                            run_uuid,
-                            scheme,
-                            'out',
-                            schema_targets['relpaths'][k]
-                        )
+                        self.containerinfo.aws_s3_scratch_loc,
+                        run_uuid,
+                        scheme,
+                        'out',
+                        schema_targets['relpaths'][k]
+                    )
                     # Add to UF for inside the container
                     UF.add('{}::{}'.format(
                         container_paths[k],
