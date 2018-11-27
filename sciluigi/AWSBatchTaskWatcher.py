@@ -28,7 +28,7 @@ class AWSBatchTaskWatcher():
                     if state not in self.COMPLETED_JOB_STATES
                 ]
                 if len(jobIDs_needing_update) > 0:
-                    self.__log__.info("Polling AWS about {} jobs".format(
+                    self.__log__.debug("Polling AWS about {} jobs".format(
                         len(jobIDs_needing_update))
                     )
                     update_result = self.__batch_client__.describe_jobs(
