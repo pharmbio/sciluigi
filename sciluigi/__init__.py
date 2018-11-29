@@ -56,6 +56,10 @@ try:
 except:
     batch_task_watcher = None
 
+import threading
+
+# Lock to ensure only one singularity image is created
+singularity_lock = threading.Lock()
 
 def getBatchTaskWatcher():
     global batch_task_watcher
