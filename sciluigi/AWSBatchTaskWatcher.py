@@ -27,6 +27,7 @@ class AWSBatchTaskWatcher():
                     jID for jID, state in self.__jobStateDict__.items()
                     if state not in self.COMPLETED_JOB_STATES
                 ]
+                self.__active_job_ids__ = set(jobIDs_needing_update)
                 if len(jobIDs_needing_update) > 0:
                     self.__log__.debug("Polling AWS about {} jobs".format(
                         len(jobIDs_needing_update))
@@ -88,6 +89,8 @@ class AWSBatchTaskWatcher():
         self.__batch_client__ = self.__session__.client(
             'batch'
         )
+        # Holder for active jobs
+        self.__active_job_ids__ = set()
         # Use the multiprocessing manager to create a job state dict
         # that can safely be shared among processes
         self.__manager__ = mp.Manager()
@@ -97,5 +100,12 @@ class AWSBatchTaskWatcher():
         self.__jobStatePoller__.start()
 
     def __del__(self):
+        # Delete active jobs
+        for jobId in self.__active_job_ids__:
+            self.__batch_client__.terminate_job(
+                jobId=jobId,
+                reason='Workflow cancelled'
+            )
         # Explicitly stop the polling process when this class is destroyed.
         self.__jobStatePoller__.terminate()
+
