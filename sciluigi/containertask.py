@@ -596,38 +596,39 @@ class ContainerHelpers():
             input_mount_point,
             output_mount_point)
 
-        img_location = os.path.join(
-            self.containerinfo.container_cache,
-            "{}.singularity.img".format(self.make_fs_name(self.container))
-        )
-        log.info("Looking for singularity image {}".format(img_location))
-        if not os.path.exists(img_location):
-            log.info("No image at {} Creating....".format(img_location))
-            try:
-                os.makedirs(os.path.dirname(img_location))
-            except FileExistsError:
-                # No big deal
-                pass
-            # Singularity is dumb and can only pull images to the working dir
-            # So, get our current working dir. 
-            cwd = os.getcwd()
-            # Move to our target dir
-            os.chdir(os.path.dirname(img_location))
-            # Attempt to pull our image
-            pull_proc = subprocess.run(
-                [
-                    'singularity',
-                    'pull',
-                    '--name',
-                    os.path.basename(img_location),
-                    "docker://{}".format(self.container)
-                ],
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE
+        with sciluigi.singularity_lock:
+            img_location = os.path.join(
+                self.containerinfo.container_cache,
+                "{}.singularity.img".format(self.make_fs_name(self.container))
             )
-            log.info(pull_proc)
-            # Move back
-            os.chdir(cwd)
+            log.info("Looking for singularity image {}".format(img_location))
+            if not os.path.exists(img_location):
+                log.info("No image at {} Creating....".format(img_location))
+                try:
+                    os.makedirs(os.path.dirname(img_location))
+                except FileExistsError:
+                    # No big deal
+                    pass
+                # Singularity is dumb and can only pull images to the working dir
+                # So, get our current working dir. 
+                cwd = os.getcwd()
+                # Move to our target dir
+                os.chdir(os.path.dirname(img_location))
+                # Attempt to pull our image
+                pull_proc = subprocess.run(
+                    [
+                        'singularity',
+                        'pull',
+                        '--name',
+                        os.path.basename(img_location),
+                        "docker://{}".format(self.container)
+                    ],
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE
+                )
+                log.info(pull_proc)
+                # Move back
+                os.chdir(cwd)
 
         template_dict = container_paths.copy()
         template_dict.update(extra_params)
@@ -659,7 +660,7 @@ class ContainerHelpers():
         else:
             command_proc = subprocess.run(
                 [
-                    'salloc',
+                    'srun',
                     '-c', str(self.containerinfo.vcpu),
                     '--mem={}M'.format(self.containerinfo.mem),
                     '-t', str(self.containerinfo.timeout),
