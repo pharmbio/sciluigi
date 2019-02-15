@@ -43,6 +43,9 @@ class ContainerInfo():
     timeout = None
     # Format is {'source_path': {'bind': '/container/path', 'mode': mode}}
     mounts = None
+
+    # Location within the container for scratch work. Can be paired with a mount
+    container_working_dir = None
     # Local Container cache location. For things like singularity that need to pull
     # And create a local container
     container_cache = None
@@ -56,6 +59,8 @@ class ContainerInfo():
     aws_secrets_loc = None
     aws_boto_max_tries = None
     aws_batch_job_poll_sec = None
+
+    # PBS STUFF
     pbs_account = None
     pbs_queue = None
     pbs_scriptpath = None
@@ -81,6 +86,7 @@ class ContainerInfo():
                  pbs_account='',
                  pbs_queue='',
                  pbs_scriptpath=None,
+                 container_working_dir='/tmp/'
                  ):
         self.engine = engine
         self.vcpu = vcpu
@@ -192,6 +198,9 @@ class ContainerInfo():
 
         if config_values.get('pbs_scriptpath', "") != "":
             self.pbs_scriptpath = config_values['pbs_scriptpath']
+
+        if config_values.get('container_working_dir', "") != "":
+            self.container_working_dir = config_values['container_working_dir']
 
     def __str__(self):
         """
@@ -639,8 +648,9 @@ class ContainerHelpers():
             self.container
         ))
 
+        working_dir = tempfile.mkdtemp()
         command_list = [
-            'singularity', 'exec', '-e', '--contain', '--scratch', '/scratch'
+            'singularity', 'exec', '--contain', '-e', '--workdir', working_dir
         ]
         for mp in mounts:
             command_list += ['-B', "{}:{}:{}".format(mp, mounts[mp]['bind'], mounts[mp]['mode'])]
