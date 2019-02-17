@@ -668,6 +668,36 @@ class ContainerHelpers():
                 stderr=subprocess.PIPE,
             )
         else:
+            """
+            out_fn = os.path.join(
+                next(tempfile._get_candidate_names())
+            )
+            command_proc = subprocess.run(
+                [
+                    'sbatch',
+                    '-c', str(self.containerinfo.vcpu),
+                    '--mem={}M'.format(self.containerinfo.mem),
+                    '-t', str(self.containerinfo.timeout),
+                    '-p', self.containerinfo.slurm_partition,
+                    '--wait',
+                    '--output={}'.format(out_fn)
+                ],
+                input="#!/bin/bash\n"+subprocess.list2cmdline(command_list)+"\n",
+                encoding='ascii'
+            )
+            if command_proc.returncode == 0 and os.path.exists(out_fn):
+                log.info(
+                    open(out_fn, 'rt').read()
+                )
+            elif command_proc.returncode != 0 and os.path.exists(out_fn):
+                log.error(
+                    open(out_fn, 'rt').read()
+                )
+            try:
+                os.remove(out_fn)
+            except:
+                pass
+            """
             command_proc = subprocess.run(
                 [
                     'srun',
@@ -679,10 +709,10 @@ class ContainerHelpers():
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
             )
-
-        log.info(command_proc.stdout)
-        if command_proc.stderr:
-            log.warn(command_proc.stderr)
+            log.info(command_proc.stdout)
+            if command_proc.stderr:
+                log.warn(command_proc.stderr)
+            
 
     def ex_aws_batch(
             self,
