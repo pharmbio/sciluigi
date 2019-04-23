@@ -51,7 +51,7 @@ def setup_logging():
     sciluigi_logger = logging.getLogger('sciluigi-interface')
     sciluigi_logger.addHandler(stream_handler)
     sciluigi_logger.addHandler(sciluigi_file_handler)
-    sciluigi_logger.setLevel(logging.DEBUG)
+    sciluigi_logger.setLevel(logging.INFO)
 
 setup_logging()
 

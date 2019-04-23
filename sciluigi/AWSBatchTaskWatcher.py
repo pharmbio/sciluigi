@@ -101,11 +101,13 @@ class AWSBatchTaskWatcher():
 
     def __del__(self):
         # Delete active jobs
-        for jobId in self.__active_job_ids__:
-            self.__batch_client__.terminate_job(
-                jobId=jobId,
-                reason='Workflow cancelled'
-            )
+        if hasattr(self, '__active_job_ids__') and self.__active_job_ids__ is not None:
+            for jobId in self.__active_job_ids__:
+                self.__batch_client__.terminate_job(
+                    jobId=jobId,
+                    reason='Workflow cancelled'
+                )
         # Explicitly stop the polling process when this class is destroyed.
-        self.__jobStatePoller__.terminate()
+        if hasattr(self, '__jobStatePoller__'):
+            self.__jobStatePoller__.terminate()
 
