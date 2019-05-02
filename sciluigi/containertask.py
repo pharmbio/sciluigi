@@ -567,10 +567,10 @@ class ContainerHelpers():
                     '-A', self.containerinfo.pbs_account,
                     '-q', self.containerinfo.pbs_queue,
                     '-l',
-                    'nodes={}:ppn={},mem={}mb,walltime={}'.format(
+                    'nodes={}:ppn={},mem={}gb,walltime={}'.format(
                         1,
                         self.containerinfo.vcpu,
-                        int(self.containerinfo.mem),
+                        int(self.containerinfo.mem / 1024),
                         self.containerinfo.timeout * 60
                     ),
                     script_h.name
