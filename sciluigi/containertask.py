@@ -528,9 +528,8 @@ class ContainerHelpers():
                     self.container
                 )
             )
-            working_dir = tempfile.mkdtemp()
             command_list = [
-                'singularity', 'exec', '--contain', '-e', '--workdir', working_dir
+                'singularity', 'exec', '--contain', '-e', '--scratch', self.containerinfo.container_working_dir,
             ]
             for mp in mounts:
                 command_list += ['-B', "{}:{}:{}".format(mp, mounts[mp]['bind'], mounts[mp]['mode'])]
@@ -648,9 +647,8 @@ class ContainerHelpers():
             self.container
         ))
 
-        working_dir = tempfile.mkdtemp()
         command_list = [
-            'singularity', 'exec', '--contain', '-e', '--workdir', working_dir
+            'singularity', 'exec', '--contain', '-e', '--scratch', self.containerinfo.container_working_dir,
         ]
         for mp in mounts:
             command_list += ['-B', "{}:{}:{}".format(mp, mounts[mp]['bind'], mounts[mp]['mode'])]
@@ -712,7 +710,6 @@ class ContainerHelpers():
             log.info(command_proc.stdout)
             if command_proc.stderr:
                 log.warn(command_proc.stderr)
-            
 
     def ex_aws_batch(
             self,
@@ -722,8 +719,8 @@ class ContainerHelpers():
             extra_params={},
             inputs_mode='ro',
             outputs_mode='rw',
-            input_mount_point='/mnt/inputs',
-            output_mount_point='/mnt/outputs'):
+            input_mount_point='/working/inputs',
+            output_mount_point='/working/outputs'):
         """
         Run a command in a container using AWS batch.
         Handles uploading of files to / from s3 and then into the container.
@@ -751,6 +748,17 @@ class ContainerHelpers():
                 self.containerinfo.aws_batch_job_prefix,
                 str(uuid.uuid4())
             )
+        # Get a task-specific working dir
+        input_container_path = os.path.join(
+            self.containerinfo.container_working_dir,
+            run_uuid,
+            'inputs'
+        )
+        output_container_path = os.path.join(
+            self.containerinfo.container_working_dir,
+            run_uuid,
+            'outputs'
+        )
 
         # We need mappings for both to and from S3 and from S3 to within the container
         # <local fs> <-> <s3> <-> <Container Mounts>
@@ -772,10 +780,10 @@ class ContainerHelpers():
         for schema, schema_targets in output_target_maps.items():
             for k, relpath in schema_targets['relpaths'].items():
                 container_paths[k] = os.path.join(
-                    output_mount_point,
+                    output_container_path,
                     schema,
                     relpath
-                )     
+                )  
         # Inputs too
         # Group by schema
         input_target_maps = self.map_targets_to_container(
@@ -785,7 +793,7 @@ class ContainerHelpers():
         for schema, schema_targets in input_target_maps.items():
             for k, relpath in schema_targets['relpaths'].items():
                 container_paths[k] = os.path.join(
-                    input_mount_point,
+                    input_container_path,
                     schema,
                     relpath
                 )
