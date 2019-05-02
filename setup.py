@@ -1,54 +1,30 @@
-import os
-import sys
+import setuptools
 
-try:
-    from setuptools import setup
-except:
-    from distutils.core import setup
+with open("README.md", "r") as fh:
+    long_description = fh.read()
 
-readme_note = '''\
-.. note::
-
-   For the latest source, issues and discussion, etc, please visit the
-   `GitHub repository <https://github.com/samuell/sciluigi>`_\n\n
-'''
-
-with open('README.rst') as fobj:
-    long_description = readme_note + fobj.read()
-
-setup(
-    name='sciluigi',
-    version='2.0.0_ct',
-    description='Helper library for writing dynamic, flexible workflows in luigi',
+setuptools.setup(
+    name="geneshot",
+    version="0.0.2",
+    author="Jonathan Golob",
+    author_email="j-dev@golob.org",
+    description="A gene-level metagenomics pipeline",
     long_description=long_description,
-    author='Samuel Lampa',
-    author_email='samuel.lampa@farmbio.uu.se',
-    url='https://github.com/pharmbio/sciluigi',
-    license='MIT',
-    keywords='workflows workflow pipeline luigi',
-    packages=[
-        'sciluigi',
+    long_description_content_type="text/markdown",
+    url="https://github.com/jgolob/geneshot",
+    packages=setuptools.find_packages(),
+    dependency_links=[
+        'https://github.com/jgolob/sciluigi/tarball/containertask',
     ],
     install_requires=[
-        'luigi',
-        'boto3',
-        'mongo',
-        'docker',
-        ],
-    classifiers=[
-        'Development Status :: 4 - Beta',
-        'Environment :: Console',
-        'Intended Audience :: Science/Research',
-        'License :: OSI Approved :: MIT License',
-        'Natural Language :: English',
-        'Operating System :: POSIX :: Linux',
-        'Programming Language :: Python',
-        'Programming Language :: Python :: 2',
-        'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 2.7',
-        'Programming Language :: Python :: 3.4',
-        'Topic :: Scientific/Engineering',
-        'Topic :: Scientific/Engineering :: Bio-Informatics',
-        'Topic :: Scientific/Engineering :: Chemistry',
+        'sciluigi==2.0.1'
     ],
+    classifiers=[
+        "Programming Language :: Python :: 3",
+        "License :: OSI Approved :: MIT License",
+        "Operating System :: OS Independent",
+    ],
+    entry_points={
+        'console_scripts': ['geneshot=geneshot.geneshot:main']
+    }
 )
