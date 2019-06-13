@@ -9,6 +9,7 @@ from sciluigi import audit
 from sciluigi.audit import AuditTrailHelpers
 
 from sciluigi import dependencies
+from sciluigi.dependencies import ContainerTargetInfo
 from sciluigi.dependencies import TargetInfo
 from sciluigi.dependencies import S3TargetInfo
 from sciluigi.dependencies import DependencyHelpers
@@ -43,3 +44,25 @@ from sciluigi.util import timestamp
 from sciluigi.util import timepath
 from sciluigi.util import recordfile_to_dict
 from sciluigi.util import dict_to_recordfile
+
+from sciluigi import containertask
+from sciluigi.containertask import ContainerInfo
+from sciluigi.containertask import ContainerTask
+from sciluigi.containertask import ContainerHelpers
+
+from sciluigi.AWSBatchTaskWatcher import AWSBatchTaskWatcher
+try:
+    batch_task_watcher = AWSBatchTaskWatcher()
+except:
+    batch_task_watcher = None
+
+import threading
+
+# Lock to ensure only one singularity image is created
+singularity_lock = threading.Lock()
+
+def getBatchTaskWatcher():
+    global batch_task_watcher
+    if batch_task_watcher is None:
+        raise NotImplementedError
+    return batch_task_watcher

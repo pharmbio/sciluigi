@@ -11,6 +11,7 @@ LOGFMT_LUIGI = '%(asctime)s %(levelname)8s    LUIGI %(message)s'
 LOGFMT_SCILUIGI = '%(asctime)s %(levelname)8s SCILUIGI %(message)s'
 DATEFMT = '%Y-%m-%d %H:%M:%S'
 
+
 def setup_logging():
     '''
     Set up SciLuigi specific logging
@@ -42,20 +43,25 @@ def setup_logging():
     luigi_logger.addHandler(luigi_file_handler)
     luigi_logger.addHandler(stream_handler)
     luigi_logger.setLevel(logging.WARN)
-    luigi.interface.setup_interface_logging.has_run = True
+    try:
+        luigi.interface.setup_interface_logging.has_run = True
+    except:
+        pass
 
     sciluigi_logger = logging.getLogger('sciluigi-interface')
     sciluigi_logger.addHandler(stream_handler)
     sciluigi_logger.addHandler(sciluigi_file_handler)
-    sciluigi_logger.setLevel(logging.DEBUG)
+    sciluigi_logger.setLevel(logging.INFO)
 
 setup_logging()
+
 
 def run(*args, **kwargs):
     '''
     Forwarding luigi's run method
     '''
     luigi.run(*args, **kwargs)
+
 
 def run_local(*args, **kwargs):
     '''

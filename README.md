@@ -1,23 +1,13 @@
 ![SciLuigi Logo](http://i.imgur.com/2aMT04J.png)
 
-* ***UPDATE, Nov, 2016: A paper with the motivation and design decisions behind SciLuigi [now available](http://dx.doi.org/10.1186/s13321-016-0179-6)***
-  * If you use SciLuigi in your research, please cite it like this:<br>
-    Lampa S, Alvarsson J, Spjuth O. Towards agile large-scale predictive modelling in drug discovery with flow-based programming design principles. *J Cheminform*. 2016. doi:[10.1186/s13321-016-0179-6](http://dx.doi.org/10.1186/s13321-016-0179-6).
-* ***A Virtual Machine with a realistic, runnable, example workflow in a Jupyter Notebook, is available [here](https://github.com/pharmbio/bioimg-sciluigi-casestudy)***
-* ***Watch a 10 minute screencast going through the basics of using SciLuigi [here](https://www.youtube.com/watch?v=gkKUWskRbjw)***
-* ***See a poster describing the motivations behind SciLuigi [here](http://dx.doi.org/10.13140/RG.2.1.1143.6246)***
+# Scientific Luigi 
+(SciLuigi for short) is a light-weight wrapper library around [Spotify](http://spotify.com)'s [Luigi](http://github.com/spotify/luigi) workflow system that aims to make writing scientific workflows more fluent, flexible and modular.
 
-Scientific Luigi (SciLuigi for short) is a light-weight wrapper library around [Spotify](http://spotify.com)'s [Luigi](http://github.com/spotify/luigi)
-workflow system that aims to make writing scientific workflows more fluent, flexible and
-modular.
+Luigi is a flexile and fun-to-use library. It has turned out though that its default way of defining dependencies by hard coding  them in each task's requires() function is not optimal for some type of workflows common e.g. in bioinformatics where multiple inputs and outputs, complex dependencies, and the need to quickly try different workflow connectivity in an explorative fashion is central to the way of working.
 
-Luigi is a flexile and fun-to-use library. It has turned out though
-that its default way of defining dependencies by hard coding them in each task's
-requires() function is not optimal for some type of workflows common e.g. in bioinformatics where multiple inputs and outputs, complex dependencies,
-and the need to quickly try different workflow connectivity in an explorative fashion is central to the way of working.
+Sciluigi can (optionally) complete tasks by running commands in containers. This can improve reproducibility (as a container can be portably run on the cloud, on private clusters, or for lightweight tasks on a users computer via docker) and ease of use (not requiring the end-user of a workflow to install finicky bioinformatics software while avoiding the problem of conflicting dependencies). Sciluigi can facilitate running software that only runs on linux when hosted on a Windows or Macintosh computer, and leverage cloud computing resources (AWS batch).
 
-SciLuigi was designed to solve some of these problems, by providing the following
-"features" over vanilla Luigi:
+SciLuigi was designed to solve some of these problems, by providing the following "features" over vanilla Luigi:
 
 - Separation of dependency definitions from the tasks themselves,
   for improved modularity and composability.
@@ -30,39 +20,21 @@ SciLuigi was designed to solve some of these problems, by providing the followin
 - Inputs and outputs are connected with an intuitive "single-assignment syntax".
 - "Good default" high-level logging of workflow tasks and execution times.
 - Produces an easy to read audit-report with high level information per task.
-- Integration with some HPC workload managers.
-  (So far only [SLURM](http://slurm.schedmd.com/) though).
+- Integration with some HPC workload managers, currently AWS batch.
+- Integration with cloud-bucket stores (currently AWS S3).
+- When containers are used, one can prototype and test a task on test data locally
+ with docker, and then run it on cloud resources (e.g. AWS batch) when confronted
+ with a large dataset with only a change in a single parameter.
 
 Because of Luigi's easy-to-use API these changes have been implemented
 as a very thin layer on top of luigi's own API with no changes at all to the luigi
 core, which means that you can continue leveraging the work already being
 put into maintaining and further developing luigi by the team at Spotify and others.
 
-## Workflow code quick demo
-
-***For a brief 10 minute screencast going through the basics below, see [this link](https://www.youtube.com/watch?v=gkKUWskRbjw)***
-
-Just to give a quick feel for how a workflow definition might look like in SciLuigi, check this code example
-(implementation of tasks hidden here for brevity. See Usage section further below for more details):
-
-```python
-import sciluigi as sl
-
-class MyWorkflow(sl.WorkflowTask):
-    def workflow(self):
-        # Initialize tasks:
-        foowrt = self.new_task('foowriter', MyFooWriter)
-        foorpl = self.new_task('fooreplacer', MyFooReplacer,
-            replacement='bar')
-
-        # Here we do the *magic*: Connecting outputs to inputs:
-        foorpl.in_foo = foowrt.out_foo
-
-        # Return the last task(s) in the workflow chain.
-        return foorpl
-```
-
-That's it! And again, see the "usage" section just below for a more detailed description of getting to this!
+* ***UPDATE, Nov, 2016: A paper with the motivation and design decisions behind SciLuigi [now available](http://dx.doi.org/10.1186/s13321-016-0179-6)***
+  * If you use SciLuigi in your research, please cite it like this:<br>
+    Lampa S, Alvarsson J, Spjuth O. Towards agile large-scale predictive modelling in drug discovery with flow-based programming design principles. *J Cheminform*. 2016. doi:[10.1186/s13321-016-0179-6](http://dx.doi.org/10.1186/s13321-016-0179-6).*
+* ***See a poster describing the motivations behind SciLuigi [here](http://dx.doi.org/10.13140/RG.2.1.1143.6246)***
 
 ## Support: Getting help
 
@@ -72,6 +44,8 @@ Please use the [issue queue](https://github.com/pharmbio/sciluigi/issues) for an
 
 - Python 2.7 - 3.4
 - Luigi 1.3.x - 2.0.1
+- boto3 > 1.7.10
+- docker >= 3.2.1
 
 ## Install
 
@@ -129,31 +103,37 @@ Then, you need to define some tasks that can be done in this workflow.
 
 This is done by:
 
-1. Creating a subclass of `sciluigi.Task` (or `sciluigi.SlurmTask` if you want Slurm support)
+1. Creating a subclass of `sciluigi.ContainerTask`
 2. Adding fields named `in_<yournamehere>` for each input, in the new task class
-3. Define methods named `out_<yournamehere>()` for each output, that return `sciluigi.TargetInfo` objects. (sciluigi.TargetInfo is initialized with a reference to the task object itself - typically `self` - and a path name, where upstream tasks paths can be used).
+3. Define methods named `out_<yournamehere>()` for each output, that return `sciluigi.ContainerTargetInfo` objects. sciluigi.TargetInfo is initialized with a reference to the task object itself - typically `self` - and an url. ContainerTargets can silently change where they are hosted, including on local filesystems (/path/to/file.txt) or in buckets (s3://bucket/key/file.txt).
 4. Define luigi parameters to the task.
-5. Implement the `run()` method of the task.
+5. Define the container engine and parameters that the container will be run.
+6. Implement the `run()` method of the task.
 
 #### Example:
 
-Let's define a simple task that just writes "foo" to a file named `foo.txt`:
+##### Let's define a simple task that just writes "foo" to a file named `foo.txt`.
+
+For this very simple task, we do not need a container, and thus we can base the task on the sciluigi.Task class. We do use the sciluigi.ContainerTargetInfo class here. The path/url we gave is for the local filesystem. If instead we gave an S3 bucket/key url (s3://bucket/foo.txt), this class will handle uploading (and later downloading if needed) from S3.
 
 ```python
 class MyFooWriter(sciluigi.Task):
     # We have no inputs here
     # Define outputs:
     def out_foo(self):
-        return sciluigi.TargetInfo(self, 'foo.txt')
+        return sciluigi.ContainerTargetInfo(self, 'foo.txt')
     def run(self):
         with self.out_foo().open('w') as foofile:
             foofile.write('foo\n')
 ```
 
-Then, let's create a task that replaces "foo" with "bar":
+##### Then, let's create a task that replaces "foo" with "bar":
+
+This task will be run in a container, in this case, the alpine linux container. This way (say if we are running sciluigi on a Windows machine without sed), we can still run the command wihtout fuss. In fact, no matter where this is hosted, the task will reliably run in the docker container the same way.
 
 ```python
-class MyFooReplacer(sciluigi.Task):
+class MyFooReplacer(sciluigi.ContainerTask):
+    container = 'alpine:3.7'
     replacement = sciluigi.Parameter() # Here, we take as a parameter
                                   # what to replace foo with.
     # Here we have one input, a "foo file":
@@ -162,24 +142,27 @@ class MyFooReplacer(sciluigi.Task):
     def out_replaced(self):
         # As the path to the returned target(info), we
         # use the path of the foo file:
-        return sciluigi.TargetInfo(self, self.in_foo().path + '.bar.txt')
+        return sciluigi.ContainerTargetInfo(self, self.in_foo().path + '.bar.txt')
     def run(self):
-        with self.in_foo().open() as in_f:
-            with self.out_replaced().open('w') as out_f:
-                # Here we see that we use the parameter self.replacement:
-                out_f.write(in_f.read().replace('foo', self.replacement))
+        self.ex(
+            command="sed 's/foo/$repl/g' $infile > $outfile",
+            input_targets={
+                'infile': self.in_foo(),
+            },
+            output_targets={
+                'outfile': self.out_replaced(),
+            },
+            extra_parameters={
+                'repl': self.replacement,
+            }
+        )
 ```
+Several things have happened here:
 
-The last lines, we could have instead written using the command-line `sed` utility, available in linux, by calling it on the commandline, with the built-in `ex()` method:
-
-```python
-    def run(self):
-        # Here, we use the in-built self.ex() method, to execute commands:
-        self.ex("sed 's/foo/{repl}/g' {inpath} > {outpath}".format(
-            repl=self.replacement,
-            inpath=self.in_foo().path,
-            outpath=self.out_replaced().path))
-```
+- We've specified which container the command should be run in. This can be any docker-style URI
+- The command now uses the [python string template system](https://docs.python.org/3.5/library/string.html#string.Template) to replace parameters, input and output targets
+- We use a ContainerTargetInfo in place of a ContainerTarget. This replacement target takes a URL, and can seemlessly handle
+local files, S3 buckets (and in the future SFTP, etc).
 
 ### Write the workflow definition
 
@@ -189,7 +172,8 @@ We do this by:
 
 1. Instantiating the tasks, using the `self.new_task(<unique_taskname>, <task_class>, *args, **kwargs)` method, of the workflow task.
 2. Connect the tasks together, by pointing the right `out_*` method to the right `in_*` field.
-3. Returning the last task in the chain, from the workflow method.
+3. Giving some basic parameters as to which sort of container engine should be used for the container task via defining a `sciluigi.ContainerInfo` class.
+4. Returning the last task in the chain, from the workflow method.
 
 #### Example:
 
@@ -197,9 +181,20 @@ We do this by:
 import sciluigi
 class MyWorkflow(sciluigi.WorkflowTask):
     def workflow(self):
-        foowriter = self.new_task('foowriter', MyFooWriter)
-        fooreplacer = self.new_task('fooreplacer', MyFooReplacer,
-            replacement='bar')
+        foowriter = self.new_task(
+            'foowriter',
+            MyFooWriter
+        )
+        fooreplacer = self.new_task(
+            'fooreplacer',
+            MyFooReplacer,
+            containerinfo=sciluigi.ContainerInfo(
+                vcpu=1,
+                mem=512,
+                engine='docker',
+            ),
+            replacement='bar'
+        )
 
         # Here we do the *magic*: Connecting outputs to inputs:
         fooreplacer.in_foo = foowriter.out_foo
@@ -269,6 +264,8 @@ If you run into any of these problems, you might be interested in a new workflow
 
 Changelog
 ---------
+- 0.9.6b7_ct
+  - Support for containerized tasks and `ContainerTargetInfo`
 - 0.9.3b4
   - Support for Python 3 (Thanks to @jeffcjohnson for contributing this!).
   - Bug fixes.

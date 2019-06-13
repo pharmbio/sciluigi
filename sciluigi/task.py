@@ -15,12 +15,14 @@ log = logging.getLogger('sciluigi-interface')
 
 # ==============================================================================
 
+
 def new_task(name, cls, workflow_task, **kwargs):
     '''
     Instantiate a new task. Not supposed to be used by the end-user
     (use WorkflowTask.new_task() instead).
     '''
     slurminfo = None
+    containerinfo = None
     for key, val in [(key, val) for key, val in iteritems(kwargs)]:
         # Handle non-string keys
         if not isinstance(key, string_types):
@@ -29,18 +31,25 @@ def new_task(name, cls, workflow_task, **kwargs):
         if isinstance(val, sciluigi.slurm.SlurmInfo):
             slurminfo = val
             kwargs[key] = val
+        if isinstance(val, sciluigi.containertask.ContainerInfo):
+            containerinfo = val
+            kwargs[key] = val
         elif not isinstance(val, string_types):
             try:
-                kwargs[key] = json.dumps(val) # Force conversion into string
+                kwargs[key] = json.dumps(val)  # Force conversion into string
             except TypeError:
                 kwargs[key] = str(val)
     kwargs['instance_name'] = name
     kwargs['workflow_task'] = workflow_task
     kwargs['slurminfo'] = slurminfo
+    kwargs['containerinfo'] = containerinfo
     newtask = cls.from_str_params(kwargs)
     if slurminfo is not None:
         newtask.slurminfo = slurminfo
+    if containerinfo is not None:
+        newtask.containerinfo = containerinfo
     return newtask
+
 
 class Task(sciluigi.audit.AuditTrailHelpers, sciluigi.dependencies.DependencyHelpers, luigi.Task):
     '''
@@ -87,6 +96,7 @@ class Task(sciluigi.audit.AuditTrailHelpers, sciluigi.dependencies.DependencyHel
         return self.ex_local(command)
 
 # ==============================================================================
+
 
 class ExternalTask(
         sciluigi.audit.AuditTrailHelpers,

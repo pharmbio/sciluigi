@@ -8,7 +8,13 @@ from luigi.contrib.postgres import PostgresTarget
 from luigi.contrib.s3 import S3Target
 from luigi.six import iteritems
 
+try:
+    from urlparse import urlsplit
+except ImportError:
+    from urllib.parse import urlsplit
+
 # ==============================================================================
+
 
 class TargetInfo(object):
     '''
@@ -32,6 +38,35 @@ class TargetInfo(object):
 
 # ==============================================================================
 
+
+class ContainerTargetInfo(TargetInfo):
+    '''
+    Class to be used for sending specification of which target, from which
+    task, to use, when stitching workflow tasks' outputs and inputs together.
+    Accepts a url as a path, and then can properly create the proper target type
+    for a given scheme (e.g. s3, file, etc)
+    '''
+    scheme = None
+
+    def __init__(self, task, path, format=None, is_tmp=False, client=None):
+        self.task = task
+        self.path = path
+        sr = urlsplit(path)
+        self.scheme = sr.scheme
+
+        if sr.scheme == 's3':
+            self.target = S3Target(path, format=format, client=client)
+        elif sr.scheme == 'file' or sr.scheme == '':
+            self.target = luigi.LocalTarget(path, format, is_tmp)
+            self.scheme = 'file'
+            self.path = sr.path
+        else:
+            raise ValueError("URL scheme {} is not supported".format(sr.scheme))
+
+
+# ==============================================================================
+
+
 class S3TargetInfo(TargetInfo):
     def __init__(self, task, path, format=None, client=None):
         self.task = task
@@ -39,6 +74,7 @@ class S3TargetInfo(TargetInfo):
         self.target = S3Target(path, format=format, client=client)
 
 # ==============================================================================
+
 
 class PostgresTargetInfo(TargetInfo):
     def __init__(self, task, host, database, user, password, update_id, table=None, port=None):
@@ -50,9 +86,18 @@ class PostgresTargetInfo(TargetInfo):
         self.update_id = update_id
         self.table = table
         self.port = port
-        self.target = PostgresTarget(host=host, database=database, user=user, password=password, table=table, update_id=update_id, port=port)
+        self.target = PostgresTarget(
+            host=host,
+            database=database,
+            user=user,
+            password=password,
+            table=table,
+            update_id=update_id,
+            port=port
+        )
 
 # ==============================================================================
+
 
 class DependencyHelpers(object):
     '''
