@@ -10,7 +10,7 @@ readme_note = '''\
 .. note::
 
    For the latest source, issues and discussion, etc, please visit the
-   `GitHub repository <https://github.com/samuell/sciluigi>`_\n\n
+   `GitHub repository <https://github.com/pharmbio/sciluigi>`_\n\n
 '''
 
 with open('README.rst') as fobj:
@@ -22,7 +22,7 @@ setup(
     description='Helper library for writing dynamic, flexible workflows in luigi',
     long_description=long_description,
     author='Samuel Lampa',
-    author_email='samuel.lampa@farmbio.uu.se',
+    author_email='samuel.lampa@rilnet.com',
     url='https://github.com/pharmbio/sciluigi',
     license='MIT',
     keywords='workflows workflow pipeline luigi',
@@ -30,7 +30,9 @@ setup(
         'sciluigi',
     ],
     install_requires=[
-        'luigi'
+        'luigi',
+        'psycopg2',
+        'boto3'
         ],
     classifiers=[
         'Development Status :: 4 - Beta',
