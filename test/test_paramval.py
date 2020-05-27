@@ -34,13 +34,13 @@ class TestNonStringParameterValues(unittest.TestCase):
         self.w.add(self.nsp_wf)
 
     def test_intparam_gets_set(self):
-        self.assertEquals(self.nsp_wf._tasks['intparam_task'].an_int_param, 123)
+        self.assertEqual(self.nsp_wf._tasks['intparam_task'].an_int_param, 123)
 
     def test_intparam_gets_set(self):
         self.w.run()
         with self.nsp_wf.workflow().out_int_val().open() as infile:
             val = infile.read()
-            self.assertEquals(val, '123')
+            self.assertEqual(val, '123')
 
     def tearDown(self):
         pass
