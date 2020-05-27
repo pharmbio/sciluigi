@@ -1,11 +1,16 @@
 .. figure:: http://i.imgur.com/2aMT04J.png
    :alt: SciLuigi Logo
 
-   SciLuigi Logo
+Project updates
+---------------
 
--  ***UPDATE, Nov, 2016: A paper with the motivation and design
-   decisions behind SciLuigi `now
-   available <http://dx.doi.org/10.1186/s13321-016-0179-6>`__***
+-  ***Status as of May 27, 2020***: A rewrite and update, with some
+   possible simplifications is in the works. Some features, such as
+   audit logging and SLURM integration will probably be either dropped
+   or moved out into separate libraries, to make it easier to keep the
+   core library easy to maintain in lockstep with Luigi.
+-  ***A paper with the motivation and design decisions behind SciLuigi
+   `now available <http://dx.doi.org/10.1186/s13321-016-0179-6>`__***
 -  If you use SciLuigi in your research, please cite it like this: Lampa
    S, Alvarsson J, Spjuth O. Towards agile large-scale predictive
    modelling in drug discovery with flow-based programming design
@@ -18,6 +23,9 @@
    SciLuigi `here <https://www.youtube.com/watch?v=gkKUWskRbjw>`__***
 -  ***See a poster describing the motivations behind SciLuigi
    `here <http://dx.doi.org/10.13140/RG.2.1.1143.6246>`__***
+
+About SciLuigi
+--------------
 
 Scientific Luigi (SciLuigi for short) is a light-weight wrapper library
 around `Spotify <http://spotify.com>`__'s
@@ -334,9 +342,9 @@ dependencies <http://luigi.readthedocs.io/en/stable/tasks.html#dynamic-dependenc
 but they work only for upstream tasks, not downstream tasks, which we
 would need).
 
-If you run into any of these problems, you might be interested in an
-experimental workflow engine we develop to overcome these limitations:
-`SciPipe <http://scipipe.org/>`__.
+If you run into any of these problems, you might be interested in a new
+workflow engine we develop to overcome these limitations:
+`SciPipe <http://scipipe.org>`__.
 
 Changelog
 ---------
@@ -362,4 +370,33 @@ BILS <https://bils.se>`__
 
 Many ideas and inspiration for the API is taken from: - `John Paul
 Morrison's invention and works on Flow-Based
-Programming <jpaulmorrison.com/fbp>`__
+Programming <http://jpaulmorrison.com/fbp>`__
+
+Publications using SciLuigi
+---------------------------
+
+Below is an incomplete list of publications using SciLuigi for
+computational analysis. If you are using SciLuigi in a publication,
+please consider adding your own here.
+
+Schulz W, Durant T, Siddon A, Torres R. Use of application containers
+and workflows for genomic data analysis. J Pathol Inform. 2016;7(1):53.
+DOI:
+`10.4103/2153-3539.197197 <https://dx.doi.org/10.4103%2F2153-3539.197197>`__
+
+See also: `SciPipe <http://scipipe.org>`__
+------------------------------------------
+
+If you find yourself needing some more advanced scheduling features like
+dynamic scheduling, or run into performance problems with
+Python/Luigi/SciLuigi, you might be interested to check out a new
+workflow engine we develop, in the Go programming language, to cope with
+some of the limitations we have still faced with Python/Luigi/SciLuigi:
+`SciPipe <http://scipipe.org>`__.
+
+`SciPipe <http://scipipe.org>`__ leverages some of the successful parts
+of Luigi's API, such as the flexible file name formatting, but replaces
+the Luigi scheduler with a custom, novel and very light-weight implicit
+dataflow scheduler written in Go. We find that it makes life much easier
+for complex workflow constructs as those involving cross validation,
+and/or nested parameter sweeps.

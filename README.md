@@ -1,11 +1,20 @@
 ![SciLuigi Logo](http://i.imgur.com/2aMT04J.png)
 
-* ***UPDATE, Nov, 2016: A paper with the motivation and design decisions behind SciLuigi [now available](http://dx.doi.org/10.1186/s13321-016-0179-6)***
+## Project updates
+
+* ***Status as of May 27, 2020***: A rewrite and update, with some possible
+  simplifications is in the works. Some features, such as audit logging and
+  SLURM integration will probably be either dropped or moved out into separate
+  libraries, to make it easier to keep the core library easy to maintain in
+  lockstep with Luigi.
+* ***A paper with the motivation and design decisions behind SciLuigi [now available](http://dx.doi.org/10.1186/s13321-016-0179-6)***
   * If you use SciLuigi in your research, please cite it like this:<br>
     Lampa S, Alvarsson J, Spjuth O. Towards agile large-scale predictive modelling in drug discovery with flow-based programming design principles. *J Cheminform*. 2016. doi:[10.1186/s13321-016-0179-6](http://dx.doi.org/10.1186/s13321-016-0179-6).
 * ***A Virtual Machine with a realistic, runnable, example workflow in a Jupyter Notebook, is available [here](https://github.com/pharmbio/bioimg-sciluigi-casestudy)***
 * ***Watch a 10 minute screencast going through the basics of using SciLuigi [here](https://www.youtube.com/watch?v=gkKUWskRbjw)***
 * ***See a poster describing the motivations behind SciLuigi [here](http://dx.doi.org/10.13140/RG.2.1.1143.6246)***
+
+## About SciLuigi
 
 Scientific Luigi (SciLuigi for short) is a light-weight wrapper library around [Spotify](http://spotify.com)'s [Luigi](http://github.com/spotify/luigi)
 workflow system that aims to make writing scientific workflows more fluent, flexible and
