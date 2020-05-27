@@ -4,6 +4,7 @@ the dependency graph of workflows.
 '''
 
 import luigi
+import warnings
 from luigi.contrib.postgres import PostgresTarget
 from luigi.contrib.s3 import S3Target
 from luigi.six import iteritems
@@ -121,9 +122,17 @@ class DependencyHelpers(object):
         '''
         output_targets = []
         for attrname in dir(self):
-            attrval = getattr(self, attrname)
-            if attrname.startswith('out_'):
-                output_targets = self._parse_outputitem(attrval, output_targets)
+            with warnings.catch_warnings():
+                # Deliberately suppress this deprecation warning, as we are not
+                # using the param_args property, only iterating through all
+                # members of the class, which triggers the deprecation warning
+                # just because of that.
+                warnings.filterwarnings('ignore',
+                        category=DeprecationWarning,
+                        message='Use of param_args has been deprecated')
+                attrval = getattr(self, attrname)
+                if attrname.startswith('out_'):
+                    output_targets = self._parse_outputitem(attrval, output_targets)
 
         return output_targets
 
