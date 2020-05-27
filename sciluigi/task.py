@@ -6,6 +6,7 @@ import luigi
 from luigi.six import iteritems, string_types
 import logging
 import subprocess as sub
+import warnings
 import sciluigi.audit
 import sciluigi.interface
 import sciluigi.dependencies
@@ -37,10 +38,16 @@ def new_task(name, cls, workflow_task, **kwargs):
     kwargs['instance_name'] = name
     kwargs['workflow_task'] = workflow_task
     kwargs['slurminfo'] = slurminfo
-    newtask = cls.from_str_params(kwargs)
-    if slurminfo is not None:
-        newtask.slurminfo = slurminfo
-    return newtask
+    with warnings.catch_warnings():
+        # We are deliberately hacking Luigi's parameter system to use for
+        # storing upstream tasks, thus this warning is not really helpful.
+        warnings.filterwarnings('ignore',
+                category=UserWarning,
+                message='Parameter "workflow_task".*is not of type string')
+        newtask = cls.from_str_params(kwargs)
+        if slurminfo is not None:
+            newtask.slurminfo = slurminfo
+        return newtask
 
 class Task(sciluigi.audit.AuditTrailHelpers, sciluigi.dependencies.DependencyHelpers, luigi.Task):
     '''
