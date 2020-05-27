@@ -78,7 +78,7 @@ class DependencyHelpers(object):
         '''
         upstream_tasks = set()
         for attrname, attrval in iteritems(self.__dict__):
-            if 'in_' == attrname[0:3]:
+            if attrname.startswith('in_'):
                 upstream_tasks = self._parse_inputitem(attrval, upstream_tasks)
 
         return list(upstream_tasks)
@@ -122,7 +122,7 @@ class DependencyHelpers(object):
         output_targets = []
         for attrname in dir(self):
             attrval = getattr(self, attrname)
-            if attrname[0:4] == 'out_':
+            if attrname.startswith('out_'):
                 output_targets = self._parse_outputitem(attrval, output_targets)
 
         return output_targets
