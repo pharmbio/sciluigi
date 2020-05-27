@@ -2,11 +2,8 @@
 
 ## Project updates
 
-* ***Status as of May 27, 2020***: A rewrite and update, with some possible
-  simplifications is in the works. Some features, such as audit logging and
-  SLURM integration will probably be either dropped or moved out into separate
-  libraries, to make it easier to keep the core library easy to maintain in
-  lockstep with Luigi.
+* ***Update May 27, 2020***: Version 0.9.7 is released, and should work well
+  with Python 3.8 and Luigi 2.8. Please [report any issues](https://github.com/pharmbio/sciluigi)!
 * ***A paper with the motivation and design decisions behind SciLuigi [now available](http://dx.doi.org/10.1186/s13321-016-0179-6)***
   * If you use SciLuigi in your research, please cite it like this:<br>
     Lampa S, Alvarsson J, Spjuth O. Towards agile large-scale predictive modelling in drug discovery with flow-based programming design principles. *J Cheminform*. 2016. doi:[10.1186/s13321-016-0179-6](http://dx.doi.org/10.1186/s13321-016-0179-6).
@@ -288,9 +285,11 @@ Contributors
 
 Acknowledgements
 ----------------
-This work is funded by:
+This work has been supported by:
 - [Faculty grants of the dept. of Pharmaceutical Biosciences, Uppsala University](http://www.farmbio.uu.se)
 - [Bioinformatics Infrastructure for Life Sciences, BILS](https://bils.se)
+- [Vinnova](https://www.vinnova.se/) via the project [KoDa - Kollektivtrafikens Datalab](https://www.vinnova.se/p/koda---kollektivtrafikens-datalab/)
+  as granted to [Savantic](https://savantic.eu/) and others.
 
 Many ideas and inspiration for the API is taken from:
 - [John Paul Morrison's invention and works on Flow-Based Programming](http://jpaulmorrison.com/fbp)
