@@ -79,28 +79,28 @@ class DependencyHelpers(object):
         upstream_tasks = set()
         for attrname, attrval in iteritems(self.__dict__):
             if attrname.startswith('in_'):
-                upstream_tasks = self._parse_inputitem(attrval, upstream_tasks)
+                upstream_tasks = self._add_upstream_tasks(upstream_tasks, attrval)
 
         return list(upstream_tasks)
 
-    def _parse_inputitem(self, val, tasks):
+    def _add_upstream_tasks(self, tasks, new_tasks):
         '''
         Recursively loop through lists of TargetInfos, or
         callables returning TargetInfos, or lists of ...
         (repeat recursively) ... and return all tasks.
         '''
-        if callable(val):
-            val = val()
-        if isinstance(val, TargetInfo):
-            tasks.add(val.task)
-        elif isinstance(val, list):
-            for valitem in val:
-                tasks = self._parse_inputitem(valitem, tasks)
-        elif isinstance(val, dict):
-            for _, valitem in iteritems(val):
-                tasks = self._parse_inputitem(valitem, tasks)
+        if callable(new_tasks):
+            new_tasks = new_tasks()
+        if isinstance(new_tasks, TargetInfo):
+            tasks.add(new_tasks.task)
+        elif isinstance(new_tasks, list):
+            for new_task in new_tasks:
+                tasks = self._add_upstream_tasks(tasks, new_task)
+        elif isinstance(new_tasks, dict):
+            for _, new_task in iteritems(new_tasks):
+                tasks = self._add_upstream_tasks(tasks, new_task)
         else:
-            raise Exception('Input item is neither callable, TargetInfo, nor list: %s' % val)
+            raise Exception('Input value is neither callable, TargetInfo, nor list: %s' % val)
         return tasks
 
     # --------------------------------------------------------
