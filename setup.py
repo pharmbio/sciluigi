@@ -31,8 +31,6 @@ setup(
     ],
     install_requires=[
         'luigi',
-        'psycopg2',
-        'boto3'
         ],
     classifiers=[
         'Development Status :: 4 - Beta',
