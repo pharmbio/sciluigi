@@ -30,7 +30,7 @@ setup(
         'sciluigi',
     ],
     install_requires=[
-        'luigi',
+        'luigi>=1.3.0,<3',
         'psycopg2',
         'boto3'
         ],
