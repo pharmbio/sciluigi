@@ -6,7 +6,6 @@ sciluigi library
 import csv
 import os
 import time
-from luigi.six import iteritems
 
 def timestamp(datefmt='%Y-%m-%d, %H:%M:%S'):
     '''
@@ -51,6 +50,6 @@ def dict_to_recordfile(filehandle, records):
     '''
     csvwt = csv.writer(filehandle, delimiter=RECORDFILE_DELIMITER, skipinitialspace=True)
     rows = []
-    for key, val in iteritems(records):
+    for key, val in records.items():
         rows.append([key, val])
     csvwt.writerows(rows)

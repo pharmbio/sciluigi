@@ -7,7 +7,6 @@ import luigi
 import warnings
 from luigi.contrib.postgres import PostgresTarget
 from luigi.contrib.s3 import S3Target
-from luigi.six import iteritems
 
 # ==============================================================================
 
@@ -78,7 +77,7 @@ class DependencyHelpers(object):
         for use in luigi's requires() method.
         '''
         upstream_tasks = set()
-        for attrname, attrval in iteritems(self.__dict__):
+        for attrname, attrval in self.__dict__.items():
             if attrname.startswith('in_'):
                 upstream_tasks = self._add_upstream_tasks(upstream_tasks, attrval)
 
@@ -98,7 +97,7 @@ class DependencyHelpers(object):
             for new_task in new_tasks:
                 tasks = self._add_upstream_tasks(tasks, new_task)
         elif isinstance(new_tasks, dict):
-            for _, new_task in iteritems(new_tasks):
+            for _, new_task in new_tasks.items():
                 tasks = self._add_upstream_tasks(tasks, new_task)
         else:
             raise Exception('Input value is neither callable, TargetInfo, nor list: %s' % val)
@@ -150,7 +149,7 @@ class DependencyHelpers(object):
             for valitem in val:
                 targets = self._parse_outputitem(valitem, targets)
         elif isinstance(val, dict):
-            for _, valitem in iteritems(val):
+            for _, valitem in val.items():
                 targets = self._parse_outputitem(valitem, targets)
         else:
             raise Exception('Input item is neither callable, TargetInfo, nor list: %s' % val)
