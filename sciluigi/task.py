@@ -3,7 +3,6 @@ This module contains sciluigi's subclasses of luigi's Task class.
 '''
 import json
 import luigi
-from luigi.six import iteritems, string_types
 import logging
 import subprocess as sub
 import warnings
@@ -22,15 +21,15 @@ def new_task(name, cls, workflow_task, **kwargs):
     (use WorkflowTask.new_task() instead).
     '''
     slurminfo = None
-    for key, val in [(key, val) for key, val in iteritems(kwargs)]:
+    for key, val in [(key, val) for key, val in kwargs.items()]:
         # Handle non-string keys
-        if not isinstance(key, string_types):
+        if not isinstance(key, str):
             raise Exception("Key in kwargs to new_task is not string. Must be string: %s" % key)
         # Handle non-string values
         if isinstance(val, sciluigi.slurm.SlurmInfo):
             slurminfo = val
             kwargs[key] = val
-        elif not isinstance(val, string_types):
+        elif not isinstance(val, str):
             try:
                 kwargs[key] = json.dumps(val) # Force conversion into string
             except TypeError:

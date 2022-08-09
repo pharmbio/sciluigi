@@ -2,7 +2,6 @@ import logging
 import luigi
 import sciluigi as sl
 import os
-import six.moves as s
 import time
 import unittest
 
@@ -22,7 +21,7 @@ class MultiOutTask(sl.Task):
     an_id = luigi.Parameter()
 
     def out_multi(self):
-        return [sl.TargetInfo(self, '/tmp/out_%s_%d.txt' % (self.an_id, i)) for i in s.range(10)]
+        return [sl.TargetInfo(self, '/tmp/out_%s_%d.txt' % (self.an_id, i)) for i in range(10)]
     def run(self):
         for otgt in self.out_multi():
             with otgt.open('w') as ofile:
@@ -71,15 +70,15 @@ class TestMultiInOutWorkflow(unittest.TestCase):
         self.w.run()
 
         # Assert outputs exists
-        for p in ['/tmp/out_%s_%d.txt' % (aid, i) for i in s.range(10) for aid in ['x']]:
+        for p in ['/tmp/out_%s_%d.txt' % (aid, i) for i in range(10) for aid in ['x']]:
             self.assertTrue(os.path.exists(p))
-        for p in ['/tmp/out_%s_%d.txt.daa.txt' % (aid, i) for i in s.range(10) for aid in ['x']]:
+        for p in ['/tmp/out_%s_%d.txt.daa.txt' % (aid, i) for i in range(10) for aid in ['x']]:
             self.assertTrue(os.path.exists(p))
 
         # Remove
-        for p in ['/tmp/out_%s_%d.txt' % (aid, i) for i in s.range(10) for aid in ['x']]:
+        for p in ['/tmp/out_%s_%d.txt' % (aid, i) for i in range(10) for aid in ['x']]:
             os.remove(p)
-        for p in ['/tmp/out_%s_%d.txt.daa.txt' % (aid, i) for i in s.range(10) for aid in ['x']]:
+        for p in ['/tmp/out_%s_%d.txt.daa.txt' % (aid, i) for i in range(10) for aid in ['x']]:
             os.remove(p)
 
     def tearDown(self):
