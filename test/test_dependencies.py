@@ -21,7 +21,9 @@ class MultiOutTask(sl.Task):
     an_id = luigi.Parameter()
 
     def out_multi(self):
-        return [sl.TargetInfo(self, '/tmp/out_%s_%d.txt' % (self.an_id, i)) for i in range(10)]
+        paths = ['/tmp/out_%s_%d.txt' % (self.an_id, i) for i in range(10)]
+        targets = [sl.TargetInfo(self, path) for path in paths]
+        return targets
     def run(self):
         for otgt in self.out_multi():
             with otgt.open('w') as ofile:
