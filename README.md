@@ -4,8 +4,8 @@
 
 ## Project updates
 
-* ***Update May 27, 2020***: Version 0.9.7 is released, and should work well
-  with Python 3.8 and Luigi 2.8. Please [report any issues](https://github.com/pharmbio/sciluigi)!
+* ***Update Jan 7, 2023***: Version 0.10.0 is released, and should work well at least with
+  with Python 3.9 and Luigi 3.1.1. Please [report any issues](https://github.com/pharmbio/sciluigi)!
 * ***A paper with the motivation and design decisions behind SciLuigi [now available](http://dx.doi.org/10.1186/s13321-016-0179-6)***
   * If you use SciLuigi in your research, please cite it like this:<br>
     Lampa S, Alvarsson J, Spjuth O. Towards agile large-scale predictive modelling in drug discovery with flow-based programming design principles. *J Cheminform*. 2016. doi:[10.1186/s13321-016-0179-6](http://dx.doi.org/10.1186/s13321-016-0179-6).
