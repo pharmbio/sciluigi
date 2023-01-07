@@ -1,5 +1,7 @@
 ![SciLuigi Logo](http://i.imgur.com/2aMT04J.png)
 
+[![CircleCI Build status](https://img.shields.io/circleci/build/github/samuell/sciluigi_fork)](https://app.circleci.com/pipelines/github/samuell/sciluigi_fork)
+
 ## Project updates
 
 * ***Update May 27, 2020***: Version 0.9.7 is released, and should work well
