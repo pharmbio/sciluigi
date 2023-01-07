@@ -103,7 +103,7 @@ class DoWebRequest(sl.Task):
 
     # Impl
     def run(self):
-        resp = requests.get('http://bils.se')
+        resp = requests.get('http://nbis.se')
         if resp.status_code != 200:
             log.error('Web request failed!')
         else:
@@ -134,7 +134,7 @@ class SplitAFile(sl.Task):
 
     # Impl
     def run(self):
-        cmd = 'wc -l {f}'.format(f=self.in_data().path)
+        cmd = f'wc -l {self.in_data().path}'
         _, wc_output, _ = self.ex(cmd)
 
         lines_cnt = int(wc_output.split(' ')[0])
