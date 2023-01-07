@@ -4,7 +4,7 @@
 
 ## Project updates
 
-* ***Update Jan 7, 2023***: Version 0.10.0 is released, and should work well at least with
+* ***Update Jan 7, 2023***: Version (0.10.0 and) 0.10.1 are released, and should work well at least with
   with Python 3.9 and Luigi 3.1.1. Please [report any issues](https://github.com/pharmbio/sciluigi)!
 * ***A paper with the motivation and design decisions behind SciLuigi [now available](http://dx.doi.org/10.1186/s13321-016-0179-6)***
   * If you use SciLuigi in your research, please cite it like this:<br>
