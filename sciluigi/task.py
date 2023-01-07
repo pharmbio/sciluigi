@@ -65,7 +65,7 @@ class Task(sciluigi.audit.AuditTrailHelpers, sciluigi.dependencies.DependencyHel
             command = sub.list2cmdline(command)
 
         log.info('Executing command: ' + str(command))
-        proc = sub.Popen(command, shell=True, stdout=sub.PIPE, stderr=sub.PIPE)
+        proc = sub.Popen(command, shell=True, stdout=sub.PIPE, stderr=sub.PIPE, text=True)
         stdout, stderr = proc.communicate()
         retcode = proc.returncode
 
